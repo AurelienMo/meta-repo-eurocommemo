@@ -1,0 +1,675 @@
+openapi: 3.1.0
+info:
+  title: Analytics
+  version: 3.0.0
+  description: >-
+    The Analytics API exposes aggregated shipping insights derived from your
+    account's shipping activity. The current release covers carrier and shipping
+    option transit times.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Analytics
+paths:
+  /analytics/transit-times/carriers:
+    get:
+      summary: Retrieve carrier transit times
+      description: >-
+        Returns aggregated transit-time statistics per carrier, optionally
+        filtered by origin and destination country and a date window.
+      x-mint:
+        href: /api/v3/analytics/retrieve-carrier-transit-times
+        metadata:
+          tag: Beta
+        content: >-
+          Transit times are aggregated from your account's recent shipping
+          activity. The response contains one record per `(carrier_code,
+          from_country_code, to_country_code)` row; rows with no transit-time
+          data are omitted. When `start_date` and `end_date` are omitted, the
+          response covers the last 90 days (UTC). `start_date` must be on or
+          before `end_date`.
+      operationId: sc-public-v3-analytics-get-carrier_transit_times
+      tags:
+        - Analytics
+      parameters:
+        - name: carrier_code
+          in: query
+          required: true
+          style: form
+          explode: true
+          description: >-
+            One or more carrier codes to retrieve transit times for. Repeat the
+            parameter to pass multiple values.
+          schema:
+            type: array
+            minItems: 1
+            items:
+              type: string
+              minLength: 1
+            example:
+              - postnl
+              - dhl
+        - $ref: '#/components/parameters/FromCountryCode'
+        - $ref: '#/components/parameters/ToCountryCode'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarrierTransitTimeResponse'
+              examples:
+                RetrieveCarrierTransitTimes:
+                  summary: Retrieve carrier transit times
+                  value:
+                    transit_times:
+                      - carrier_code: postnl
+                        from_country_code: NL
+                        to_country_code: AT
+                        start_date: '2025-03-01T00:00:00Z'
+                        end_date: '2025-03-31T23:59:59Z'
+                        total_parcels: 1284
+                        transit_time_hours: 48.5
+                        transit_time_days: 2
+                      - carrier_code: postnl
+                        from_country_code: NL
+                        to_country_code: DE
+                        start_date: '2025-03-01T00:00:00Z'
+                        end_date: '2025-03-31T23:59:59Z'
+                        total_parcels: 932
+                        transit_time_hours: 36.2
+                        transit_time_days: 2
+        '400':
+          description: >-
+            Bad Request. Returned when a request parameter fails validation or
+            the request is semantically invalid. The `source.parameter` field
+            identifies the offending input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidDateRange:
+                  summary: Invalid date range
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: start_date must be on or before end_date.
+                MissingRequiredParameter:
+                  summary: Required parameter missing
+                  value:
+                    errors:
+                      - status: '400'
+                        code: missing
+                        detail: Field required
+                        source:
+                          parameter: carrier_code
+                InvalidCountryCode:
+                  summary: Country code is not two characters
+                  value:
+                    errors:
+                      - status: '400'
+                        code: string_too_long
+                        detail: String should have at most 2 characters
+                        source:
+                          parameter: from_country_code
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+  /analytics/transit-times/shipping-options:
+    get:
+      summary: Retrieve shipping option transit times
+      description: >-
+        Returns aggregated transit-time statistics per shipping option,
+        optionally filtered by origin and destination country and a date window.
+      x-mint:
+        href: /api/v3/analytics/retrieve-shipping-option-transit-times
+        metadata:
+          tag: Beta
+        content: >-
+          Transit times are aggregated from your account's recent shipping
+          activity. The response contains one record per `(shipping_option_code,
+          from_country_code, to_country_code)` row; rows with no transit-time
+          data are omitted. When `start_date` and `end_date` are omitted, the
+          response covers the last 90 days (UTC). `start_date` must be on or
+          before `end_date`.
+      operationId: sc-public-v3-analytics-get-shipping_option_transit_times
+      tags:
+        - Analytics
+      parameters:
+        - name: shipping_option_code
+          in: query
+          required: true
+          style: form
+          explode: true
+          description: >-
+            One or more shipping option codes to retrieve transit times for.
+            Repeat the parameter to pass multiple values.
+          schema:
+            type: array
+            minItems: 1
+            items:
+              type: string
+              minLength: 1
+              maxLength: 256
+            example:
+              - postnl_standard
+              - dhl_express
+        - $ref: '#/components/parameters/FromCountryCode'
+        - $ref: '#/components/parameters/ToCountryCode'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/EndDate'
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShippingOptionTransitTimeResponse'
+              examples:
+                RetrieveShippingOptionTransitTimes:
+                  summary: Retrieve shipping option transit times
+                  value:
+                    transit_times:
+                      - shipping_option_code: postnl_standard
+                        from_country_code: NL
+                        to_country_code: AT
+                        start_date: '2025-03-01T00:00:00Z'
+                        end_date: '2025-03-31T23:59:59Z'
+                        total_parcels: 842
+                        transit_time_hours: 50.1
+                        transit_time_days: 2
+                      - shipping_option_code: dhl_express
+                        from_country_code: NL
+                        to_country_code: DE
+                        start_date: '2025-03-01T00:00:00Z'
+                        end_date: '2025-03-31T23:59:59Z'
+                        total_parcels: 217
+                        transit_time_hours: 26.4
+                        transit_time_days: 1
+        '400':
+          description: >-
+            Bad Request. Returned when one or more request parameters fail
+            validation (missing required parameters, country codes that aren't
+            two characters, `shipping_option_code` outside its length bounds,
+            dates outside the supported format) or when the request itself is
+            semantically invalid (e.g. `start_date` after `end_date`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                InvalidDateRange:
+                  summary: Invalid date range
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: start_date must be on or before end_date.
+                MissingRequiredParameter:
+                  summary: Required parameter missing
+                  value:
+                    errors:
+                      - status: '400'
+                        code: missing
+                        detail: Field required
+                        source:
+                          parameter: shipping_option_code
+                InvalidCountryCode:
+                  summary: Country code is not two characters
+                  value:
+                    errors:
+                      - status: '400'
+                        code: string_too_long
+                        detail: String should have at most 2 characters
+                        source:
+                          parameter: from_country_code
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  parameters:
+    FromCountryCode:
+      name: from_country_code
+      in: query
+      required: false
+      style: form
+      explode: true
+      description: >-
+        ISO 3166-1 alpha-2 country codes of the origin to filter by. Repeat the
+        parameter to pass multiple values.
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 2
+          maxLength: 2
+        example:
+          - NL
+    ToCountryCode:
+      name: to_country_code
+      in: query
+      required: false
+      style: form
+      explode: true
+      description: >-
+        ISO 3166-1 alpha-2 country codes of the destination to filter by. Repeat
+        the parameter to pass multiple values.
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 2
+          maxLength: 2
+        example:
+          - AT
+          - DE
+    StartDate:
+      name: start_date
+      in: query
+      required: false
+      description: >-
+        Inclusive start of the window in `YYYY-MM-DD` format. Defaults to 90
+        days before today (UTC) when omitted.
+      schema:
+        type: string
+        format: date
+        example: '2025-03-01'
+    EndDate:
+      name: end_date
+      in: query
+      required: false
+      description: >-
+        Inclusive end of the window in `YYYY-MM-DD` format. Defaults to today
+        (UTC) when omitted.
+      schema:
+        type: string
+        format: date
+        example: '2025-03-31'
+  responses:
+    Unauthorized:
+      description: >-
+        Unauthorized. Returned when authentication credentials are missing or
+        invalid. Make sure you're using your **Public Key** as the username and
+        **Secret Key** as the password (HTTP Basic Auth), or a valid OAuth 2.0
+        access token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            MissingCredentials:
+              summary: No `Authorization` header on the request
+              value:
+                errors:
+                  - status: '401'
+                    code: authentication_failed
+                    detail: Authentication credentials were not provided.
+            InvalidCredentials:
+              summary: Provided credentials don't match a Sendcloud account
+              value:
+                errors:
+                  - status: '401'
+                    code: authentication_failed
+                    detail: Invalid username/password.
+    Forbidden:
+      description: >-
+        Forbidden. Returned when your account doesn't have access to this
+        endpoint.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            NotEnabled:
+              summary: Account does not have access to the Analytics API
+              value:
+                errors:
+                  - status: '403'
+                    code: forbidden
+                    detail: Analytics is not enabled for this organization.
+    NotFound:
+      description: >-
+        Not Found. Returned when the analytics data source has not been
+        provisioned for your organization. A successful query with no matching
+        rows returns `200` with an empty `transit_times` array instead.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            NotProvisioned:
+              summary: Analytics data source not provisioned
+              value:
+                errors:
+                  - status: '404'
+                    code: not_found
+                    detail: Analytics data is not available for this organization.
+    InternalServerError:
+      description: >-
+        Internal Server Error. Returned when the analytics data source is
+        unreachable, times out, or returns an unexpected error. Safe to retry,
+        but if it persists, contact support and include the request ID from the
+        `X-Request-Id` response header.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            UpstreamUnavailable:
+              summary: Analytics data source unavailable
+              value:
+                errors:
+                  - status: '500'
+                    code: unknown_error
+                    detail: Failed to fetch analytics data. Please try again later.
+    BadGateway:
+      description: >-
+        Bad Gateway. Returned when a request to an external service fails with
+        an unexpected status. Safe to retry, but if it persists, contact support
+        and include the request ID from the `X-Request-Id` response header.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            ExternalServiceError:
+              summary: External service returned an error
+              value:
+                errors:
+                  - status: '502'
+                    code: external_service_error
+                    detail: An error occurred with an external service.
+  schemas:
+    CarrierTransitTimeResponse:
+      description: Response schema for the carrier transit times endpoint.
+      type: object
+      title: CarrierTransitTimeResponse
+      properties:
+        transit_times:
+          type: array
+          description: >-
+            Aggregated transit-time records matching the requested filters. Rows
+            with no transit-time data are omitted.
+          items:
+            $ref: '#/components/schemas/CarrierTransitTimeRecord'
+      required:
+        - transit_times
+    CarrierTransitTimeRecord:
+      description: >-
+        A single aggregated transit-time record for a carrier and country pair
+        over a date window.
+      type: object
+      title: CarrierTransitTimeRecord
+      properties:
+        carrier_code:
+          type: string
+          minLength: 1
+          description: Unique identifier of the carrier the record applies to.
+          example: postnl
+        from_country_code:
+          type:
+            - string
+            - 'null'
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code of the origin, or `null` when the
+            record is not scoped to a specific origin.
+          example: NL
+        to_country_code:
+          type:
+            - string
+            - 'null'
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code of the destination, or `null` when
+            the record is not scoped to a specific destination.
+          example: AT
+        start_date:
+          type: string
+          format: date-time
+          description: Inclusive start of the window the record covers.
+          example: '2025-03-01T00:00:00Z'
+        end_date:
+          type: string
+          format: date-time
+          description: Inclusive end of the window the record covers.
+          example: '2025-03-31T23:59:59Z'
+        total_parcels:
+          type: integer
+          minimum: 0
+          description: Number of parcels that contributed to the aggregate.
+          example: 1284
+        transit_time_hours:
+          type: number
+          format: float
+          minimum: 0
+          description: Median transit time in hours.
+          example: 48.5
+        transit_time_days:
+          type: integer
+          minimum: 0
+          description: Median transit time in whole days.
+          example: 2
+      required:
+        - carrier_code
+        - from_country_code
+        - to_country_code
+        - start_date
+        - end_date
+        - total_parcels
+        - transit_time_hours
+        - transit_time_days
+    ShippingOptionTransitTimeResponse:
+      description: Response schema for the shipping option transit times endpoint.
+      type: object
+      title: ShippingOptionTransitTimeResponse
+      properties:
+        transit_times:
+          type: array
+          description: >-
+            Aggregated transit-time records matching the requested filters. Rows
+            with no transit-time data are omitted.
+          items:
+            $ref: '#/components/schemas/ShippingOptionTransitTimeRecord'
+      required:
+        - transit_times
+    ShippingOptionTransitTimeRecord:
+      description: >-
+        A single aggregated transit-time record for a shipping option and
+        country pair over a date window.
+      type: object
+      title: ShippingOptionTransitTimeRecord
+      properties:
+        shipping_option_code:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Unique identifier of the shipping option the record applies to.
+          example: postnl_standard
+        from_country_code:
+          type:
+            - string
+            - 'null'
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code of the origin, or `null` when the
+            record is not scoped to a specific origin.
+          example: NL
+        to_country_code:
+          type:
+            - string
+            - 'null'
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code of the destination, or `null` when
+            the record is not scoped to a specific destination.
+          example: AT
+        start_date:
+          type: string
+          format: date-time
+          description: Inclusive start of the window the record covers.
+          example: '2025-03-01T00:00:00Z'
+        end_date:
+          type: string
+          format: date-time
+          description: Inclusive end of the window the record covers.
+          example: '2025-03-31T23:59:59Z'
+        total_parcels:
+          type: integer
+          minimum: 0
+          description: Number of parcels that contributed to the aggregate.
+          example: 842
+        transit_time_hours:
+          type: number
+          format: float
+          minimum: 0
+          description: Median transit time in hours.
+          example: 50.1
+        transit_time_days:
+          type: integer
+          minimum: 0
+          description: Median transit time in whole days.
+          example: 2
+      required:
+        - shipping_option_code
+        - from_country_code
+        - to_country_code
+        - start_date
+        - end_date
+        - total_parcels
+        - transit_time_hours
+        - transit_time_days
+    ErrorResponse:
+      type: object
+      description: Standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+      required:
+        - errors
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.

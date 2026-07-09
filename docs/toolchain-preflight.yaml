@@ -1,0 +1,21 @@
+_meta:
+  generated_at: "2026-06-28T00:00:00Z"
+  generated_by: skill/toolchain-preflight
+  workspace_hash: "f75bdd0e710a2c26839f97116acef086"
+  status: verified
+
+repos:
+  src-eurocommemo:
+    status: pass
+    exec_mode: compose
+    exec_note: "resolve_paths.py (stdlib) ne parse pas le bloc exec inline-commenté — vérification effectuée via docker compose exec direct"
+    runtime:
+      expected: "8.3"
+      found: "8.3.30"
+      match: range
+      status: pass
+    package_manager:
+      expected: null
+      found: "2.9.5"
+      match: presence
+      status: pass

@@ -1,0 +1,399 @@
+openapi: 3.1.0
+info:
+  title: Brands
+  version: 3.0.0
+  description: Provides details for the user's configured brands.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Brands
+paths:
+  /brands:
+    get:
+      summary: Retrieve a list of brands
+      description: >-
+        Retrieves a list of all brands and their associated properties.
+
+
+        This endpoint uses cursor-based pagination via `Link` headers. See
+        [Pagination](/api/v3/pagination) for details.
+      x-mint:
+        href: /api/v3/brands/retrieve-a-list-of-brands
+      operationId: sc-public-v3-brands-get-all_brands
+      tags:
+        - Brands
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - schema:
+            type: integer
+            maximum: 100
+          in: query
+          name: page_size
+          description: The size of the page to fetch.
+          example: 100
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-sendcloud-paginated: true
+      x-sendcloud-paginated-discriminator: data
+      responses:
+        '200':
+          description: OK
+          headers:
+            Link:
+              description: >-
+                The pagination links, according to the web linking specification
+                (RFC8288).
+              schema:
+                type: string
+                example: >-
+                  <https://panel.sendcloud.sc/api/v3/brands?cursor=cj0xJnA9MjUzNTQyMzM3>;
+                  rel="prev",
+                  <https://panel.sendcloud.sc/api/v3/brands?cursor=cD0yNTM1NDIyODI%3D>;
+                  rel="next"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: A list of the user's configured brands.
+                    items:
+                      $ref: '#/components/schemas/BrandSchema'
+              examples:
+                RetrieveAListOfBrands:
+                  summary: Retrieve a list of brands
+                  value:
+                    data:
+                      - id: 1
+                        name: Sendcloud B.V
+                        domain: sendcloud-shop
+                        color: '#112857'
+                        website: https://www.sendcloud.com
+                        screen_logo: https://media.sendcloud.sc/brands/1/Sendcloud.png
+                        print_logo: https://media.sendcloud.sc/brands/1/Sendcloud.png
+                        screen_thumb: >-
+                          https://media.sendcloud.sc/brands/1/a05d525e580da030907607d901e10288_thumbnail.png
+                        print_thumb: >-
+                          https://media.sendcloud.sc/brands/1/a05d525e580da030907607d901e10288_thumbnail.png
+                        notify_reply_to_email: info@sendcloud.com
+                        notify_bcc_email: info@sendcloud.com
+                        hide_powered_by: false
+                        google_analytics_id: G-1234567890
+  /brands/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 1
+        description: The unique id of the user's configured brand.
+    get:
+      summary: Retrieve a brand
+      description: >-
+        Retrieves a user's configured brand and its properties, identified by
+        its unique ID.
+      x-mint:
+        href: /api/v3/brands/retrieve-a-brand
+      operationId: sc-public-v3-brands-get-brand_by_id
+      tags:
+        - Brands
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandResponseSchema'
+              examples:
+                RetrieveBrand:
+                  summary: Retrieve a brand
+                  value:
+                    data:
+                      id: 1
+                      name: Sendcloud B.V
+                      domain: sendcloud-shop
+                      color: '#112857'
+                      website: https://www.sendcloud.com
+                      screen_logo: https://media.sendcloud.sc/brands/1/Sendcloud.png
+                      print_logo: https://media.sendcloud.sc/brands/1/Sendcloud.png
+                      screen_thumb: >-
+                        https://media.sendcloud.sc/brands/1/a05d525e580da030907607d901e10288_thumbnail.png
+                      print_thumb: >-
+                        https://media.sendcloud.sc/brands/1/a05d525e580da030907607d901e10288_thumbnail.png
+                      notify_reply_to_email: info@sendcloud.com
+                      notify_bcc_email: info@sendcloud.com
+                      hide_powered_by: false
+                      google_analytics_id: G-1234567890
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                BrandNotFound:
+                  summary: Brand not found
+                  value:
+                    errors:
+                      - status: '404'
+                        code: not_found
+                        detail: No Brand matches the given query.
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    BrandResponseSchema:
+      description: Response schema for the brand endpoint.
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/BrandSchema'
+      required:
+        - data
+      title: BrandResponseSchema
+    BrandSchema:
+      description: Schema representing a brand.
+      type: object
+      title: BrandSchema
+      properties:
+        id:
+          type: integer
+          description: The unique identifier of the brand.
+          example: 1
+        name:
+          type: string
+          description: The brand name.
+          example: Sendcloud B.V
+        domain:
+          type:
+            - string
+            - 'null'
+          description: >-
+            A user-defined domain for use with the tracking page and the return
+            portal features.
+          example: sendcloud-shop
+        color:
+          type: string
+          description: Hex code of the primary brand color.
+          example: '#112857'
+          pattern: ^#[a-fA-F0-9]{6}
+          minLength: 7
+          maxLength: 7
+        website:
+          type: string
+          format: uri
+          description: >-
+            The website of the specific brand, usually used for display
+            purposes.
+          example: https://www.sendcloud.com
+        screen_logo:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: URL of the brand's logo used for display purposes.
+          example: https://media.sendcloud.sc/brands/1/Sendcloud.png
+        print_logo:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: URL of the brand's logo used for printing purposes (e.g. labels).
+          example: https://media.sendcloud.sc/brands/1/Sendcloud.png
+        screen_thumb:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: Thumbnail of the screen logo.
+          example: >-
+            https://media.sendcloud.sc/brands/1/a05d525e580da030907607d901e10288_thumbnail.png
+        print_thumb:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: Thumbnail of the print logo.
+          example: >-
+            https://media.sendcloud.sc/brands/1/a05d525e580da030907607d901e10288_thumbnail.png
+        notify_reply_to_email:
+          type:
+            - string
+            - 'null'
+          format: email
+          description: >-
+            Email address used for reply-to actions for tracking email
+            notifications.
+          example: info@sendcloud.com
+        notify_bcc_email:
+          type:
+            - string
+            - 'null'
+          format: email
+          description: >-
+            BCC email address used for reply-to actions for tracking email
+            notifications.
+          example: info@sendcloud.com
+        hide_powered_by:
+          type: boolean
+          description: >-
+            Indicates if the "powered by Sendcloud" message should be displayed
+            on features which display the user's brand, such as the tracking
+            page.
+          example: false
+        google_analytics_id:
+          type: string
+          description: A user-defined string representing the Google Analytics ID.
+          example: G-1234567890
+          pattern: ^G-\d{10}$
+          maxLength: 15
+      required:
+        - id
+        - name
+        - domain
+        - color
+        - website
+        - screen_logo
+        - print_logo
+        - screen_thumb
+        - print_thumb
+        - notify_reply_to_email
+        - notify_bcc_email
+        - hide_powered_by
+        - google_analytics_id
+    ErrorResponse:
+      type: object
+      description: Standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+      required:
+        - errors
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      description: >-
+        The cursor query string is used as the pivot value to filter results. If
+        no value is provided, the first page of results will be returned. To get
+        this value, you must encode the offset, reverse and position into a
+        base64 string.
+
+
+        There are 3 possible parameters to encode:
+
+        - `o`: Offset
+
+        - `r`: Reverse
+
+        - `p`: Position
+          
+        For example, `r=1&p=300` encoded as a base64 string would be
+        `cj0xJnA9MzAw`. The query string would then be `cursor=cj0xJnA9MzAw`.
+      schema:
+        type: string
+        example: cj0xJnA9MzAw

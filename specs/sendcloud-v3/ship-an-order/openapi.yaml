@@ -1,0 +1,1220 @@
+openapi: 3.1.0
+info:
+  title: Ship an Order
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: |
+    The Sendcloud Ship an Order API
+
+    ## What can you do with this API?
+
+    - [Create Labels for orders](/docs/orders/ship-an-order/).
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Ship an Order
+    description: OrderLabelAPI
+paths:
+  /orders/create-labels-async:
+    post:
+      tags:
+        - Ship an Order
+      operationId: sc-public-v3-orders_labels-post-create_labels_async
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      summary: Request a label for one or more orders asynchronously
+      description: >-
+        Request a label for a single or multiple orders. This endpoint will fail
+        gracefully if some orders cannot be processed, returning any
+        successfully created labels along with error details for the orders that
+        failed.
+      x-mint:
+        href: >-
+          /api/v3/ship-an-order/request-a-label-for-one-or-more-orders-asynchronously
+        content: >-
+          To retrieve your documents or view announcement errors, use the `id`
+          of the relevant shipment with the [Retrieve a
+          shipment](/api/v3/shipments/retrieve-a-shipment) endpoint.
+
+
+          To apply shipping rules to the orders, make sure to set
+          `apply_shipping_rules` to `true`.
+
+
+          This endpoint will attempt to generate labels for each order. If a
+          request for one label errors, it will still attempt to generate the
+          other labels. Because of this, the response might return a mix of
+          labels and errors. Use the errors `source` `pointer` field to see
+          which labels encountered a problem.
+
+
+          <Note>
+
+          If you create orders via the [Orders
+          API](/api/v3/orders/create-update-orders-in-batch) and then
+          immediately request labels, the orders may not yet be available. Order
+          saving is **asynchronous**. A successful `201` response from the
+          Orders API does not guarantee the order is immediately ready for
+          shipping. Before calling this endpoint, verify the order exists by
+          retrieving it with the [Retrieve an
+          order](/api/v3/orders/retrieve-an-order) endpoint.
+
+          </Note>
+      parameters:
+        - $ref: '#/components/parameters/SendcloudPartnerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/create-labels-async'
+            examples:
+              CreateSingleLabelAsync:
+                summary: Create a label for a specific order.
+                description: Create a single shipping label for the order you want to ship.
+                value:
+                  integration_id: 70
+                  orders:
+                    - order_number: ORDER-25763
+                      apply_shipping_rules: false
+              CreateLabelUsingSenderAddressIDAsync:
+                summary: Create a label for a specific order using a sender address ID.
+                description: >-
+                  Create a single shipping label where the sender address is
+                  being supplied through ID.
+                value:
+                  integration_id: 70
+                  sender_address_id: 17
+                  orders:
+                    - order_number: ORDER-25763
+              CreateLabelUsingBrandIDAsync:
+                summary: Create a label for a specific order using a brand ID.
+                description: >-
+                  Create a single shipping label where the brand is being set
+                  through ID.
+                value:
+                  integration_id: 70
+                  brand_id: 42
+                  orders:
+                    - order_number: ORDER-25763
+              CreateLabelUsingShipWithAsync:
+                summary: >-
+                  Create a label for a specific order using a specific shipping
+                  option.
+                description: >-
+                  Create a single shipping label where the carrier and the
+                  shipping functionalities are defined by the supplied
+                  shipping_option_code.
+                value:
+                  integration_id: 70
+                  ship_with:
+                    type: shipping_option_code
+                    properties:
+                      contract_id: 517
+                      shipping_option_code: postnl:standard
+                  orders:
+                    - order_number: ORDER-25763
+              CreateLabelsAsync:
+                summary: Create a label for a multiple orders.
+                description: >-
+                  Create shipping labels for orders you want to sent to your
+                  customers.
+                value:
+                  integration_id: 70
+                  orders:
+                    - order_number: ORDER-257633
+                      apply_shipping_rules: false
+                    - order_id: d59e8b1c-04ca-4b38-90cf-e11083506e22
+              CreateMulticolloLabelAsync:
+                summary: Create multiple labels for an order.
+                description: >-
+                  Create shipping labels for order you want to sent in multiple
+                  parcels.
+                value:
+                  integration_id: 70
+                  orders:
+                    - order_number: ORDER-25763
+                      parcels:
+                        - parcel_items:
+                            - item_id: '5552'
+                              quantity: 1
+                            - item_id: '5555'
+                              quantity: 2
+                          dimensions:
+                            length: '5.00'
+                            width: '15.00'
+                            height: '20.00'
+                            unit: cm
+                          weight:
+                            value: '1.320'
+                            unit: kg
+                        - parcel_items:
+                            - item_id: '5552'
+                              quantity: 1
+                            - item_id: '763'
+                              quantity: 12
+                          dimensions:
+                            length: '10.00'
+                            width: '12.00'
+                            height: '30.00'
+                            unit: cm
+                          weight:
+                            value: '2.2'
+                            unit: kg
+                      apply_shipping_rules: false
+      responses:
+        '202':
+          description: Information about the created parcels.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: >-
+                      An array containing the created parcel IDs and other order
+                      information.
+                    minItems: 0
+                    items:
+                      $ref: '#/components/schemas/label-async'
+                  errors:
+                    type:
+                      - array
+                    items:
+                      type: object
+                      allOf:
+                        - $ref: '#/components/schemas/ErrorObject'
+                      required:
+                        - status
+                        - code
+                        - detail
+              examples:
+                AllLabelsSuccessful:
+                  description: All the requested labels were successfully generated.
+                  value:
+                    data:
+                      - parcel_id: 420
+                        parcels_ids:
+                          - 420
+                        shipment_id: '511'
+                        order_id: 593c853e-ca90-4ab4-953c-fd2f47dd8dc3
+                        order_number: ORD-2024-00174
+                      - parcel_id: 4428
+                        parcels_ids:
+                          - 4428
+                        shipment_id: '512'
+                        order_id: '23458265234'
+                        order_number: ORD-2024-00166
+                MulticolloLabelsSuccessful:
+                  description: A single order shipped in multiple parcels.
+                  value:
+                    data:
+                      - parcel_id: 420
+                        parcels_ids:
+                          - 420
+                          - 421
+                          - 422
+                        shipment_id: '511'
+                        order_id: 593c853e-ca90-4ab4-953c-fd2f47dd8dc3
+                        order_number: ORD-2024-00174
+                SomeLabelsContainErrors:
+                  description: >-
+                    Some labels were generated, while others encountered an
+                    error.
+                  value:
+                    data:
+                      - parcel_id: 420
+                        parcels_ids:
+                          - 420
+                        shipment_id: '511'
+                        order_id: 593c853e-ca90-4ab4-953c-fd2f47dd8dc3
+                        order_number: ORD-2024-00174
+                    errors:
+                      - status: '400'
+                        code: validation_error
+                        title: Invalid order
+                        detail: The order has no valid shipping address.
+                        source:
+                          pointer: /data/attributes/orders/[1]
+                SenderAddressIDDoesNotExist:
+                  description: Sender Address does not exist.
+                  value:
+                    errors:
+                      - status: '404'
+                        code: invalid
+                        detail: Does not exist.
+                        source:
+                          pointer: /data/attributes/sender_address_id
+                LabelsSuccessfulWithShipWith:
+                  description: >-
+                    All the requested labels were successfully generated using
+                    the provided `ship_with` option.
+                  value:
+                    data:
+                      - parcel_id: 420
+                        shipment_id: '511'
+                        order_id: 593c853e-ca90-4ab4-953c-fd2f47dd8dc3
+                        order_number: ORD-2024-00174
+                        ship_with:
+                          type: shipping_option_code
+                          properties:
+                            contract_id: 517
+                            shipping_option_code: postnl:standard
+                      - parcel_id: 4428
+                        shipment_id: '512'
+                        order_id: '23458265234'
+                        order_number: ORD-2024-00166
+                        ship_with:
+                          type: shipping_option_code
+                          properties:
+                            contract_id: 517
+                            shipping_option_code: postnl:standard
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                InvalidOrderId:
+                  summary: The provided order_id is not a valid string.
+                  value:
+                    errors:
+                      - detail: Input should be a valid string
+                        status: '400'
+                        source:
+                          pointer: /data/attributes/orders/0/order_id
+                        code: invalid
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orders/create-label-sync:
+    post:
+      tags:
+        - Ship an Order
+      operationId: sc-public-v3-orders_labels-post-create_labels_sync
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      summary: Request a label for a single order synchronously
+      description: >-
+        Request a label for a single order and wait for the results. The label
+        and any other documents will be provided in the response to this
+        request.
+      x-mint:
+        href: /api/v3/ship-an-order/request-a-label-for-a-single-order-synchronously
+        content: >-
+          <Note>
+
+          If you create orders via the [Orders
+          API](/api/v3/orders/create-update-orders-in-batch) and then
+          immediately request a label, the order may not yet be available. Order
+          saving is **asynchronous**. A successful `201` response from the
+          Orders API does not guarantee the order is immediately ready for
+          shipping. Before calling this endpoint, verify the order exists by
+          retrieving it with the [Retrieve an
+          order](/api/v3/orders/retrieve-an-order) endpoint.
+
+          </Note>
+      parameters:
+        - $ref: '#/components/parameters/SendcloudPartnerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/create-labels-sync'
+            examples:
+              CreateSingleLabelSync:
+                summary: Create a label for a specific order.
+                description: Create a shipping label for the order you want to ship.
+                value:
+                  integration_id: 70
+                  label_details:
+                    mime_type: application/pdf
+                    dpi: 72
+                  order:
+                    order_number: ORDER-25763
+                    apply_shipping_rules: false
+              CreateLabelUsingShipWithSync:
+                summary: >-
+                  Create a label for a specific order using a specific shipping
+                  option.
+                description: >-
+                  Create a single shipping label where the carrier and the
+                  shipping functionalities are defined by the supplied
+                  `shipping_option_code`.
+                value:
+                  integration_id: 70
+                  ship_with:
+                    type: shipping_option_code
+                    properties:
+                      contract_id: 517
+                      shipping_option_code: postnl:standard
+                  order:
+                    - order_number: ORDER-25763
+              CreateLabelUsingSenderAddressIDSync:
+                summary: Create a label for a specific order using a sender address ID.
+                description: Create a shipping label using a specific sender address.
+                value:
+                  integration_id: 70
+                  sender_address_id: 17
+                  label_details:
+                    mime_type: application/pdf
+                    dpi: 72
+                  orders:
+                    - order_number: ORDER-25763
+              CreateLabelUsingBrandIDSync:
+                summary: Create a label for a specific order using a brand ID.
+                description: Create a single shipping label using a specific brand.
+                value:
+                  integration_id: 70
+                  brand_id: 42
+                  label_details:
+                    mime_type: application/pdf
+                    dpi: 72
+                  order:
+                    order_number: ORDER-25763
+      responses:
+        '201':
+          description: Parcel ID along with generated label.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: Parcel ID, tracking details and generated label.
+                    $ref: '#/components/schemas/label-sync'
+              examples:
+                LabelSuccessfulWithShipWith:
+                  description: >-
+                    All requested labels are being generated with the provided
+                    `ship_with`.
+                  value:
+                    data:
+                      - parcel_id: 420
+                        shipment_id: '511'
+                        order_id: 593c853e-ca90-4ab4-953c-fd2f47dd8dc3
+                        order_number: ORD-2024-00174
+                        ship_with:
+                          type: shipping_option_code
+                          properties:
+                            contract_id: 517
+                            shipping_option_code: postnl:standard
+                        tracking_number: ABCD1234567890
+                        tracking_url: >-
+                          https://test.shipping-portal.com/tracking/?tracking_number=abcd1234567890&country=nl&postal_code=1234AB
+                        label:
+                          file: <base64-encoded-pdf-data>
+                          mime_type: application/pdf
+                          dpi: 72
+                        documents:
+                          - type: label
+                            size: a6
+                            link: >-
+                              https://panel.sendcloud.sc/api/v3/parcels/1234567890/documents/label
+                      - parcel_id: 4428
+                        shipment_id: '512'
+                        order_id: '23458265234'
+                        order_number: ORD-2024-00166
+                        ship_with:
+                          type: shipping_option_code
+                          properties:
+                            contract_id: 517
+                            shipping_option_code: postnl:standard
+                        tracking_number: ABCD1234567890
+                        tracking_url: >-
+                          https://test.shipping-portal.com/tracking/?tracking_number=abcd1234567890&country=nl&postal_code=1234AB
+                        label:
+                          file: <base64-encoded-pdf-data>
+                          mime_type: application/pdf
+                          dpi: 72
+                        documents:
+                          - type: label
+                            size: a6
+                            link: >-
+                              https://panel.sendcloud.sc/api/v3/parcels/1234567890/documents/label
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  responses:
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+          examples:
+            PageNotFound:
+              summary: The page you have requested could not be found.
+              value:
+                errors:
+                  - status: '404'
+                    code: not_found
+                    title: Not found
+                    detail: The page you have requested could not be found.
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+          examples:
+            InvalidOrderId:
+              summary: The provided order_id is not a valid string.
+              value:
+                errors:
+                  - status: '400'
+                    code: invalid
+                    title: Invalid
+                    detail: Input should be a valid string.
+                    source:
+                      pointer: /data/attributes/order/order_id
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  parameters:
+    SendcloudPartnerId:
+      in: header
+      name: Sendcloud-Partner-Id
+      description: >-
+        If you are an official [Sendcloud Tech
+        Partner](https://www.sendcloud.com/ecosystem/), send your unique
+        Sendcloud Partner UUID as a request header for the system to recognize
+        you.
+
+
+        The header is not required but if it is set, the system will check it.
+        An unknown or invalid UUID will cause a 400 error.
+      schema:
+        type: string
+  schemas:
+    shipping-option-code-properties:
+      title: Shipping option properties Object
+      description: >-
+        Contains the required properties to be sent when API client informs the
+        shipping method and carrier to be used
+      type: object
+      properties:
+        shipping_option_code:
+          type:
+            - string
+            - 'null'
+          description: >-
+            The shipping option that will be or is used for shipping your
+            parcel. The code can be retrieved via the [Create a list of shipping
+            options](/api/v3/shipping-options/create-a-list-of-shipping-options)
+            endpoint. When `ship_with.type` is set to `shipping_option_code`,
+            this field is mandatory.
+          example: postnl:standard/insured=3000
+        contract_id:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          description: >-
+            The selected shipping contract. If you haven't specified a contract
+            for shipping your parcel, we will automatically select the default
+            contract for the carrier that matches your shipping option. You can
+            retrieve your contract IDs from the [Retrieve a list of
+            contracts](/api/v3/contracts/retrieve-a-list-of-contracts) endpoint.
+            Otherwise, the default direct contract will be automatically
+            selected.
+    ship-with:
+      title: Ship with object
+      type: object
+      description: >
+        The ship with object can be used to define how you would like to send
+        your shipment.
+
+
+        You can use a `shipping_option_code`. This is a unique identifier that
+        displays what carrier and what set of shipping functionalities you want
+        to use.
+      examples:
+        - type: shipping_option_code
+          properties:
+            shipping_option_code: postnl:standard/insured=3000
+            contract_id: 517
+      properties:
+        type:
+          type: string
+          description: >
+            The way the shipping method and carrier will be selected. Nowadays
+            the only possible value is 'shipping_option_code', which requires
+            client to also send the `shipping_option_code` inside properties.
+          enum:
+            - shipping_option_code
+          example: shipping_option_code
+        properties:
+          $ref: '#/components/schemas/shipping-option-code-properties'
+      required:
+        - type
+        - properties
+    create-labels-base:
+      type: object
+      required:
+        - integration_id
+      properties:
+        integration_id:
+          type: integer
+          description: The ID of the integration your orders belong to.
+          example: 70
+        sender_address_id:
+          type: integer
+          example: 192
+          description: >-
+            The ID of the sender address you would like to ship from. If not
+            specified, your default sender address will be used.
+
+
+            A sender address can be added through the [Sendcloud
+            platform](https://app.sendcloud.com/v2/settings/addresses/sender)
+            and be retrieved using the [Retrieve a list of sender
+            addresses](/api/v3/sender-addresses/retrieve-a-list-of-sender-addresses)
+            endpoint.
+        brand_id:
+          type: integer
+          example: 42
+          description: >-
+            The ID of the brand. Brands can be added through the [Sendcloud
+            platform](https://app.sendcloud.com/v2/settings/brands/list) and be
+            retrieved using the [Retrieve a list of
+            brands](/api/v2/brands/retrieve-a-list-of-brands) endpoint.
+
+
+            > **Note:** The Brands API is currently only available in API v2.
+            This reference will be updated when a v3 version becomes available.
+          minimum: 1
+        ship_with:
+          type: object
+          $ref: '#/components/schemas/ship-with'
+      components:
+        schemas:
+          OrderSelectorOrderIdRequired:
+            type: object
+            properties:
+              order_id:
+                type: string
+                minLength: 1
+                maxLength: 64
+                description: >-
+                  An external order ID assigned by the shop system. Used to
+                  identify an order to be shipped.
+              order_number:
+                type: string
+                minLength: 1
+                maxLength: 255
+                description: >-
+                  An identification of an order in a shop system (often unique).
+                  Used to identify an order to be shipped.
+              apply_shipping_rules:
+                type: boolean
+                description: Apply shipping rules for this order.
+                default: false
+                example: false
+            required:
+              - order_id
+          OrderSelectorOrderNumberRequired:
+            type: object
+            properties:
+              order_id:
+                type: string
+                minLength: 1
+                maxLength: 64
+                description: >-
+                  External order ID assigned by shop system. Used to identify an
+                  order to be shipped.
+              order_number:
+                type: string
+                minLength: 1
+                maxLength: 255
+                description: >-
+                  An identification of an order in a shop system (often unique).
+                  Used to identify an order to be shipped.
+              apply_shipping_rules:
+                type: boolean
+                description: Apply shipping rules to this order.
+                default: false
+                example: false
+            required:
+              - order_number
+    dimension-units:
+      type: string
+      title: Dimensional units
+      enum:
+        - cm
+        - mm
+        - m
+        - yd
+        - ft
+        - in
+      example: mm
+    str-dimensions:
+      title: Dimensions
+      type: object
+      description: Dimensions in the specified unit
+      properties:
+        length:
+          type: string
+          description: length in specified unit
+          example: '15'
+        width:
+          type: string
+          description: width in specified unit
+          example: '20.5'
+        height:
+          type: string
+          description: height in specified unit
+          example: '37'
+        unit:
+          $ref: '#/components/schemas/dimension-units'
+      required:
+        - length
+        - width
+        - height
+        - unit
+    weight-units:
+      type: string
+      title: Mass Units Object
+      enum:
+        - kg
+        - g
+        - lbs
+        - oz
+      example: g
+    str-weight:
+      title: Weight
+      type: object
+      description: Weight in the specified unit
+      properties:
+        value:
+          type: string
+          description: Weight value
+          example: '14.5'
+        unit:
+          $ref: '#/components/schemas/weight-units'
+      required:
+        - value
+        - unit
+    parcel-common-with-optional-fields:
+      title: Parcel common with optional fields Object
+      description: Parcel common with optional fields model
+      type: object
+      properties:
+        dimensions:
+          $ref: '#/components/schemas/str-dimensions'
+          description: >-
+            While dimensions are generally optional, some carriers require them
+            to be present. If this is the case, an error will be thrown.
+        weight:
+          $ref: '#/components/schemas/str-weight'
+    OrderItem:
+      type: object
+      properties:
+        item_id:
+          type: string
+          description: >-
+            The order item's external ID in the shop system. This `item_id` can
+            be obtained via the [Retrieve an
+            order](/api/v3/orders/retrieve-an-order) endpoint.
+          example: '5552'
+          minLength: 1
+        quantity:
+          type: integer
+          description: Quantity of items shipped.
+          minimum: 1
+          example: 1
+      required:
+        - item_id
+        - quantity
+    CreateLabelParcel:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/parcel-common-with-optional-fields'
+        - type: object
+          properties:
+            parcel_items:
+              type: array
+              description: List of items/products from the order that the parcel contains.
+              maxItems: 1000
+              items:
+                $ref: '#/components/schemas/OrderItem'
+      required:
+        - parcel_items
+    create-labels-parcels:
+      title: Multicollo parcels array Object
+      description: >-
+        Multicollo parcels array model used for splitting shipped object into
+        multiple parcels
+      type: object
+      properties:
+        parcels:
+          description: >-
+            Represents each package in the shipment. Each carrier can have its
+            own limit for the number of parcels per shipment, otherwise there is
+            a default maximum of 50 parcels. If left empty, one parcel will be
+            created from an entire order.
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateLabelParcel'
+          minItems: 1
+          maxItems: 50
+      components:
+        schemas:
+          OrderItem:
+            type: object
+            properties:
+              item_id:
+                type: string
+                description: >-
+                  The order item's external ID in the shop system. This
+                  `item_id` can be obtained via the [Retrieve an
+                  order](/api/v3/orders/retrieve-an-order) endpoint.
+                example: '5552'
+                minLength: 1
+              quantity:
+                type: integer
+                description: Quantity of items shipped.
+                minimum: 1
+                example: 1
+            required:
+              - item_id
+              - quantity
+          CreateLabelParcel:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/parcel-common-with-optional-fields'
+              - type: object
+                properties:
+                  parcel_items:
+                    type: array
+                    description: >-
+                      List of items/products from the order that the parcel
+                      contains.
+                    maxItems: 1000
+                    items:
+                      $ref: '#/components/schemas/OrderItem'
+            required:
+              - parcel_items
+    OrderSelectorOrderIdRequired:
+      type: object
+      properties:
+        order_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: >-
+            An external order ID assigned by the shop system. Used to identify
+            an order to be shipped.
+        order_number:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: >-
+            An identification of an order in a shop system (often unique). Used
+            to identify an order to be shipped.
+        apply_shipping_rules:
+          type: boolean
+          description: Apply shipping rules for this order.
+          default: false
+          example: false
+      required:
+        - order_id
+    OrderSelectorOrderNumberRequired:
+      type: object
+      properties:
+        order_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+          description: >-
+            External order ID assigned by shop system. Used to identify an order
+            to be shipped.
+        order_number:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: >-
+            An identification of an order in a shop system (often unique). Used
+            to identify an order to be shipped.
+        apply_shipping_rules:
+          type: boolean
+          description: Apply shipping rules to this order.
+          default: false
+          example: false
+      required:
+        - order_number
+    create-labels-async:
+      title: Create labels asynchronously
+      description: >-
+        Payload for creating labels for orders.
+
+
+        Note that if the `sender_address_id` is not specified, the API will use
+        the default [sender address](/docs/getting-started/sender-addresses)
+        associated with your account.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/create-labels-base'
+        - type: object
+          required:
+            - orders
+            - integration_id
+          properties:
+            orders:
+              type: array
+              minItems: 1
+              maxItems: 20
+              uniqueItems: true
+              description: Array of order objects you want to create labels for
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/create-labels-parcels'
+                  - oneOf:
+                      - $ref: '#/components/schemas/OrderSelectorOrderIdRequired'
+                      - $ref: '#/components/schemas/OrderSelectorOrderNumberRequired'
+    label-base:
+      type: object
+      properties:
+        shipment_id:
+          type: string
+          description: The ID of the shipment that was created for the provided order.
+          example: '511'
+        order_id:
+          type: string
+          description: The ID of your order.
+          example: 593c853e-ca90-4ab4-953c-fd2f47dd8dc3
+        order_number:
+          type: string
+          description: A human-readable order number.
+          example: ORD-2024-01414
+        ship_with:
+          type: object
+          $ref: '#/components/schemas/ship-with'
+    label-async:
+      title: Reference to label
+      type: object
+      description: Holds the reference to created label.
+      allOf:
+        - $ref: '#/components/schemas/label-base'
+        - type: object
+          properties:
+            parcel_id:
+              type: integer
+              description: >-
+                The ID of the parcel the label belongs to. For multicollo
+                shipments, the ID of the first parcel will be returned.
+
+
+                **Deprecated** in favour of the `parcels_ids` field, which
+                returns an array containing the parcel ID (or multiple parcel
+                IDs for a multicollo shipment).
+              example: 420
+              deprecated: true
+            parcels_ids:
+              type: array
+              description: >-
+                An array containing the IDs of all the parcels the labels belong
+                to.
+              example:
+                - 420
+              items:
+                type: integer
+                example: 420
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail
+    create-labels-sync:
+      title: Create labels synchronously
+      description: >
+        Payload for creating labels for orders.
+
+
+        Note that if the `sender_address_id` is not specified, the API will use
+        the default [sender address](/docs/getting-started/sender-addresses)
+        associated with your account.
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/create-labels-base'
+        - type: object
+          required:
+            - order
+            - integration_id
+          properties:
+            order:
+              type: object
+              oneOf:
+                - $ref: '#/components/schemas/OrderSelectorOrderIdRequired'
+                - $ref: '#/components/schemas/OrderSelectorOrderNumberRequired'
+            label_details:
+              type: object
+              properties:
+                mime_type:
+                  type: string
+                  default: application/pdf
+                  enum:
+                    - application/pdf
+                    - application/zpl
+                    - image/png
+                  example: application/zpl
+                  description: The returned format of the label.
+                dpi:
+                  type: integer
+                  default: 72
+                  enum:
+                    - 72
+                    - 150
+                    - 203
+                    - 300
+                    - 600
+                  example: 72
+                  description: >-
+                    DPI refers to the printing resolution of your shipping
+                    labels. It's important that labels are printed at a high
+                    enough resolution to ensure the clarity of address details
+                    and the barcode for scanning purposes.
+
+
+                    Refer to the following table for DPI settings per file
+                    format:
+
+
+                    File format | Default DPI | Valid DPI
+
+                    ----------- | ----------- | ---------
+
+                    pdf         | 72          | 72
+
+                    png         | 300         | 150, 300
+
+
+                    ZPL labels are not affected by the DPI setting, as the
+                    resolution is determined by the carrier itself. Most
+                    carriers use a resolution of 203 DPI. Zebra printers need to
+                    be configured to print at the specific DPI of the label if
+                    they have higher resolution capabilities.
+    documents:
+      title: Documents Object
+      type: object
+      description: Documents object for a parcel
+      properties:
+        type:
+          type: string
+          deprecated: true
+          description: The type of the document. See the list below for available types.
+          enum:
+            - label
+            - cn23
+            - cp71
+            - commercial-invoice
+            - cn23-default
+            - air-waybill
+            - qr
+        document_type:
+          type: string
+          description: The type of the document. See the list below for available types.
+          enum:
+            - label
+            - customs-declaration
+            - air-waybill
+        size:
+          type: string
+          description: The paper size of the document.
+          enum:
+            - a6
+            - a4
+        link:
+          type: string
+          description: >-
+            A link to the document, which allows downloading of the document in
+            PDF, PNG and ZPL and various DPI.
+    label-sync:
+      title: Reference to label
+      type: object
+      description: Holds the reference to created label.
+      allOf:
+        - $ref: '#/components/schemas/label-base'
+        - type: object
+          properties:
+            parcel_id:
+              type: integer
+              description: The ID of the parcel the label belongs to.
+              example: 420
+            label_details:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: byte
+                  description: The base64 representation of the label file.
+                mime_type:
+                  type: string
+                  default: application/pdf
+                  enum:
+                    - application/pdf
+                    - application/zpl
+                    - image/png
+                  example: application/zpl
+                  description: The returned format of the label.
+                dpi:
+                  type: integer
+                  default: 72
+                  enum:
+                    - 72
+                    - 150
+                    - 203
+                    - 300
+                    - 600
+                  example: 72
+                  description: >-
+                    DPI refers to the printing resolution of your shipping
+                    labels. It's important that labels are printed at a high
+                    enough resolution to ensure the clarity of address details
+                    and the barcode for scanning purposes.
+
+
+                    Refer to the following table for DPI settings per file
+                    format:
+
+
+                    File format | Default DPI | Valid DPI
+
+                    ----------- | ----------- | ---------
+
+                    pdf         | 72          | 72
+
+                    png         | 300         | 150, 300
+
+
+                    ZPL labels are not affected by the DPI setting, as the
+                    resolution is determined by the carrier itself. Most
+                    carriers use a resolution of 203 DPI. Zebra printers need to
+                    be configured to print at the specific DPI of the label if
+                    they have higher resolution capabilities.
+            documents:
+              type: array
+              uniqueItems: true
+              description: >-
+                An array of documents. A parcel can contain multiple documents,
+                for instance labels and a customs form. This field returns an
+                array of all the available documents for this parcel.
+              readOnly: true
+              items:
+                $ref: '#/components/schemas/documents'
+            tracking_number:
+              type: string
+              description: Tracking number of the shipment.
+              readOnly: true
+            tracking_url:
+              type: string
+              description: Tracking url of this shipment.
+              readOnly: true

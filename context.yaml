@@ -1,0 +1,41 @@
+client: ESP
+
+# ── Langue & style ────────────────────────────────────────
+language:
+  code: en           # fr | en
+  commits: en
+commit_convention: conventional-commits
+
+# ── Politiques du pipeline ────────────────────────────────
+ai_visibility: selective
+# none       → zéro fichier IA dans les repos versionnés
+# selective  → CLAUDE.md et .ai-hints.md autorisés dans les repos
+# full       → tous fichiers IA assumés (co-authored commits, tech-profile dans le repo)
+
+guidelines_location: meta-repo
+# meta-repo  → fichiers dans meta-repo/specs/guidelines/
+# repo       → fichiers dans le repo (ex: CONTRIBUTING.md)
+# both       → fusion meta-repo + repo (repo-wins en cas de conflit)
+
+review_position: after_tests
+# after_diffs      → coût LLM faible, vérifie spec + guidelines uniquement
+# after_tests      → défaut recommandé (voit le code ET les tests)
+# after_validation → coût élevé, contexte maximal (voit aussi les résultats CI)
+
+# ── Règles de PR ─────────────────────────────────────────
+pr_rules:
+  base_branch: develop
+  require_tests: true
+  min_coverage_delta: 0
+
+# ── Definition of Done mesurable ─────────────────────────
+# Baseline globale. Surchargeable PAR REPO via workspace.yaml → repos.{repo}.dod
+# (repo-wins, clés partielles). Le contrat client narratif vit dans specs/dod.md.
+definition_of_done:
+  tests_required: false
+  min_coverage: 0
+  coverage_must_not_decrease: false
+  pr_review_required: false
+  doc_updated: true
+  no_new_warnings: true
+  migration_required_if_schema_change: true

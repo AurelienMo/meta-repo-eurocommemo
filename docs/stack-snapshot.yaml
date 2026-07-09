@@ -1,0 +1,29 @@
+_meta:
+  generated_at: "2026-06-26T22:46:26Z"
+  generated_by: skill/tech-detector
+  workspace_hash: "f75bdd0e710a2c26839f97116acef086"
+  valid: true
+
+repos:
+  src-eurocommemo:
+    runtime: php
+    version: "8.3"
+    framework: symfony
+    framework_version: "6.4"
+    build_tool: composer
+    test_framework: phpunit
+    ci: none
+    source: scan
+    secondary:
+      - runtime: node
+        build_tool: yarn
+        framework: webpack-encore
+    notes: >-
+      PHP/Symfony detected via composer.json (no php sub-skill in detector table).
+      No CI config and no static-analysis tool (phpstan/cs-fixer) present.
+      exec.mode=compose (service php-fpm-per83): commands are wrapped by repo_exec.py.
+    commands:
+      build: "composer install --no-interaction --no-progress"
+      test: "php bin/phpunit"
+      lint: none
+      coverage: "php bin/phpunit --coverage-text"

@@ -1,0 +1,1496 @@
+openapi: 3.1.0
+info:
+  title: Parcel Tracking API
+  version: 3.0.0
+  description: >
+    The Parcel Tracking API allows you to register parcels for tracking and
+    retrieve parcel information by tracking number
+
+    It supports creating and managing parcel tracking details, including
+    associated addresses, measurements, and insurance
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Parcel Tracking
+paths:
+  /parcels/tracking/{tracking_number}:
+    get:
+      summary: Retrieve tracking information for a parcel
+      x-mint:
+        href: /api/v3/parcel-tracking/retrieve-tracking-information-for-a-parcel
+      tags:
+        - Parcel Tracking
+      operationId: >-
+        sc-public-v3-shipping_intelligence_engine-get-get_parcel_by_tracking_number
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      parameters:
+        - name: tracking_number
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+            description: The tracking number of a parcel
+            title: Tracking Number
+          description: Parcel tracking number
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/parcel-tracking-response'
+        '404':
+          description: Parcel does not exist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message indicating the parcel does not exist
+              example:
+                detail: Parcel does not exist
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      description: >-
+        Get information about a parcel, including its current status and recent
+        tracking events, using its tracking number
+  /parcels/tracking:
+    post:
+      tags:
+        - Parcel Tracking
+      summary: Create an external parcel for tracking
+      x-mint:
+        href: /api/v3/parcel-tracking/create-an-external-parcel-for-tracking
+        metadata:
+          tag: Beta
+        content: >-
+          Register a parcel in the Sendcloud system exclusively for tracking,
+          without creating a shipment label. This is useful when you create
+          labels outside of Sendcloud but still want to track the parcels within
+          the platform. Provide the tracking number, carrier, sender and
+          recipient addresses, and optionally include parcel items,
+          measurements, and insurance details.
+
+
+          <Note>
+            This endpoint is currently in beta. While the core functionality is stable, some details or behavior may change as the API is finalized. Review your integration periodically and check release notes for updates.
+          </Note>
+
+
+          <Info>
+            To see the parcel in [Analytics](https://support.sendcloud.com/hc/en-us/sections/28788521497745-Analytics), include the `shipping_option_code` in the `ship_with` property. Parcels created without a shipping option code will not appear in analytics. You can retrieve valid shipping option codes via the [Shipping Options API](/docs/shipments/shipping-options-and-quotes).
+          </Info>
+      operationId: >-
+        sc-public-v3-shipping_intelligence_engine-post-register_parcel_for_tracking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/parcel-tracking-create-request'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/parcel-tracking-create-response'
+        '409':
+          description: >-
+            Race condition conflict: another request created the same parcel
+            concurrently. This is rare — duplicate submissions normally return
+            200 with created: false.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Error message indicating the conflict
+              example:
+                detail: Parcel or tracking number already exists
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      description: >-
+        Register an external parcel in the Sendcloud system for tracking, based
+        on the provided details. It requires a valid tracking number and parcel
+        information.
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    '0':
+      title: Ship With Shipping Option Code Object
+      type: object
+      description: Ship using a shipping option code. The shipping option code is required.
+      properties:
+        type:
+          type: string
+          const: shipping_option_code
+          description: Type discriminator for shipping_option_code.
+        properties:
+          $ref: '#/components/schemas/shipping-option-code-properties'
+      required:
+        - type
+        - properties
+      additionalProperties: false
+    '1':
+      title: Ship With Contract Object
+      type: object
+      description: Ship using a contract. The contract_id is required.
+      properties:
+        type:
+          type: string
+          const: contract
+          description: Type discriminator for contract.
+        properties:
+          $ref: '#/components/schemas/contract-properties'
+      required:
+        - type
+        - properties
+      additionalProperties: false
+    HTTPValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+      title: HTTPValidationError
+    ParcelTrackingCreateRequest:
+      $ref: '#/components/schemas/parcel-tracking-create-request'
+    ParcelTrackingCreateResponse:
+      $ref: '#/components/schemas/parcel-tracking-create-response'
+    ParcelTrackingResponse:
+      $ref: '#/components/schemas/parcel-tracking-response'
+    ValidationError:
+      type: object
+      properties:
+        loc:
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
+    parcel-detail-response:
+      title: Parcel Detail Response
+      type: object
+      properties:
+        brand_id:
+          type: integer
+          title: Brand ID
+          description: >-
+            ID of the brand. Brands can be added through the [Sendcloud
+            platform](https://app.sendcloud.com/v2/settings/brands/list) and be
+            retrieved (alongside their `id`) through the [Brands
+            API](/api/v2/brands/retrieve-a-list-of-brands).
+        expected_delivery_date:
+          type: string
+          format: date
+          title: Expected Delivery Date
+          description: Day when the parcel will be delivered (estimate, no timestamp)
+        integration_id:
+          type: integer
+          title: Integration ID
+          description: The shop integration ID to which the provided parcel belongs
+        is_mail_box:
+          type: boolean
+          title: Is Mail Box
+          description: Indicates whether this parcel will be delivered to a mail box
+        is_return:
+          type: boolean
+          description: Indicates if the parcel is a return
+          title: Is Return
+        is_to_service_point:
+          type: boolean
+          title: Is to Service Point
+          description: >-
+            Indicates whether this parcel is delivered to a service point (e.g.
+            a supermarket, as opposed to a home address)
+      example:
+        brand_id: 123
+        expected_delivery_date: '2025-01-04'
+        integration_id: 456
+        is_mail_box: false
+        is_return: false
+        is_to_service_point: false
+    parcel-event-response:
+      title: Parcel Event Response
+      type: object
+      description: The Parcel Event Response object
+      properties:
+        event_at:
+          type: string
+          format: date-time
+          description: Timestamp of the parcel event
+          title: Event At
+        event_type:
+          type: string
+          enum:
+            - calculated
+            - carrier
+            - claim
+            - internal
+          description: >-
+            The event type to indicate where the event update is from (e.g. a
+            smart event, carrier event, etc.)
+          title: Event Type
+        status_code:
+          type: string
+          description: A status represented by a Sendcloud code
+          title: Status Code
+        status_description:
+          type: string
+          description: Indicates if the parcel is a return
+          title: Status Description
+        status_type:
+          type: string
+          description: The status type
+          title: Status Type
+        sub_status_code:
+          type: string
+          description: A sub status represented by a Sendcloud code
+          title: Sub Status Code
+      example:
+        event_at: '2024-01-02T00:00:00Z'
+        event_type: carrier
+        status_code: accepted
+        status_description: Parcel has been accepted by the carrier.
+        status_type: success
+        sub_status_code: none
+    ParcelTrackingAddress:
+      type: object
+      title: Parcel Tracking Address
+      description: Parcel Tracking Address object
+      properties:
+        address_line_1:
+          type:
+            - string
+            - 'null'
+          title: Address Line 1
+          description: First line of the address
+          example: Stadhuisplein
+        address_line_2:
+          type:
+            - string
+            - 'null'
+          title: Address Line 2
+          description: Additional address information, e.g. 2nd level
+          example: Apartment 17B
+        city:
+          type:
+            - string
+            - 'null'
+          title: City
+          description: City of the address
+          example: Eindhoven
+        company_name:
+          type:
+            - string
+            - 'null'
+          title: Company Name
+          description: Name of the company associated with the address
+          example: Sendcloud
+        country_code:
+          type: string
+          title: Country Code
+          description: The country code of the customer represented as ISO 3166-1 alpha-2
+          minLength: 1
+          example: NL
+        email:
+          type:
+            - string
+            - 'null'
+          format: email
+          title: Email
+          description: Email address of the person associated with the address
+          example: johndoe@gmail.com
+        house_number:
+          type:
+            - string
+            - 'null'
+          title: House Number
+          description: House number of the address
+          example: '50'
+        name:
+          type:
+            - string
+            - 'null'
+          title: Name
+          description: Name of the person associated with the address
+          example: John Doe
+        phone_number:
+          type:
+            - string
+            - 'null'
+          title: Phone Number
+          description: Phone number of the person associated with the address
+          example: '+319881729999'
+        po_box:
+          type:
+            - string
+            - 'null'
+          title: PO Box
+          description: Code required in case of PO Box or post locker delivery
+        postal_code:
+          type: string
+          title: Postal Code
+          description: Zip code of the address
+          minLength: 1
+          example: 1013 AB
+        state_province_code:
+          type:
+            - string
+            - 'null'
+          title: State Province Code
+          description: >-
+            The character state code of the customer represented as ISO 3166-2
+            code. This field is required for certain countries. See
+            [international
+            shipping](/docs/shipments/international-shipping#required-fields-for-international-shipments)
+            for details.
+          example: IT-RM
+      required:
+        - country_code
+        - postal_code
+      additionalProperties: false
+    weight-units:
+      type: string
+      title: Mass Units Object
+      enum:
+        - kg
+        - g
+        - lbs
+        - oz
+      example: g
+    weight:
+      title: Weight
+      type: object
+      description: Weight in the specified unit
+      properties:
+        value:
+          type: number
+          description: Weight value
+          exclusiveMinimum: 0
+          example: 14.5
+        unit:
+          $ref: '#/components/schemas/weight-units'
+      required:
+        - value
+        - unit
+    Price:
+      title: Price Object
+      type: object
+      properties:
+        value:
+          type: string
+          example: '12.65'
+          pattern: '[\d]+(\.[\d]+)?'
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          minLength: 3
+          maxLength: 3
+          example: USD
+    required-price:
+      title: Price object
+      description: Price, consisting of a value and currency.
+      allOf:
+        - $ref: '#/components/schemas/Price'
+        - type: object
+          required:
+            - value
+            - currency
+    dangerous-goods:
+      title: DangerousGoods
+      type: object
+      description: Hazardous materials information for items.
+      properties:
+        chemical_record_identifier:
+          type: string
+          nullable: true
+          description: Chemical record identifier for the dangerous goods
+        regulation_set:
+          type: string
+          enum:
+            - IATA
+            - ADR
+          description: Regulation set governing the dangerous goods
+        packaging_type_quantity:
+          type: string
+          nullable: true
+          description: Quantity of packaging type
+        packaging_type:
+          type: string
+          nullable: true
+          description: Type of packaging used
+        packaging_instruction_code:
+          type: string
+          nullable: true
+          description: Packaging instruction code
+        id_number:
+          type: string
+          nullable: true
+          description: UN identification number
+        class_division_number:
+          type: string
+          nullable: true
+          description: Hazard class and division number
+        quantity:
+          type: string
+          nullable: true
+          description: Quantity of dangerous goods
+        unit_of_measurement:
+          type: string
+          enum:
+            - KG
+            - G
+            - L
+            - ML
+          description: Unit of measurement for dangerous goods quantity
+        proper_shipping_name:
+          type: string
+          nullable: true
+          description: Proper shipping name as defined by regulations
+        commodity_regulated_level_code:
+          type: string
+          enum:
+            - LQ
+            - EQ
+          description: Commodity regulated level code
+        transportation_mode:
+          type: string
+          enum:
+            - Highway
+            - Ground
+            - PAX
+            - CAO
+          description: Mode of transportation
+        emergency_contact_name:
+          type: string
+          nullable: true
+          description: Name of emergency contact person
+        emergency_contact_phone:
+          type: string
+          nullable: true
+          description: Phone number of emergency contact
+        adr_packing_group_letter:
+          type: string
+          enum:
+            - I
+            - II
+            - III
+          description: ADR packing group classification
+        local_proper_shipping_name:
+          type: string
+          nullable: true
+          description: Local proper shipping name
+        transport_category:
+          type: string
+          nullable: true
+          description: Transport category for ADR regulations
+        tunnel_restriction_code:
+          type: string
+          nullable: true
+          description: Tunnel restriction code
+        weight_type:
+          type: string
+          enum:
+            - Net
+            - Gross
+          description: Type of weight measurement
+    parcel-item:
+      title: Parcel Item Object
+      description: >-
+        A single item in a shipment. **Note that parcel item object is required
+        for shipments that require customs documents.**
+      type: object
+      properties:
+        item_id:
+          type: string
+          description: Order Item external ID in shop system
+          example: '5552'
+          minLength: 1
+        description:
+          type: string
+          description: Description of the item.
+          example: T-Shirt XL
+          minLength: 1
+          maxLength: 255
+        quantity:
+          type: integer
+          description: Quantity of items shipped.
+          minimum: 1
+          example: 1
+        weight:
+          description: Weight of the item.
+          $ref: '#/components/schemas/weight'
+        price:
+          description: Price of the item.
+          $ref: '#/components/schemas/required-price'
+        hs_code:
+          type: string
+          description: Harmonized System Code.
+          example: '620520'
+          maxLength: 12
+        origin_country:
+          type: string
+          description: ISO-2 code of the country where the items were originally produced.
+          example: NL
+        sku:
+          type: string
+          description: The SKU of the product
+          example: TS1234
+        product_id:
+          type: string
+          description: The internal ID of the product
+          example: '19284'
+        mid_code:
+          title: MID Code
+          type:
+            - string
+            - 'null'
+          description: >-
+            MID code is short for Manufacturer's Identification code and must be
+            shown on the commercial invoice. It's used as an alternative to the
+            full name and address of a manufacturer, shipper or exporter and is
+            always required for U.S. formal customs entries.
+          example: NLOZR92MEL
+        material_content:
+          title: Material Content
+          type:
+            - string
+            - 'null'
+          description: A description of materials of the order content.
+          example: 100% Cotton
+        intended_use:
+          title: Intended Use
+          type:
+            - string
+            - 'null'
+          description: >-
+            Intended use of the order contents. The intended use may be personal
+            or commercial.
+          example: Personal use
+        dangerous_goods:
+          $ref: '#/components/schemas/dangerous-goods'
+        dds_reference:
+          title: DDS Reference
+          type:
+            - string
+            - 'null'
+          description: >-
+            The DDS (Due Diligence Statement) reference number associated with
+            the item, if applicable. See EUDR system for more details.
+          example: 25FIYPEK0A7573
+        taric_doc_code:
+          title: TARIC document code
+          type:
+            - string
+            - 'null'
+          description: >-
+            TARIC document codes are specific alphanumeric codes used in EU
+            customs declarations (Box 44) to identify required supporting
+            documents, certificates, or conditions for a product, like health
+            certificates (e.g., 3200), origin proofs (e.g., EUR.1), or special
+            authorizations (e.g., C716 for due diligence) for simplified
+            procedures, ensuring compliance with EU trade rules for various
+            goods.
+          example: Y142
+        manufacturer_product_id:
+          title: Manufacturer Product ID
+          type:
+            - string
+            - 'null'
+          description: >-
+            A manufacturer or product supplier's unique code, assigned to an
+            individual product.
+          maxLength: 70
+          example: ABC-12345
+        manufacturer_product_id_std:
+          title: Manufacturer Product ID (Standardized)
+          type:
+            - string
+            - 'null'
+          description: >-
+            A standardized manufacturer product identifier assigned by a global
+            industry standard body (e.g. GTIN). Provide only if one exists for
+            the product.
+          maxLength: 70
+          example: '01234567890128'
+        properties:
+          type: object
+          additionalProperties: true
+          description: Any custom user-defined properties of order item or product
+          example:
+            size: red
+            color: green
+    ParcelItemWithSourceId:
+      allOf:
+        - $ref: '#/components/schemas/parcel-item'
+        - type: object
+          title: Parcel Item with Source ID Object
+          description: A single item in a parcel with an optional `source_id` field
+          properties:
+            source_id:
+              type: string
+              description: >-
+                An external identifier that clients can provide to link the
+                parcel item with the corresponding record in their own system
+              example: 123abc
+          required:
+            - description
+            - hs_code
+            - price
+            - quantity
+            - weight
+    shipping-option-code-properties:
+      title: Shipping Option Code Properties Object
+      description: >
+        Properties for shipping_option_code type ship_with.
+
+        This type requires a shipping_option_code and optionally a contract_id.
+
+        User can also provide custom shipping method name and ID for display
+        purposes.
+      type: object
+      properties:
+        shipping_option_code:
+          type: string
+          description: >-
+            The shipping option code to use for this parcel. A shipping option
+            `code` can be retrieved via the [**Create a list of shipping
+            options**](https://api.sendcloud.dev/docs/sendcloud-public-api/branches/v3/shipping-options/operations/create-a-shipping-option)
+            endpoint.
+          example: postnl:standard/insured=3000
+        contract_id:
+          type:
+            - integer
+          minimum: 1
+          description: >-
+            The contract ID to use for this parcel. You can retrieve your
+            contract IDs by using the [**Retrieve a list of
+            contracts**](https://api.sendcloud.dev/docs/sendcloud-public-api/branches/v3/contracts/operations/list-contracts)
+            operation.
+          example: 517
+        user_shipping_method_name:
+          type:
+            - string
+            - 'null'
+          description: >-
+            User-defined shipping method name for display purposes (no
+            validation).
+          example: Express Delivery
+        user_shipping_method_id:
+          type:
+            - string
+            - 'null'
+          description: >-
+            User-defined shipping method ID for tracking purposes (no
+            validation).
+          example: express-001
+      required:
+        - shipping_option_code
+        - contract_id
+      additionalProperties: false
+    contract-properties:
+      title: Contract Properties Object
+      description: >
+        Properties for contract type ship_with.
+
+        This type only requires a contract_id, without needing a
+        shipping_option_code.
+
+        User can provide custom shipping method name and ID for display
+        purposes.
+      type: object
+      properties:
+        contract_id:
+          type: integer
+          minimum: 1
+          description: >-
+            The contract ID to use for this parcel. You can retrieve your
+            contract IDs by using the [**Retrieve a list of
+            contracts**](https://api.sendcloud.dev/docs/sendcloud-public-api/branches/v3/contracts/operations/list-contracts)
+            operation.
+          example: 517
+        user_shipping_method_name:
+          type:
+            - string
+            - 'null'
+          description: >-
+            User-defined shipping method name for display purposes (no
+            validation).
+          example: Standard Shipping
+        user_shipping_method_id:
+          type:
+            - string
+            - 'null'
+          description: >-
+            User-defined shipping method ID for tracking purposes (no
+            validation).
+          example: standard-001
+      required:
+        - contract_id
+      additionalProperties: false
+    ship-with:
+      title: Ship With Object
+      description: >
+        The ship with object can be used to define how you would like to send
+        your shipment.
+
+
+        You can use one of the following types:
+
+        - `shipping_option_code`: Use a shipping option code to specify the
+        carrier and shipping functionalities. The `shipping_option_code`
+        property is required, and `contract_id` is optional.
+
+        - `contract`: Use a contract to specify which carrier contract to use.
+        The `contract_id` property is required.
+      type: object
+      oneOf:
+        - title: Ship With Shipping Option Code Object
+          type: object
+          description: >-
+            Ship using a shipping option code. The shipping option code is
+            required.
+          properties:
+            type:
+              type: string
+              const: shipping_option_code
+              description: Type discriminator for shipping_option_code.
+            properties:
+              $ref: '#/components/schemas/shipping-option-code-properties'
+          required:
+            - type
+            - properties
+          additionalProperties: false
+        - title: Ship With Contract Object
+          type: object
+          description: Ship using a contract. The contract_id is required.
+          properties:
+            type:
+              type: string
+              const: contract
+              description: Type discriminator for contract.
+            properties:
+              $ref: '#/components/schemas/contract-properties'
+          required:
+            - type
+            - properties
+          additionalProperties: false
+      discriminator:
+        propertyName: type
+        mapping:
+          shipping_option_code: '#/components/schemas/0'
+          contract: '#/components/schemas/1'
+      examples:
+        - type: shipping_option_code
+          properties:
+            shipping_option_code: postnl:standard/insured=3000
+            contract_id: 517
+            user_shipping_method_name: Express Delivery
+            user_shipping_method_id: express-001
+        - type: contract
+          properties:
+            contract_id: 517
+            user_shipping_method_name: Standard Shipping
+            user_shipping_method_id: standard-001
+    tracking-number-response:
+      title: Tracking Number Response
+      type: object
+      description: The response object of the Tracking Number
+      properties:
+        carrier_code:
+          type: string
+          title: Carrier Code
+          description: A carrier represented by a Sendcloud code
+        tracking_identifier:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Tracking Identifier
+          description: The tracking identifier of the parcel
+          examples:
+            - aBcdEF
+        tracking_number:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Tracking Number
+          description: The tracking number of the parcel
+          examples:
+            - BARCODE123
+        tracking_url:
+          type: string
+          minLength: 1
+          title: Tracking URL
+          description: >-
+            The tracking URL for the parcel, which can be used to track the
+            parcel on the carrier's website
+          examples:
+            - https://tracking.carrier.com/tracking_number
+      required:
+        - carrier_code
+        - tracking_number
+      example:
+        carrier_code: postnl
+        tracking_number: '123456789'
+        tracking_url: https://example.com
+    parcel-tracking-response:
+      title: Parcel Tracking Response
+      type: object
+      description: This object contains the parcel and its associated tracking numbers
+      properties:
+        announced_at:
+          type: string
+          format: date-time
+          title: Announced At
+          description: >-
+            The timestamp of when the parcel was announced to the carrier (label
+            was created)
+        created_at:
+          type: string
+          format: date-time
+          title: Announced At
+          description: The timestamp of when the parcel was created in the system
+        details:
+          $ref: '#/components/schemas/parcel-detail-response'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/parcel-event-response'
+        from_address:
+          $ref: '#/components/schemas/ParcelTrackingAddress'
+        parcel_items:
+          type: array
+          description: List of items / products that the parcel contains
+          items:
+            $ref: '#/components/schemas/ParcelItemWithSourceId'
+        ship_with:
+          $ref: '#/components/schemas/ship-with'
+        source_id:
+          type: string
+          title: Source ID
+          description: >-
+            An external identifier that clients can provide to link the parcel
+            with the corresponding record in their own system
+        to_address:
+          $ref: '#/components/schemas/ParcelTrackingAddress'
+        tracking_numbers:
+          type: array
+          items:
+            $ref: '#/components/schemas/tracking-number-response'
+        updated_at:
+          type: string
+          format: date-time
+          title: Announced At
+          description: >-
+            The timestamp of when the parcel was last updated in the system.
+            Only altered by updates on `announced_at`, `contract`, and
+            `source_id`
+      required:
+        - announced_at
+        - created_at
+        - details
+        - events
+        - from_address
+        - source_id
+        - to_address
+        - tracking_numbers
+        - updated_at
+      example:
+        announced_at: '2024-01-01T00:00:00Z'
+        created_at: '2024-01-01T00:00:00Z'
+        details:
+          brand_id: 123
+          expected_delivery_date: '2024-01-03'
+          integration_id: 456
+          is_mail_box: false
+          is_return: false
+          is_to_service_point: false
+        events:
+          - event_at: '2024-01-02T00:00:00Z'
+            event_type: carrier
+            status_code: accepted
+            status_description: Parcel has been accepted by the carrier.
+            status_type: success
+            sub_status_code: none
+        from_address:
+          address_line_1: 33 rue de Stalingrad
+          address_line_2: ''
+          city: Cermenate
+          company_name: Company
+          country_code: IT
+          email: billing@mail.com
+          house_number: '45'
+          name: Laurent Kuchto
+          phone_number: ''
+          po_box: '12345'
+          postal_code: '78500'
+          state_province_code: IT-CO
+        parcel_items:
+          - description: T-Shirt XL
+            hs_code: '620520'
+            intended_use: Personal use
+            item_id: '5552'
+            material_content: 100% Cotton
+            mid_code: NLOZR92MEL
+            origin_country: NL
+            product_id: '19284'
+            properties:
+              color: green
+              size: red
+            quantity: 1
+            sku: TS1234
+            price:
+              currency: EUR
+              value: '6.15'
+            weight:
+              unit: kg
+              value: 0.4
+        ship_with:
+          type: shipping_option_code
+          properties:
+            contract_id: 517
+            shipping_option_code: postnl:standard
+        source_id: '123'
+        to_address:
+          address_line_1: 33 rue de Stalingrad
+          address_line_2: ''
+          city: Cermenate
+          company_name: Company
+          country_code: IT
+          email: billing@mail.com
+          house_number: '45'
+          name: Laurent Kuchto
+          phone_number: ''
+          po_box: '12345'
+          postal_code: '78500'
+          state_province_code: IT-CO
+        tracking_numbers:
+          - carrier_code: postnl
+            tracking_number: '123456789'
+            tracking_url: https://example.com
+        updated_at: '2024-01-01T00:00:00Z'
+    parcel-detail-create-request:
+      title: Parcel Detail Create Request
+      type: object
+      properties:
+        brand_id:
+          type: integer
+          title: Brand ID
+          description: >-
+            ID of the brand. Brands can be added through the [Sendcloud
+            platform](https://app.sendcloud.com/v2/settings/brands/list) and be
+            retrieved (alongside their `id`) through the [Brands
+            API](/api/v2/brands/retrieve-a-list-of-brands).
+        integration_id:
+          type: integer
+          title: Integration ID
+          description: The shop integration ID to which the provided parcel belongs
+        is_return:
+          type: boolean
+          description: Indicates if the parcel is a return
+          title: Is Return
+    optional-price:
+      title: Optional price
+      anyOf:
+        - type: 'null'
+        - $ref: '#/components/schemas/required-price'
+    insurance:
+      title: Insurance
+      type: object
+      description: Sendcloud Insurance object with insurance policy ID
+      properties:
+        insured_value:
+          $ref: '#/components/schemas/optional-price'
+          description: The insured value of the parcel
+        policy_id:
+          type: string
+          title: Insurance Policy ID
+          description: The ID of the insurance policy
+    dimension-units:
+      type: string
+      title: Dimensional units
+      enum:
+        - cm
+        - mm
+        - m
+        - yd
+        - ft
+        - in
+      example: mm
+    dimension:
+      title: Dimension
+      type: object
+      description: Dimension in the specified unit
+      properties:
+        length:
+          type: number
+          description: length in specified unit
+          minimum: 0
+          example: 15
+        width:
+          type: number
+          description: width in specified unit
+          minimum: 0
+          example: 20.5
+        height:
+          type: number
+          description: height in specified unit
+          minimum: 0
+          example: 37
+        unit:
+          $ref: '#/components/schemas/dimension-units'
+      required:
+        - length
+        - width
+        - height
+        - unit
+    volume-units:
+      type: string
+      title: Volume units
+      enum:
+        - m3
+        - cm3
+        - l
+        - ml
+        - gal
+      example: l
+    volume:
+      title: Volume
+      type: object
+      description: Volume in the specified unit
+      properties:
+        value:
+          type: integer
+          description: Volume value
+          minimum: 0
+          example: 5
+        unit:
+          $ref: '#/components/schemas/volume-units'
+      required:
+        - value
+        - unit
+    measurement:
+      title: Measurement Object
+      type: object
+      properties:
+        dimension:
+          $ref: '#/components/schemas/dimension'
+        weight:
+          $ref: '#/components/schemas/weight'
+        volume:
+          $ref: '#/components/schemas/volume'
+      description: >-
+        This object provides essential information for accurate packing,
+        shipping, and inventory management
+    order-create-request:
+      title: Order Create Request
+      type: object
+      properties:
+        order_number:
+          type: string
+          title: Order Number
+          description: The order number linked to the parcel
+        source_external_id:
+          type: string
+          title: Source External ID
+          description: The external ID of the order as present in the client's system
+        source_id:
+          type: string
+          title: Source ID
+          description: >-
+            An external identifier that clients can provide to link the order
+            with the corresponding record in their own system
+        total_order_price:
+          $ref: '#/components/schemas/optional-price'
+          description: The total order price
+      required:
+        - source_id
+    shipment-create-request:
+      title: Shipment Create Request
+      type: object
+      properties:
+        external_reference_id:
+          type: string
+          title: External Reference ID
+          description: >-
+            An optional reference can be provided by the API user; if included,
+            it must be unique across shipments of the user
+        order:
+          $ref: '#/components/schemas/order-create-request'
+        price:
+          $ref: '#/components/schemas/optional-price'
+          description: The shipment price
+        source_id:
+          type: string
+          title: Source ID
+          description: >-
+            An external identifier that clients can provide to link the shipment
+            with the corresponding record in their own system
+      required:
+        - source_id
+    tracking-number-create-request:
+      title: Tracking Number Create Request
+      type: object
+      description: The request object for the Tracking Number
+      properties:
+        carrier_code:
+          type: string
+          title: Carrier Code
+          description: A carrier represented by a Sendcloud code
+        tracking_identifier:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Tracking Identifier
+          description: The tracking identifier of the parcel
+          examples:
+            - aBcdEF
+        tracking_number:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Tracking Number
+          description: The tracking number of the parcel
+          examples:
+            - BARCODE123
+        tracking_url:
+          type: string
+          minLength: 1
+          title: Tracking URL
+          description: >-
+            The tracking URL for the parcel, which can be used to track the
+            parcel on the carrier's website
+          examples:
+            - https://tracking.carrier.com/tracking_number
+      required:
+        - carrier_code
+        - tracking_number
+    parcel-tracking-create-request:
+      title: Parcel Tracking Create Request
+      type: object
+      description: The Parcel Tracking Create Request object
+      properties:
+        announced_at:
+          type: string
+          format: date-time
+          title: Announced At
+          description: >-
+            The timestamp of when the parcel was announced to the carrier (label
+            was created)
+        details:
+          $ref: '#/components/schemas/parcel-detail-create-request'
+        from_address:
+          $ref: '#/components/schemas/ParcelTrackingAddress'
+        insurance:
+          $ref: '#/components/schemas/insurance'
+        parcel_items:
+          type: array
+          description: List of items / products that the parcel contains
+          items:
+            $ref: '#/components/schemas/parcel-item'
+        measurements:
+          $ref: '#/components/schemas/measurement'
+        return_price:
+          $ref: '#/components/schemas/optional-price'
+          description: The return price
+        ship_with:
+          $ref: '#/components/schemas/ship-with'
+        shipment:
+          $ref: '#/components/schemas/shipment-create-request'
+        source_id:
+          type: string
+          title: Source ID
+          description: >-
+            An external identifier that clients can provide to link the parcel
+            with the corresponding record in their own system
+        to_address:
+          $ref: '#/components/schemas/ParcelTrackingAddress'
+        tracking_number:
+          $ref: '#/components/schemas/tracking-number-create-request'
+      required:
+        - announced_at
+        - from_address
+        - ship_with
+        - shipment
+        - source_id
+        - to_address
+        - tracking_number
+      example:
+        announced_at: '2024-01-01T00:00:00Z'
+        details:
+          brand_id: 123
+          integration_id: 456
+          is_return: false
+        from_address:
+          address_line_1: 33 rue de Stalingrad
+          address_line_2: ''
+          city: Cermenate
+          company_name: Company
+          country_code: IT
+          email: billing@mail.com
+          house_number: '45'
+          name: Laurent Kuchto
+          phone_number: ''
+          po_box: '12345'
+          postal_code: '78500'
+          state_province_code: IT-CO
+        insurance:
+          currency: EUR
+          policy_id: POL123
+          value: 500
+        parcel_items:
+          - description: T-Shirt XL
+            hs_code: '620520'
+            intended_use: Personal use
+            item_id: '5552'
+            material_content: 100% Cotton
+            mid_code: NLOZR92MEL
+            origin_country: NL
+            product_id: '19284'
+            properties:
+              color: green
+              size: red
+            quantity: 1
+            sku: TS1234
+            price:
+              currency: EUR
+              value: '6.15'
+            weight:
+              unit: kg
+              value: 6
+        measurements:
+          dimension:
+            height: 3
+            length: 2
+            unit: m
+            width: 4
+          volume:
+            unit: cm3
+            value: 35
+          weight:
+            unit: g
+            value: 82
+        return_price:
+          currency: EUR
+          value: '76.64'
+        ship_with:
+          type: shipping_option_code
+          properties:
+            contract_id: 517
+            shipping_option_code: postnl:standard
+        shipment:
+          external_reference_id: REF123
+          order:
+            order_number: ORD123
+            source_external_id: EXT789
+            source_id: order_456
+            total_order_price:
+              currency: EUR
+              value: '76.64'
+          price:
+            currency: EUR
+            value: '76.64'
+          source_id: shipment_789
+        source_id: '1234'
+        to_address:
+          address_line_1: 33 rue de Stalingrad
+          address_line_2: ''
+          city: Cermenate
+          company_name: Company
+          country_code: IT
+          email: billing@mail.com
+          house_number: '45'
+          name: Laurent Kuchto
+          phone_number: ''
+          po_box: '12345'
+          postal_code: '78500'
+          state_province_code: IT-CO
+        tracking_number:
+          carrier_code: dhl
+          tracking_number: TRACK123456789
+          tracking_url: https://track.carrier.com/TRACK123456789
+    parcel-tracking-create-response:
+      title: Parcel Tracking Create Response
+      type: object
+      description: The Parcel Tracking Create Response object
+      properties:
+        announced_at:
+          type: string
+          format: date-time
+          title: Announced At
+          description: >-
+            The timestamp of when the parcel was announced to the carrier (label
+            was created)
+        created:
+          type: boolean
+          title: Created
+          description: >-
+            Indicates whether the parcel was newly created (true) or already
+            existed (false). The endpoint is idempotent — submitting the same
+            source_id, carrier_code, and organization will return the existing
+            parcel with created set to false.
+        created_at:
+          type: string
+          format: date-time
+          title: Announced At
+          description: The timestamp of when the parcel was created in the system
+        details:
+          $ref: '#/components/schemas/parcel-detail-response'
+        from_address:
+          $ref: '#/components/schemas/ParcelTrackingAddress'
+        parcel_items:
+          type: array
+          description: List of items / products that the parcel contains
+          items:
+            $ref: '#/components/schemas/ParcelItemWithSourceId'
+        ship_with:
+          $ref: '#/components/schemas/ship-with'
+        source_id:
+          type: string
+          title: Source ID
+          description: >-
+            An external identifier that clients can provide to link the parcel
+            with the corresponding record in their own system
+        to_address:
+          $ref: '#/components/schemas/ParcelTrackingAddress'
+        tracking_numbers:
+          type: array
+          items:
+            $ref: '#/components/schemas/tracking-number-response'
+      required:
+        - announced_at
+        - created
+        - created_at
+        - details
+        - from_address
+        - ship_with
+        - source_id
+        - to_address
+        - tracking_numbers
+      example:
+        announced_at: '2024-01-01T00:00:00Z'
+        created: true
+        created_at: '2024-01-01T00:00:00Z'
+        details:
+          brand_id: 123
+          integration_id: 456
+          is_return: false
+        from_address:
+          address_line_1: 33 rue de Stalingrad
+          address_line_2: ''
+          city: Cermenate
+          company_name: Company
+          country_code: IT
+          email: billing@mail.com
+          house_number: '45'
+          name: Laurent Kuchto
+          phone_number: ''
+          po_box: '12345'
+          postal_code: '78500'
+          state_province_code: IT-CO
+        parcel_items:
+          - description: T-Shirt XL
+            hs_code: '620520'
+            intended_use: Personal use
+            item_id: '5552'
+            material_content: 100% Cotton
+            mid_code: NLOZR92MEL
+            origin_country: NL
+            product_id: '19284'
+            properties:
+              color: green
+              size: red
+            quantity: 1
+            sku: TS1234
+            source_id: 123abc
+            price:
+              currency: EUR
+              value: '6.15'
+            weight:
+              unit: kg
+              value: 0.4
+        ship_with:
+          type: shipping_option_code
+          properties:
+            contract_id: 517
+            shipping_option_code: postnl:standard
+        source_id: '1234'
+        to_address:
+          address_line_1: 33 rue de Stalingrad
+          address_line_2: ''
+          city: Cermenate
+          company_name: Company
+          country_code: IT
+          email: billing@mail.com
+          house_number: '45'
+          name: Laurent Kuchto
+          phone_number: ''
+          po_box: '12345'
+          postal_code: '78500'
+          state_province_code: IT-CO
+        tracking_numbers:
+          - carrier_code: dhl
+            tracking_number: TRACK123456789
+            tracking_url: https://track.carrier.com/TRACK123456789

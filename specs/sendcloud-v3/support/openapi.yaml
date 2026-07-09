@@ -1,0 +1,2586 @@
+openapi: 3.1.0
+info:
+  title: Support API [BETA]
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: >-
+    The Sendcloud Support API lets you create support tickets easily and
+    efficiently. This API can be used in conjunction with other core Sendcloud
+    features or independently.
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Support
+    description: Sendcloud's Support API
+  - name: File upload
+  - name: Carrier support contacts
+  - name: Create ticket
+  - name: Documents
+  - name: Requested data
+paths:
+  /dsf/files:
+    post:
+      tags:
+        - File upload
+      summary: Upload a file
+      description: >-
+        API for uploading a file. The uploaded file is stored in the system, and
+        a unique file token is returned in response. Use this token when
+        attaching files to tickets or when submitting requested data.
+      x-mint:
+        href: /api/v3/support/files
+        metadata:
+          tag: Beta
+        content: >-
+          The request must be `multipart/form-data` with a single part named
+          `file`. That part has to be a real **file part**: its
+          `Content-Disposition` must include a `filename`, and it must carry a
+          per-part `Content-Type` that is in the allowed list below.
+
+
+          <Warning>
+            Most server-side HTTP clients (Python `requests`, PHP Guzzle, `fetch`, axios, OkHttp, ...) do **not** set a `filename` or a per-part `Content-Type` automatically — unlike the `curl --form file=@...` shorthand, which sets both for you. If the `file` part is sent without a `filename`, the server treats it as a plain text field and responds with `422` ("`file` field must contain a file object."). Make sure your client sets both explicitly on the `file` part.
+          </Warning>
+
+
+          **Limits and allowed types**
+
+
+          - **Maximum file size:** 6 MB. Larger uploads are rejected with `413
+          Content Too Large`.
+
+          - **Allowed content types:** `image/*`, `video/*`, `text/*`,
+          `application/pdf`, `application/rtf`, `application/msword`,
+          `application/vnd.openxmlformats-officedocument.*` (`.docx`, `.xlsx`,
+          `.pptx`), `application/vnd.ms-*`,
+          `application/vnd.oasis.opendocument.*` (`.odt`, `.ods`, `.odp`),
+          `application/xml`, `application/yaml`, `application/json`. A part
+          whose `Content-Type` is not in this list is rejected with `415
+          Unsupported Media Type`. Generic types such as
+          `application/octet-stream` and `application/zip` are **not** accepted,
+          so make sure your client sends an accurate per-part `Content-Type`.
+
+
+          **Which error means what**
+
+
+          - `400` ("`file` field is required.") — there is no part named `file`
+          in the request at all.
+
+          - `422` ("`file` field must contain a file object.") — a part named
+          `file` is present, but it was sent without a `filename`, so it is not
+          recognized as a file.
+      operationId: sc-public-v3-dsf-post-files
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileUploadRequest'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/FilesCreated'
+        '400':
+          $ref: '#/components/responses/FilesBadRequest'
+        '413':
+          $ref: '#/components/responses/FilesPayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/FilesUnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/FilesUnprocessableContent'
+        '429':
+          $ref: '#/components/responses/FileUploadRateLimitExceededResponse'
+  /dsf/carrier-support-contacts:
+    post:
+      tags:
+        - Carrier support contacts
+      summary: Create carrier support contact
+      description: >-
+        A carrier support contact is required in order to create tickets for
+        shipments sent under your own carrier contract so that we can forward
+        the claim correctly.
+
+
+        Note that ticket creation will fail if a carrier support contact is
+        missing for a carrier you use with your own contract.
+      x-mint:
+        href: /api/v3/support/create-carrier-support-contact
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-carrier_support_contacts
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSupportContactRequest'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/SupportContactResponse'
+        '400':
+          $ref: '#/components/responses/SupportContactInvalidPayload'
+        '409':
+          $ref: '#/components/responses/SupportContactAlreadyExist'
+    get:
+      tags:
+        - Carrier support contacts
+      summary: Retrieve carrier support contacts
+      description: >-
+        A carrier support contact is required in order to create tickets for
+        shipments sent under your own carrier contract so that we can forward
+        the claim correctly.
+
+
+        Ticket creation will fail if a carrier support contact is missing for a
+        carrier you use with your own contract.
+      x-mint:
+        href: /api/v3/support/retrieve-carrier-support-contacts
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-get-carrier_support_contacts
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      responses:
+        '200':
+          $ref: '#/components/responses/SupportContactResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+  /dsf/carrier-support-contacts/{id}:
+    patch:
+      tags:
+        - Carrier support contacts
+      summary: Update a carrier support contact
+      description: >-
+        A carrier support contact is required in order to create tickets for
+        shipments sent under your own carrier contract so that we can forward
+        the claim correctly.
+
+
+        Ticket creation will fail if a carrier support contact is missing for a
+        carrier you use with your own contract.
+      x-mint:
+        href: /api/v3/support/update-a-carrier-support-contact
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-patch-carrier_support_contacts
+      parameters:
+        - name: id
+          in: path
+          description: Support contact id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSupportContactRequest'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/SupportContactResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+    delete:
+      tags:
+        - Carrier support contacts
+      summary: Delete a carrier support contact
+      description: >-
+        A carrier support contact is required in order to create tickets for
+        shipments sent under your own carrier contract so that we can forward
+        the claim correctly.
+
+
+        Ticket creation will fail if a carrier support contact is missing for a
+        carrier you use with your own contract.
+      x-mint:
+        href: /api/v3/support/delete-a-carrier-support-contact
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-delete-carrier_support_contacts
+      parameters:
+        - name: id
+          in: path
+          description: Support contact id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      responses:
+        '204':
+          description: No Content
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+  /dsf/tickets:
+    get:
+      tags:
+        - Retrieve tickets
+      summary: Retrieve support tickets
+      description: >-
+        Retrieve a paginated list of support tickets for your organization, with
+        optional filters for status, carrier, parcel, tracking number, and date
+        range.
+      x-mint:
+        href: /api/v3/support/retrieve-support-tickets
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-get-tickets
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+          in: query
+          name: page
+          description: The page number to retrieve (1-indexed).
+          required: false
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 15
+            example: 15
+          in: query
+          name: size
+          description: The number of items per page (max 20).
+          required: false
+        - schema:
+            $ref: '#/components/schemas/TicketStatus'
+          in: query
+          name: status
+          description: Filter by ticket status.
+          required: false
+        - schema:
+            type: integer
+            example: 12345
+          in: query
+          name: parcel_id
+          description: Filter by Sendcloud parcel ID.
+          required: false
+        - schema:
+            type: string
+            example: postnl
+          in: query
+          name: carrier
+          description: Filter by carrier code.
+          required: false
+        - schema:
+            $ref: '#/components/schemas/TrackingNumberField'
+          in: query
+          name: tracking_number
+          description: Filter by parcel tracking number.
+          required: false
+        - schema:
+            type: string
+            format: date-time
+            example: '2026-01-01T00:00:00Z'
+          in: query
+          name: created_after
+          description: Filter tickets created on or after this date (ISO 8601).
+          required: false
+        - schema:
+            type: string
+            format: date-time
+            example: '2026-12-31T23:59:59Z'
+          in: query
+          name: created_before
+          description: Filter tickets created on or before this date (ISO 8601).
+          required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/TicketListResponse'
+        '400':
+          $ref: '#/components/responses/TicketBadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+  /dsf/tickets/{ticket_id}:
+    get:
+      tags:
+        - Retrieve tickets
+      summary: Retrieve a support ticket
+      description: >-
+        Retrieve a single support ticket by its ID. Returns 404 if the ticket
+        does not exist or does not belong to your organization.
+      x-mint:
+        href: /api/v3/support/retrieve-a-support-ticket
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-get-tickets_id
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      parameters:
+        - schema:
+            type: integer
+            format: int64
+            example: 42
+          in: path
+          name: ticket_id
+          description: The ID of the ticket to retrieve.
+          required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/TicketDetailResponse'
+        '404':
+          $ref: '#/components/responses/TicketNotFound'
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+  /dsf/tickets/damage:
+    post:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Create ticket
+      summary: Create a ticket for a damaged parcel
+      description: >-
+        Create a ticket for a damaged parcel. It works with both your own
+        contract and parcels created using Sendcloud rates.
+      x-mint:
+        href: /api/v3/support/create-a-ticket-for-a-damaged-parcel
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-tickets_damage
+      parameters:
+        - $ref: '#/components/parameters/IsPortalClaimParam'
+      requestBody:
+        description: >-
+          Data that is needed for creation of a ticket for own contract parcel
+          and parcels created using Sendcloud rates is different. Please refer
+          to relevant examples below.
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CreateDamagedOwnContract'
+                - $ref: '#/components/schemas/CreateDamagedTransactional'
+      responses:
+        '202':
+          $ref: '#/components/responses/CreateTicketAccepted'
+        '400':
+          $ref: '#/components/responses/CreateTicketBadRequest'
+        '406':
+          $ref: '#/components/responses/CreateTicketNotAcceptable'
+        '422':
+          $ref: '#/components/responses/CreateTicketUnprocessableContent'
+        '429':
+          $ref: '#/components/responses/CreateTicketRateLimitExceededResponse'
+  /dsf/tickets/delay:
+    post:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Create ticket
+      summary: Create a ticket for a delayed parcel
+      description: >-
+        Create a ticket for a delayed parcel. This support type is only
+        available for parcels created using Sendcloud rates.
+      x-mint:
+        href: /api/v3/support/create-a-ticket-for-a-delayed-parcel
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-tickets_delay
+      parameters:
+        - $ref: '#/components/parameters/IsPortalClaimParam'
+      requestBody:
+        description: >-
+          Data that is needed for creation of a ticket for a delayed parcel
+          created using Sendcloud rates.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDelayedTransactional'
+      responses:
+        '202':
+          $ref: '#/components/responses/CreateTicketAccepted'
+        '400':
+          $ref: '#/components/responses/CreateTicketBadRequest'
+        '406':
+          $ref: '#/components/responses/CreateTicketNotAcceptable'
+        '422':
+          $ref: '#/components/responses/CreateTicketUnprocessableContent'
+        '429':
+          $ref: '#/components/responses/CreateTicketRateLimitExceededResponse'
+  /dsf/tickets/late-delivery:
+    post:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Create ticket
+      summary: Create a ticket for a late delivery
+      description: >-
+        Create a ticket for a late delivery. This support type is only available
+        for parcels sent under your own carrier contract.
+      x-mint:
+        href: /api/v3/support/create-a-ticket-for-a-late-delivery
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-tickets_late_delivery
+      parameters:
+        - $ref: '#/components/parameters/IsPortalClaimParam'
+      requestBody:
+        description: Create a ticket for a late delivery using your own carrier contract.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLateDeliveryOwnContract'
+      responses:
+        '202':
+          $ref: '#/components/responses/CreateTicketAccepted'
+        '400':
+          $ref: '#/components/responses/CreateTicketBadRequest'
+        '406':
+          $ref: '#/components/responses/CreateTicketNotAcceptable'
+        '422':
+          $ref: '#/components/responses/CreateTicketUnprocessableContent'
+        '429':
+          $ref: '#/components/responses/CreateTicketRateLimitExceededResponse'
+  /dsf/tickets/lost:
+    post:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Create ticket
+      summary: Create a ticket for a lost parcel
+      description: >-
+        Create a ticket for a lost parcel. It works with both your own contract
+        and parcels created using Sendcloud rates.
+      x-mint:
+        href: /api/v3/support/create-a-ticket-for-a-lost-parcel
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-tickets_lost
+      parameters:
+        - $ref: '#/components/parameters/IsPortalClaimParam'
+      requestBody:
+        description: >-
+          Data that is needed for creation of a ticket for own contract parcel
+          and parcels created using Sendcloud rates is different. Please refer
+          to relevant examples below.
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CreateLostOwnContract'
+                - $ref: '#/components/schemas/CreateLostTransactional'
+      responses:
+        '202':
+          $ref: '#/components/responses/CreateTicketAccepted'
+        '400':
+          $ref: '#/components/responses/CreateTicketBadRequest'
+        '406':
+          $ref: '#/components/responses/CreateTicketNotAcceptable'
+        '422':
+          $ref: '#/components/responses/CreateTicketUnprocessableContent'
+        '429':
+          $ref: '#/components/responses/CreateTicketRateLimitExceededResponse'
+  /dsf/tickets/delivered-but-not-received:
+    post:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Create ticket
+      summary: Create a ticket for a delivered but not received parcel
+      description: >-
+        Create a ticket for a delivered but not received parcel. It works with
+        both your own contract and parcels created using Sendcloud rates.
+      x-mint:
+        href: >-
+          /api/v3/support/create-a-ticket-for-a-delivered-but-not-received-parcel
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-tickets_delivered_but_not_received
+      parameters:
+        - $ref: '#/components/parameters/IsPortalClaimParam'
+      requestBody:
+        description: >-
+          Data that is needed for creation of a ticket for own contract parcel
+          and parcels created using Sendcloud rates is different. Please refer
+          to relevant examples below.
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: >-
+                    #/components/schemas/CreateDeliveredButNotReceivedOwnContract
+                - $ref: >-
+                    #/components/schemas/CreateDeliveredButNotReceivedTransactional
+      responses:
+        '202':
+          $ref: '#/components/responses/CreateTicketAccepted'
+        '400':
+          $ref: '#/components/responses/CreateTicketBadRequest'
+        '406':
+          $ref: '#/components/responses/CreateTicketNotAcceptable'
+        '422':
+          $ref: '#/components/responses/CreateTicketUnprocessableContent'
+        '429':
+          $ref: '#/components/responses/CreateTicketRateLimitExceededResponse'
+  /dsf/tickets/unjust-return:
+    post:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Create ticket
+      summary: Create a ticket for an unjustly returned parcel
+      description: >-
+        Create a ticket for an unjustly returned parcel. It works with both your
+        own contract and parcels created using Sendcloud rates.
+      x-mint:
+        href: /api/v3/support/create-a-ticket-for-an-unjustly-returned-parcel
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-tickets_unjust_return
+      parameters:
+        - $ref: '#/components/parameters/IsPortalClaimParam'
+      requestBody:
+        description: >-
+          Data that is needed for creation of a ticket for own contract parcel
+          and parcels created using Sendcloud rates is different. Please refer
+          to relevant examples below.
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CreateUnjustReturnOwnContract'
+                - $ref: '#/components/schemas/CreateUnjustReturnTransactional'
+      responses:
+        '202':
+          $ref: '#/components/responses/CreateTicketAccepted'
+        '400':
+          $ref: '#/components/responses/CreateTicketBadRequest'
+        '406':
+          $ref: '#/components/responses/CreateTicketNotAcceptable'
+        '422':
+          $ref: '#/components/responses/CreateTicketUnprocessableContent'
+        '429':
+          $ref: '#/components/responses/CreateTicketRateLimitExceededResponse'
+  /dsf/tickets/address-change:
+    post:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Create ticket
+      summary: Create a ticket for an address change
+      description: >-
+        Create a ticket for an address change. It works with both your own
+        contract and parcels created using Sendcloud rates.
+      x-mint:
+        href: /api/v3/support/create-a-ticket-for-an-address-change
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-tickets_address_change
+      parameters:
+        - $ref: '#/components/parameters/IsPortalClaimParam'
+      requestBody:
+        description: >-
+          Data that is needed for creation of a ticket for own contract parcel
+          and parcels created using Sendcloud rates is different. Please refer
+          to relevant examples below.
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CreateAddressChangeTransactional'
+                - $ref: '#/components/schemas/CreateAddressChangeOwnContract'
+      responses:
+        '202':
+          $ref: '#/components/responses/CreateTicketAccepted'
+        '400':
+          $ref: '#/components/responses/CreateTicketBadRequest'
+        '406':
+          $ref: '#/components/responses/CreateTicketNotAcceptable'
+        '422':
+          $ref: '#/components/responses/CreateTicketUnprocessableContent'
+        '429':
+          $ref: '#/components/responses/CreateTicketRateLimitExceededResponse'
+  /dsf/tickets/requested-data:
+    get:
+      summary: Retrieve requested data for open tickets
+      description: >-
+        Retrieve the list of additional data requests for open tickets handled
+        by Support Automation.
+      x-mint:
+        href: /api/v3/support/retrieve-requested-data-for-open-tickets
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-get-requested_data
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+          in: query
+          name: page
+          description: The page number to retrieve (1-indexed).
+          required: false
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+            example: 50
+          in: query
+          name: size
+          description: The number of items per page.
+          required: false
+      responses:
+        '200':
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                  - page
+                  - pages
+                  - size
+                properties:
+                  total:
+                    type: integer
+                    description: Total number of items across all pages.
+                    example: 42
+                  page:
+                    type: integer
+                    description: Current page number.
+                    example: 1
+                  pages:
+                    type: integer
+                    description: Total number of pages.
+                    example: 1
+                  size:
+                    type: integer
+                    description: Number of items per page.
+                    example: 50
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - created_at
+                        - request_id
+                        - title
+                        - data_type
+                      properties:
+                        created_at:
+                          type: string
+                          format: date-time
+                          description: The date and time when data was requested.
+                        request_id:
+                          type: integer
+                          description: The id of the request.
+                        title:
+                          type: string
+                          description: Request title
+                        tracking_number:
+                          type:
+                            - string
+                            - 'null'
+                          description: >-
+                            The tracking number of the parcel related to this
+                            request.
+                        order_number:
+                          type:
+                            - string
+                            - 'null'
+                          description: The number of the order related to this request.
+                        data_type:
+                          type: string
+                          enum:
+                            - claim_letter
+                            - sales_invoice
+                            - sales_data
+                            - purchase_invoice
+                            - description_of_contents
+                          description: >-
+                            The type of data requested. Depending on the type,
+                            additional documents/photos, text input, or sales
+                            data may be required.
+              examples:
+                Successful request:
+                  value:
+                    total: 42
+                    page: 2
+                    size: 50
+                    items:
+                      - created_at: '2025-04-10T15:10:42Z'
+                        request_id: 144
+                        title: Sales invoice is needed
+                        tracking_number: 3SYZXG5051720
+                        order_number: ORDER-25763
+                        data_type: sales_invoice
+                      - created_at: '2025-04-12T11:49:05Z'
+                        request_id: 159
+                        title: Sales data is needed
+                        tracking_number: 3SYZXG9944267
+                        order_number: ORDER-26064
+                        data_type: sales_data
+                Successful request but no data:
+                  value:
+                    total: 0
+                    page: 1
+                    size: 50
+                    data: []
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+      tags:
+        - Requested data
+    post:
+      summary: Create a requested data response
+      description: >-
+        Depending on the requested `data_type`, additional documents/photos,
+        text input, or sales data may be required.
+      x-mint:
+        href: /api/v3/support/provide-requested-data
+        metadata:
+          tag: Beta
+        content: >-
+          For the `sales_data` type, detailed sales data is expected, including
+          item descriptions, quantities, prices, and tax rates. The data has to
+          be passed as a valid JSON object under the `sales_data` key of the
+          payload. Each item can optionally include a `sales_date` to specify
+          the date of the sale, which will be used as the invoice date. If not
+          provided, the parcel announcement date will be used.
+
+
+          A file object is expected for the following `data_type`'s:
+          `sales_invoice`, `purchase_invoice`, `claim_letter`.
+
+          Files are expected to be passed in the `attachments` array.
+      operationId: sc-public-v3-dsf-post-requested_data
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: integer
+                  description: >-
+                    The id of the requested data. You can get it from the
+                    /related-data GET endpoint
+                comment:
+                  type:
+                    - string
+                    - 'null'
+                  description: Optional comment input from the user.
+                attachments:
+                  type: array
+                  description: >-
+                    List of file tokens that will be uploaded as the
+                    requested-data. To generate the file tokens, use the [Upload
+                    a file](/api/v3/support/files) or [Generate
+                    Documents](api/v3/support/generate-sales-invoice) endpoints.
+                  items:
+                    type: object
+                    properties:
+                      file_token:
+                        type: string
+                        description: >-
+                          Token received after uploading a file via the [Upload
+                          a file](/api/v3/support/files) endpoint.
+                    example:
+                      file_token: >-
+                        b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+                    required:
+                      - file_token
+                sales_data:
+                  type: array
+                  description: >-
+                    Detailed sales information for each item in the shipment.
+                    Required when `data_type` is `sales_data`. Pass force
+                    parameter if sales data has a large total amount.
+                  items:
+                    type: object
+                    properties:
+                      product_description:
+                        description: Description of the product
+                        type: string
+                      quantity:
+                        description: Quantity of the product
+                        type: integer
+                      selling_price:
+                        description: Price per product item. **Must be tax-included.**
+                        type: number
+                        format: double
+                      currency:
+                        $ref: '#/components/schemas/CurrencyType'
+                      tax_rate:
+                        description: Tax rate for the product
+                        type: number
+                      sales_date:
+                        description: >-
+                          Date of the sale. Used as the invoice date when
+                          generating sales invoices. If not provided, the parcel
+                          announcement date will be used.
+                        type:
+                          - string
+                          - 'null'
+                        format: date-time
+                    required:
+                      - product_description
+                      - quantity
+                      - selling_price
+                      - currency
+                      - tax_rate
+                force:
+                  type: boolean
+                  description: >-
+                    Bypasses the maximum invoice amount validation (5000 EUR).
+                    Only use this when strictly necessary, as the validation
+                    exists to prevent erroneous invoices.
+                  default: false
+              required:
+                - request_id
+            examples:
+              File request:
+                value:
+                  request_id: 144
+                  comment: Sales invoice
+                  attachments:
+                    - file_token: 4b08344f-8325-40df-8273-c0c31c412bb0
+              Textual data request:
+                value:
+                  request_id: 144
+                  comment: Lost parcel contained 3 t-shirts and 1 pants
+              Sales data request:
+                value:
+                  request_id: 144
+                  sales_data:
+                    - product_description: T-Shirt
+                      quantity: 3
+                      selling_price: 19.95
+                      currency: EUR
+                      tax_rate: 21
+                      sales_date: '2025-03-15T10:30:00Z'
+                    - product_description: Pants
+                      quantity: 1
+                      selling_price: 45
+                      currency: EUR
+                      tax_rate: 21
+                      sales_date: '2025-03-15T10:30:00Z'
+                  force: true
+      responses:
+        '200':
+          description: Data was uploaded successfully.
+        '400':
+          $ref: '#/components/responses/ProvideRequestedDataBadRequest'
+        '404':
+          $ref: '#/components/responses/RequestIdNotFoundResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+      tags:
+        - Requested data
+    parameters: []
+  /dsf/documents/generate/invoice:
+    post:
+      tags:
+        - Documents
+      summary: Create a sales invoice
+      description: >-
+        Generate a sales invoice PDF for a parcel. The invoice is created based
+        on the provided items, currency, and tax rate, combined with parcel and
+        sender details fetched from the system.
+
+
+        Company details and addresses are auto-populated from the parcel
+        tracking information.
+      x-mint:
+        href: /api/v3/support/generate-sales-invoice
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-documents_generate_invoice
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateInvoiceRequest'
+            example:
+              tracking_number: 3SABCD1234567
+              items:
+                - description: T-Shirt
+                  quantity: 3
+                  unit_price: 19.95
+                - description: Pants
+                  quantity: 1
+                  unit_price: 45
+              currency_code: EUR
+              tax_rate: 21
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/InvoiceCreated'
+        '400':
+          $ref: '#/components/responses/InvoiceGenerationFailed'
+        '401':
+          description: Unauthorized
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+  /dsf/documents/generate/claim-letter:
+    post:
+      tags:
+        - Documents
+      summary: Create a claim letter
+      description: >-
+        Generate a claim letter PDF for a parcel. The claim letter is created
+        based on the provided items, currency, tax rate, and ticket category,
+        combined with parcel and sender details fetched from the system.
+
+
+        Company details and addresses are auto-populated from the parcel and
+        sender information stored in the system.
+
+
+        **Note:** Claim letters are currently generated in French only.
+
+
+        The generated PDF returns a file token that can be used with the [Create
+        a requested data response](/api/v3/support/provide-requested-data)
+        endpoint or when creating tickets.
+      x-mint:
+        href: /api/v3/support/generate-claim-letter
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-dsf-post-documents_generate_claim_letter
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateClaimLetterRequest'
+            example:
+              tracking_number: 3SABCD1234567
+              items:
+                - description: T-Shirt
+                  quantity: 3
+                  unit_price: 19.95
+                - description: Pants
+                  quantity: 1
+                  unit_price: 45
+              currency_code: EUR
+              tax_rate: 21
+              ticket_category: damaged
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/ClaimLetterCreated'
+        '400':
+          $ref: '#/components/responses/ClaimLetterGenerationFailed'
+        '401':
+          description: Unauthorized
+        '429':
+          $ref: '#/components/responses/RateLimitExceededResponse'
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    FileUploadRequest:
+      title: File upload request
+      type: object
+      properties:
+        file:
+          title: File
+          type: string
+          format: binary
+          description: >-
+            The file to upload, sent as a `multipart/form-data` file part. The
+            part must include a `filename` in its `Content-Disposition` header
+            and a per-part `Content-Type` from the allowed list (for example
+            `application/pdf`). Maximum size is 6 MB.
+      required:
+        - file
+    CreateSupportContactRequest:
+      title: New carrier support contact request
+      type: object
+      properties:
+        carrier_code:
+          $ref: '#/components/schemas/CarrierCodeField'
+        email:
+          $ref: '#/components/schemas/CarrierEmailField'
+        language:
+          $ref: '#/components/schemas/CarrierLanguageField'
+      required:
+        - carrier_code
+        - email
+        - language
+    PatchSupportContactRequest:
+      title: Update carrier support contact request
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/CarrierEmailField'
+        language:
+          $ref: '#/components/schemas/CarrierLanguageField'
+    CreateDamagedTransactional:
+      title: Sendcloud rates parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        contents_sales_price:
+          $ref: '#/components/schemas/ContentsSalesValueField'
+        contents_purchase_price:
+          $ref: '#/components/schemas/ContentsPurchaseValueField'
+        contents_description:
+          $ref: '#/components/schemas/ContentsDescriptionField'
+        parcel_exterior_description:
+          $ref: '#/components/schemas/ParcelExteriorDescriptionField'
+        additional_remarks:
+          $ref: '#/components/schemas/AdditionalRemarksField'
+        customer_confirmation:
+          $ref: '#/components/schemas/CustomerConfirmationField'
+        sales_invoice:
+          $ref: '#/components/schemas/SalesInvoiceField'
+        purchase_invoice:
+          $ref: '#/components/schemas/PurchaseInvoiceField'
+        exterior_photo:
+          $ref: '#/components/schemas/ExteriorPhotoField'
+        interior_photo:
+          $ref: '#/components/schemas/InteriorPhotoField'
+        damage_photo_1:
+          $ref: '#/components/schemas/DamagePhoto1Field'
+        damage_photo_2:
+          $ref: '#/components/schemas/DamagePhoto2Field'
+        package_photo:
+          $ref: '#/components/schemas/PackagePhotoField'
+        entire_product_photo:
+          $ref: '#/components/schemas/EntireProductPhotoField'
+      required:
+        - tracking_number
+        - contents_sales_price
+        - contents_description
+        - parcel_exterior_description
+        - additional_remarks
+        - customer_confirmation
+        - sales_invoice
+        - purchase_invoice
+        - exterior_photo
+        - interior_photo
+        - damage_photo_1
+        - damage_photo_2
+        - package_photo
+        - entire_product_photo
+    CreateDamagedOwnContract:
+      title: Own contract parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        carrier_contract_id:
+          $ref: '#/components/schemas/CarrierContractIdField'
+        contents_sales_price:
+          $ref: '#/components/schemas/ContentsSalesValueField'
+        contents_purchase_price:
+          $ref: '#/components/schemas/ContentsPurchaseValueField'
+        contents_description:
+          $ref: '#/components/schemas/ContentsDescriptionField'
+        parcel_exterior_description:
+          $ref: '#/components/schemas/ParcelExteriorDescriptionField'
+        additional_remarks:
+          $ref: '#/components/schemas/AdditionalRemarksField'
+        customer_confirmation:
+          $ref: '#/components/schemas/CustomerConfirmationField'
+        sales_invoice:
+          $ref: '#/components/schemas/SalesInvoiceField'
+        purchase_invoice:
+          $ref: '#/components/schemas/PurchaseInvoiceField'
+        exterior_photo:
+          $ref: '#/components/schemas/ExteriorPhotoField'
+        interior_photo:
+          $ref: '#/components/schemas/InteriorPhotoField'
+        damage_photo_1:
+          $ref: '#/components/schemas/DamagePhoto1Field'
+        damage_photo_2:
+          $ref: '#/components/schemas/DamagePhoto2Field'
+        package_photo:
+          $ref: '#/components/schemas/PackagePhotoField'
+        entire_product_photo:
+          $ref: '#/components/schemas/EntireProductPhotoField'
+      required:
+        - tracking_number
+    CreateDelayedTransactional:
+      title: Sendcloud rates parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        contents_sales_price:
+          $ref: '#/components/schemas/ContentsSalesValueField'
+        contents_purchase_price:
+          $ref: '#/components/schemas/ContentsPurchaseValueField'
+        contents_description:
+          $ref: '#/components/schemas/ContentsDescriptionField'
+        parcel_exterior_description:
+          $ref: '#/components/schemas/ParcelExteriorDescriptionField'
+        sales_invoice:
+          $ref: '#/components/schemas/SalesInvoiceField'
+        purchase_invoice:
+          $ref: '#/components/schemas/PurchaseInvoiceField'
+      required:
+        - tracking_number
+        - contents_sales_price
+        - contents_description
+        - parcel_exterior_description
+        - sales_invoice
+        - purchase_invoice
+    CreateLateDeliveryOwnContract:
+      title: Own contract parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        carrier_contract_id:
+          $ref: '#/components/schemas/CarrierContractIdField'
+        additional_remarks:
+          $ref: '#/components/schemas/AdditionalRemarksField'
+      required:
+        - tracking_number
+    CreateLostTransactional:
+      title: Sendcloud rates parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        contents_sales_price:
+          $ref: '#/components/schemas/ContentsSalesValueField'
+        contents_purchase_price:
+          $ref: '#/components/schemas/ContentsPurchaseValueField'
+        contents_description:
+          $ref: '#/components/schemas/ContentsDescriptionField'
+        parcel_exterior_description:
+          $ref: '#/components/schemas/ParcelExteriorDescriptionField'
+        parcel_dimensions:
+          $ref: '#/components/schemas/ParcelDimensionsField'
+        additional_remarks:
+          $ref: '#/components/schemas/AdditionalRemarksField'
+        sales_invoice:
+          $ref: '#/components/schemas/SalesInvoiceField'
+        purchase_invoice:
+          $ref: '#/components/schemas/PurchaseInvoiceField'
+        customer_confirmation:
+          $ref: '#/components/schemas/CustomerConfirmationField'
+        carrier_claim_form:
+          $ref: '#/components/schemas/CarrierClaimForm'
+      required:
+        - tracking_number
+        - contents_sales_price
+        - contents_description
+        - parcel_exterior_description
+        - parcel_dimensions
+        - additional_remarks
+        - sales_invoice
+        - purchase_invoice
+        - customer_confirmation
+        - carrier_claim_form
+    CreateLostOwnContract:
+      title: Own contract parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        carrier_contract_id:
+          $ref: '#/components/schemas/CarrierContractIdField'
+        contents_sales_price:
+          $ref: '#/components/schemas/ContentsSalesValueField'
+        contents_purchase_price:
+          $ref: '#/components/schemas/ContentsPurchaseValueField'
+        contents_description:
+          $ref: '#/components/schemas/ContentsDescriptionField'
+        parcel_exterior_description:
+          $ref: '#/components/schemas/ParcelExteriorDescriptionField'
+        parcel_dimensions:
+          $ref: '#/components/schemas/ParcelDimensionsField'
+        additional_remarks:
+          $ref: '#/components/schemas/AdditionalRemarksField'
+        sales_invoice:
+          $ref: '#/components/schemas/SalesInvoiceField'
+        purchase_invoice:
+          $ref: '#/components/schemas/PurchaseInvoiceField'
+        customer_confirmation:
+          $ref: '#/components/schemas/CustomerConfirmationField'
+        carrier_claim_form:
+          $ref: '#/components/schemas/CarrierClaimForm'
+      required:
+        - tracking_number
+    CreateDeliveredButNotReceivedTransactional:
+      title: Sendcloud rates parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        contents_sales_price:
+          $ref: '#/components/schemas/ContentsSalesValueField'
+        contents_purchase_price:
+          $ref: '#/components/schemas/ContentsPurchaseValueField'
+        contents_description:
+          $ref: '#/components/schemas/ContentsDescriptionField'
+        parcel_exterior_description:
+          $ref: '#/components/schemas/ParcelExteriorDescriptionField'
+        parcel_dimensions:
+          $ref: '#/components/schemas/ParcelDimensionsField'
+        additional_remarks:
+          $ref: '#/components/schemas/AdditionalRemarksField'
+        sales_invoice:
+          $ref: '#/components/schemas/SalesInvoiceField'
+        purchase_invoice:
+          $ref: '#/components/schemas/PurchaseInvoiceField'
+        carrier_claim_form:
+          $ref: '#/components/schemas/CarrierClaimForm'
+      required:
+        - tracking_number
+        - contents_sales_price
+        - contents_description
+        - parcel_exterior_description
+        - parcel_dimensions
+        - additional_remarks
+        - sales_invoice
+        - purchase_invoice
+        - carrier_claim_form
+    CreateDeliveredButNotReceivedOwnContract:
+      title: Own contract parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        carrier_contract_id:
+          $ref: '#/components/schemas/CarrierContractIdField'
+        contents_sales_price:
+          $ref: '#/components/schemas/ContentsSalesValueField'
+        contents_purchase_price:
+          $ref: '#/components/schemas/ContentsPurchaseValueField'
+        contents_description:
+          $ref: '#/components/schemas/ContentsDescriptionField'
+        parcel_exterior_description:
+          $ref: '#/components/schemas/ParcelExteriorDescriptionField'
+        parcel_dimensions:
+          $ref: '#/components/schemas/ParcelDimensionsField'
+        additional_remarks:
+          $ref: '#/components/schemas/AdditionalRemarksField'
+        sales_invoice:
+          $ref: '#/components/schemas/SalesInvoiceField'
+        purchase_invoice:
+          $ref: '#/components/schemas/PurchaseInvoiceField'
+        carrier_claim_form:
+          $ref: '#/components/schemas/CarrierClaimForm'
+      required:
+        - tracking_number
+    CreateUnjustReturnTransactional:
+      title: Sendcloud rates parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        is_parcel_returned:
+          $ref: '#/components/schemas/IsParcelReturnedField'
+        additional_details:
+          $ref: '#/components/schemas/AdditionalDetailsField'
+      required:
+        - tracking_number
+        - is_parcel_returned
+        - additional_details
+    CreateUnjustReturnOwnContract:
+      title: Own contract parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        carrier_contract_id:
+          $ref: '#/components/schemas/CarrierContractIdField'
+        is_parcel_returned:
+          $ref: '#/components/schemas/IsParcelReturnedField'
+        additional_details:
+          $ref: '#/components/schemas/AdditionalDetailsField'
+      required:
+        - tracking_number
+    CreateAddressChangeTransactional:
+      title: Sendcloud rates parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        new_address:
+          $ref: '#/components/schemas/NewAddressField'
+        additional_details:
+          $ref: '#/components/schemas/AdditionalDetailsField'
+      required:
+        - tracking_number
+        - new_address
+    CreateAddressChangeOwnContract:
+      title: Own contract parcel
+      type: object
+      properties:
+        tracking_number:
+          $ref: '#/components/schemas/TrackingNumberField'
+        carrier_contract_id:
+          $ref: '#/components/schemas/CarrierContractIdField'
+        new_address:
+          $ref: '#/components/schemas/NewAddressField'
+        additional_details:
+          $ref: '#/components/schemas/AdditionalDetailsField'
+      required:
+        - tracking_number
+        - new_address
+    TrackingNumberField:
+      description: Parcel tracking number
+      type: string
+      example: 3SABCD1234567
+    CarrierContractIdField:
+      description: >-
+        The ID of the carrier contract associated with the parcel. Required when
+        creating a ticket for a support only parcel that is not tracked in the
+        Sendcloud system. The contract must belong to the authenticated user.
+      type: integer
+      example: 123
+    CarrierEmailField:
+      description: >-
+        Email address of the carrier to which the ticket details will be
+        forwarded.
+      type: string
+      format: email
+      example: carrier@email.com
+    CarrierCodeField:
+      description: A carrier represented by a Sendcloud code
+      type: string
+      enum:
+        - amazon
+        - bpost
+        - bol
+        - bring
+        - brt
+        - budbee
+        - cainiao
+        - chronopost
+        - colisprive
+        - colissimo
+        - colissimo_ec2c
+        - correos
+        - correos_express
+        - cirro
+        - dachser
+        - dbschenker
+        - delivengo
+        - der_kurier
+        - dp
+        - dhl
+        - dhl_de
+        - dhl_ecommerce
+        - dhl_freight
+        - dhl_gb
+        - dhl_parcel_gb
+        - dhl_parcel_iberia
+        - dhl_express
+        - dpd
+        - dpd_at
+        - dpd_fr
+        - dpd_gb
+        - dpd_local
+        - fadello
+        - fairsenden
+        - fedex
+        - fedexcrossborder
+        - fietskoeriers
+        - geodis
+        - gls_de
+        - gls_es
+        - gls_eu
+        - gls_it
+        - gls_nl
+        - glovo
+        - hermes_c2c_gb
+        - hermes_at
+        - hermes_de
+        - hermes_gb
+        - hived
+        - homerr
+        - hurby
+        - inpost_gb
+        - inpost_es
+        - inpost_it
+        - inpost_pl
+        - jongstra
+        - landmark
+        - lettresuivie
+        - mondial_relay
+        - mhi
+        - nacex
+        - ontime
+        - paack
+        - packs
+        - parcelforce
+        - mrw
+        - plx
+        - postat
+        - poste_italiane
+        - poste_it_delivery
+        - postnl
+        - postnl_fulfilment
+        - postnl_large
+        - postnord
+        - quicargo
+        - relais_colis
+        - rjpv2
+        - rjp
+        - royal_mail
+        - royal_mailv2
+        - sandd
+        - sendcloud
+        - seur
+        - skymail
+        - storeshippers
+        - tipsa
+        - transmission
+        - trunkrs
+        - ups
+        - van_straaten
+        - viatim
+        - ctt_express
+        - tnt_it
+        - yodel
+        - europaket
+        - spring
+        - evri_international
+        - asendia
+        - transforce
+        - dhl_2_man_handling
+      example: postnl
+    CarrierLanguageField:
+      description: Language in which the carrier will be contacted.
+      type: string
+      enum:
+        - de-de
+        - en-gb
+        - en-us
+        - es-es
+        - fr-fr
+        - nl-nl
+        - it-it
+      example: en-us
+    ContentsSalesValueField:
+      description: Sales value of the contents of the parcel
+      type: object
+      properties:
+        price:
+          type: number
+          format: double
+        currency:
+          $ref: '#/components/schemas/CurrencyType'
+      example:
+        price: 10.55
+        currency: EUR
+    ContentsPurchaseValueField:
+      description: Purchase value of the contents of the parcel
+      type: object
+      properties:
+        price:
+          type: number
+          format: double
+        currency:
+          $ref: '#/components/schemas/CurrencyType'
+      example:
+        price: 8
+        currency: EUR
+    ContentsDescriptionField:
+      description: Description of the contents of the parcel
+      type: string
+      example: The parcel contains 3 t-shits and 1 pair of shoes.
+    ParcelExteriorDescriptionField:
+      description: Parcel exterior description
+      type: string
+      example: The box has our branding.
+    AdditionalRemarksField:
+      description: Additional remarks about the parcel
+      type: string
+    CustomerConfirmationField:
+      description: Written confirmation about the problem by the intended receiver
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    SalesInvoiceField:
+      description: The sales invoice
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    PurchaseInvoiceField:
+      description: The purchase invoice
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    ExteriorPhotoField:
+      description: A photo of the exterior of the shipment's box
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    InteriorPhotoField:
+      description: A photo of the inside padding material
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    DamagePhoto1Field:
+      description: A photo of the damaged goods
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    DamagePhoto2Field:
+      description: An additional photo of the damaged goods
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    PackagePhotoField:
+      description: >-
+        A photo of the opened package taken from above. The entire contents of
+        the inner package must be clearly visible
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    EntireProductPhotoField:
+      description: A photo showing the entire product
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    CarrierClaimForm:
+      description: Filled in carrier claim form file
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: Token received after uploading a file via /api/v3/dsf/files API
+      example:
+        file_token: b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    ParcelDimensionsField:
+      description: Measurements of the parcel in cm (L × W × H)
+      type: object
+      properties:
+        length:
+          type: number
+          description: Parcel length in cm
+        width:
+          type: number
+          description: Parcel width in cm
+        height:
+          type: number
+          description: Parcel height in cm
+      required:
+        - length
+        - width
+        - height
+    AdditionalDetailsField:
+      description: Description of the issue and additional information
+      type: string
+      example: The parcel was unjustly returned
+    IsParcelReturnedField:
+      description: Has the returned parcel been received?
+      type: boolean
+      example: true
+    NewAddressField:
+      description: Foo
+      type: string
+      example: Stadhuisplein 10, 5611 EM Eindhoven
+    CurrencyType:
+      type: string
+      enum:
+        - EUR
+        - GBP
+        - USD
+    GenerateInvoiceRequest:
+      title: Generate invoice request
+      type: object
+      properties:
+        tracking_number:
+          type: string
+          description: Parcel tracking number
+          example: 3SABCD1234567
+        items:
+          type: array
+          description: List of invoice line items
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+                description: Description of the item
+              quantity:
+                type: integer
+                description: Quantity of the item
+                minimum: 1
+              unit_price:
+                type: number
+                format: double
+                description: Unit price of the item. **Must be tax-included.**
+            required:
+              - description
+              - quantity
+              - unit_price
+        currency_code:
+          type: string
+          description: ISO 4217 currency code
+          example: EUR
+        tax_rate:
+          type: number
+          format: double
+          description: Tax rate percentage (0-99)
+          minimum: 0
+          maximum: 99
+          example: 21
+        company_logo_path:
+          type:
+            - string
+            - 'null'
+          description: >-
+            Optional company logo to include on the invoice. Provide a
+            base64-encoded PNG image string or a public url leading to the
+            company logo image. If not provided a company name will be used to
+            generate a default logo.
+        force:
+          type: boolean
+          description: >-
+            Bypasses the maximum invoice amount validation (5000 EUR). Only use
+            this when strictly necessary, as the validation exists to prevent
+            erroneous invoices.
+          default: false
+      required:
+        - tracking_number
+        - items
+        - currency_code
+        - tax_rate
+    GenerateClaimLetterRequest:
+      title: Generate claim letter request
+      type: object
+      properties:
+        tracking_number:
+          type: string
+          description: Parcel tracking number
+          example: 3SABCD1234567
+        items:
+          type: array
+          description: List of invoice line items
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+                description: Description of the item
+              quantity:
+                type: integer
+                description: Quantity of the item
+                minimum: 1
+              unit_price:
+                type: number
+                format: double
+                description: Unit price of the item. **Must be tax-included.**
+            required:
+              - description
+              - quantity
+              - unit_price
+        currency_code:
+          type: string
+          description: ISO 4217 currency code
+          example: EUR
+        tax_rate:
+          type: number
+          format: double
+          description: Tax rate percentage (0-99)
+          minimum: 0
+          maximum: 99
+          example: 21
+        ticket_category:
+          type: string
+          description: The type of claim this letter is for
+          enum:
+            - damaged
+            - lost
+            - unjust_return
+            - delivered_not_received
+        force:
+          type: boolean
+          description: >-
+            Bypasses the maximum invoice amount validation (5000 EUR). Only use
+            this when strictly necessary, as the validation exists to prevent
+            erroneous documents.
+          default: false
+      required:
+        - tracking_number
+        - items
+        - currency_code
+        - tax_rate
+        - ticket_category
+    GenerateDocumentResponse:
+      title: Generate document response
+      type: object
+      properties:
+        file_token:
+          type: string
+          description: >-
+            A token referencing the generated document. Use this token when
+            attaching the document to a ticket (in the `attachments` array) or
+            when submitting it as part of a requested data response.
+        preview_url:
+          type: string
+          description: >-
+            Temporary pre-signed URL for previewing or downloading the generated
+            PDF. This URL expires after 72 hours and should not be stored for
+            long-term use.
+      required:
+        - file_token
+        - preview_url
+    TicketStatus:
+      type: string
+      description: Current ticket status.
+      enum:
+        - action_required
+        - carrier_reminder_sent
+        - carrier_update_received
+        - claim_paid
+        - closed
+        - communicated_to_carrier
+        - customer_documents_requested
+        - customer_reminder_sent
+        - delayed
+        - delivered_scan_received
+        - delivery_confirmation_rejected
+        - delivery_confirmation_requested
+        - documents_forwarded_to_carrier
+        - escalated
+        - escalated_ava
+        - hold
+        - manually_solved
+        - new_scan_received
+        - pending
+        - processing
+        - smart_refund_available
+        - smart_refund_update
+        - solved
+        - solved_by_automation
+        - unknown
+        - waiting_for_carrier
+        - waiting_for_customer
+        - waiting_for_scan
+    TicketResponse:
+      title: Support ticket
+      type: object
+      description: >-
+        A support ticket with its current status, parcel information, any
+        outstanding data requests, and resolution details.
+      required:
+        - id
+        - status
+        - stage
+        - created_at
+        - requested_actions
+      properties:
+        id:
+          type: integer
+          description: Unique ticket ID.
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        stage:
+          type: string
+          description: High-level stage of the ticket lifecycle.
+          enum:
+            - in_progress
+            - action_required
+            - manually_solved_stage
+            - solved_by_automation_stage
+            - unknown
+        type:
+          type:
+            - string
+            - 'null'
+          description: Ticket category (e.g. damaged, lost, delayed).
+          enum:
+            - address_change
+            - damaged
+            - delayed
+            - delivered_not_received
+            - late_delivery
+            - lost
+            - unjust_return
+            - other_shipping
+            - null
+        parcel_id:
+          type:
+            - integer
+            - 'null'
+          description: Sendcloud parcel ID.
+        carrier:
+          type:
+            - string
+            - 'null'
+          description: Carrier code (e.g. postnl, dpd, ups).
+        tracking_number:
+          type:
+            - string
+            - 'null'
+          description: Tracking number of the parcel associated with the ticket.
+        order_number:
+          type:
+            - string
+            - 'null'
+          description: Order number associated with the parcel.
+        brand_id:
+          type:
+            - integer
+            - 'null'
+          description: Brand ID associated with the parcel.
+        created_at:
+          type: string
+          format: date-time
+          description: Ticket creation timestamp (ISO 8601).
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Last update timestamp (ISO 8601).
+        requested_actions:
+          type: array
+          description: Outstanding data requests from the carrier.
+          items:
+            $ref: '#/components/schemas/RequestedAction'
+        resolution:
+          description: Resolution details, present only when the ticket is resolved.
+          oneOf:
+            - $ref: '#/components/schemas/TicketResolution'
+            - type: 'null'
+    RequestedAction:
+      title: Requested action
+      type: object
+      description: An outstanding data request on a ticket.
+      required:
+        - id
+        - data_type
+        - created_at
+      properties:
+        id:
+          type: integer
+          description: Request ID.
+        data_type:
+          type: string
+          description: Type of data being requested.
+          enum:
+            - claim_letter
+            - sales_invoice
+            - sales_data
+            - purchase_invoice
+            - description_of_contents
+            - customer_confirmation
+            - exterior_photo
+            - interior_photo
+            - damage_photo
+            - carrier_claims_form
+            - other
+        created_at:
+          type: string
+          format: date-time
+          description: When the request was created (ISO 8601).
+    TicketResolution:
+      title: Ticket resolution
+      type: object
+      description: How a ticket was resolved.
+      required:
+        - outcome
+      properties:
+        outcome:
+          type: string
+          description: Resolution outcome.
+          enum:
+            - claim_approved
+            - claim_declined
+            - claim_closed_in_carrier_portal
+            - delivered
+            - returned
+            - solved_merchant
+            - address_change_confirmed
+            - address_change_declined
+            - address_change_requested
+            - impossible_to_open_claim
+        amount:
+          type:
+            - number
+            - 'null'
+          description: Compensation amount.
+        currency:
+          type:
+            - string
+            - 'null'
+          description: Compensation currency (ISO 4217).
+        solved_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: When the ticket was resolved (ISO 8601).
+    ErrorsResponseSchema:
+      description: Support API error response.
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                title: Error code
+                type: string
+              detail:
+                title: Error description
+                type: string
+              title:
+                title: Error title
+                type: string
+              status:
+                title: HTTP status code
+                type: integer
+      required:
+        - errors
+    CreateTicketResponseSchema:
+      title: Create ticket response
+      description: Create ticket response
+      type: object
+      properties:
+        ticket_id:
+          type: integer
+          title: Ticket id
+      required:
+        - ticket_id
+    CarrierSupportContact:
+      title: Carrier support contact
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          title: Carrier support contact id
+        carrier_code:
+          $ref: '#/components/schemas/CarrierCodeField'
+        email:
+          $ref: '#/components/schemas/CarrierEmailField'
+        language:
+          $ref: '#/components/schemas/CarrierLanguageField'
+      required:
+        - id
+        - carrier_code
+        - email
+  parameters:
+    IsPortalClaimParam:
+      name: is_portal_claim
+      in: query
+      description: >-
+        Set to `true` to force a portal claim. Supported for `Colissimo`,
+        `Chronopost`, `Colis Privé`, `Mondial Relay`, `InPost ES`, and `DHL
+        Express` carriers only. Requires a carrier contract setup.
+      required: false
+      schema:
+        type: boolean
+        default: false
+  examples: {}
+  responses:
+    FilesCreated:
+      description: Created
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              file_token:
+                type: string
+            required:
+              - file_token
+          example:
+            file_token: >-
+              b90e7a70-57c6-4338-992a-eae50d637261-6170706c69636174696f6e2f706466
+    FilesBadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            File is missing:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: '`file` field is required.'
+                    title: Bad Request
+                    status: 400
+            Invalid form:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Invalid form.
+                    title: Bad Request
+                    status: 400
+    FilesPayloadTooLarge:
+      description: File is too large. The maximum file size is 6 MB.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            File is too large:
+              value:
+                errors:
+                  - code: content_too_large
+                    detail: File is too large.
+                    title: Content Too Large
+                    status: 413
+    FilesUnsupportedMediaType:
+      description: The file type is not allowed.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            Unsupported file type:
+              value:
+                errors:
+                  - code: unsupported_media_type
+                    detail: The file type is not allowed.
+                    title: Unsupported Media Type
+                    status: 415
+    FilesUnprocessableContent:
+      description: Non file object
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            Non file object:
+              value:
+                errors:
+                  - code: unprocessable_content
+                    detail: '`file` field must contain a file object.'
+                    title: Unprocessable Content
+                    status: 422
+    CreateTicketAccepted:
+      description: Accepted
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateTicketResponseSchema'
+          example:
+            ticket_id: 155
+    CreateTicketBadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            Parcel not found:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Parcel not found.
+                    title: Bad Request
+                    status: 400
+            Data validation errors:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: >-
+                      Validation Error. Errors: [{'type': 'missing', 'loc':
+                      ('contents_sales_price',), 'msg': 'Field required'}]
+                    title: Bad Request
+                    status: 400
+    CreateTicketNotAcceptable:
+      description: Invalid payload format
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: not_acceptable
+                detail: Invalid JSON
+                title: Not Acceptable
+                status: 406
+    CreateTicketUnprocessableContent:
+      description: Ticket can not be created due to deflection rules
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            Deflection rules violation:
+              value:
+                errors:
+                  - code: unprocessable_content
+                    detail: 'Cannot create ticket. Reason: Parcel is already delivered'
+                    title: Unprocessable Content
+                    status: 422
+            Carrier support contact is missing for own contract parcel:
+              value:
+                errors:
+                  - code: unprocessable_content
+                    detail: >-
+                      Carrier support contact is required for own contract
+                      parcel
+                    title: Unprocessable Content
+                    status: 422
+    TicketDetailResponse:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TicketResponse'
+          example:
+            id: 42
+            status: pending
+            stage: in_progress
+            type: damaged
+            parcel_id: 98765
+            carrier: postnl
+            tracking_number: 3SYZXG5051720
+            order_number: ORD-2026-1234
+            brand_id: 3
+            created_at: '2026-03-15T10:30:00+00:00'
+            updated_at: '2026-03-18T14:22:00+00:00'
+            requested_actions:
+              - id: 301
+                data_type: sales_invoice
+                created_at: '2026-03-16T09:00:00+00:00'
+            resolution: null
+    TicketListResponse:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - items
+              - total
+              - page
+              - pages
+              - size
+            properties:
+              total:
+                type: integer
+                description: Total number of tickets across all pages.
+                example: 42
+              page:
+                type: integer
+                description: Current page number.
+                example: 1
+              pages:
+                type: integer
+                description: Total number of pages.
+                example: 3
+              size:
+                type: integer
+                description: Number of items per page.
+                example: 15
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketResponse'
+          example:
+            total: 42
+            page: 1
+            pages: 3
+            size: 15
+            items:
+              - id: 42
+                status: pending
+                stage: in_progress
+                type: damaged
+                parcel_id: 98765
+                carrier: postnl
+                tracking_number: 3SYZXG5051720
+                order_number: ORD-2026-1234
+                brand_id: 3
+                created_at: '2026-03-15T10:30:00+00:00'
+                updated_at: '2026-03-18T14:22:00+00:00'
+                requested_actions: []
+                resolution: null
+              - id: 87
+                status: claim_paid
+                stage: manually_solved_stage
+                type: lost
+                parcel_id: 55432
+                carrier: dpd
+                tracking_number: 3SYZXG9944267
+                order_number: ORD-2026-5678
+                brand_id: 1
+                created_at: '2026-02-01T08:00:00+00:00'
+                updated_at: '2026-02-20T16:45:00+00:00'
+                requested_actions: []
+                resolution:
+                  outcome: claim_approved
+                  amount: 149.99
+                  currency: EUR
+                  solved_at: '2026-02-20T16:45:00+00:00'
+    TicketBadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            Invalid status filter:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: 'Invalid status: invalid_value'
+                    title: Bad Request
+                    status: 400
+    TicketNotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: bad_request
+                detail: Ticket not found
+                title: Bad Request
+                status: 404
+    RateLimitExceededResponse:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: hit_rate_limit
+                detail: 'Rate limit exceeded: 30 per 1 minute'
+                title: Rate limit exceeded
+                status: 429
+    FileUploadRateLimitExceededResponse:
+      description: Rate limit exceeded. File uploads are limited to 30 requests per minute.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: hit_rate_limit
+                detail: 'Rate limit exceeded: 30 per 1 minute'
+                title: Rate limit exceeded
+                status: 429
+    CreateTicketRateLimitExceededResponse:
+      description: >-
+        Rate limit exceeded. Ticket creation is limited to 15 requests per
+        minute.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: hit_rate_limit
+                detail: 'Rate limit exceeded: 15 per 1 minute'
+                title: Rate limit exceeded
+                status: 429
+    SupportContactResponse:
+      description: Create carrier support contact
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CarrierSupportContact'
+          example:
+            id: 1
+            carrier_code: dpd
+            email: dpd@email.com
+            language: nl-nl
+    SupportContactList:
+      description: Get carrier support contacts
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CarrierSupportContact'
+          example:
+            - id: 1
+              carrier_code: dpd
+              email: dpd@email.com
+              language: nl-nl
+    SupportContactAlreadyExist:
+      description: Carrier support contact already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: conflict
+                detail: Already exists
+                title: Conflict
+                status: 409
+    SupportContactInvalidPayload:
+      description: Invalid payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: bad_request
+                detail: >-
+                  Validation Error. Errors: [{'type': 'missing', 'loc':
+                  ('email',), 'msg': 'Field required'}]
+                title: Bad Request
+                status: 400
+    InvoiceCreated:
+      description: Invoice generated successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenerateDocumentResponse'
+          example:
+            file_token: b90e7a70-57c6-4338-992a-eae50d637261
+            preview_url: https://s3.example.com/sales_invoice.pdf?token=...
+    InvoiceGenerationFailed:
+      description: Invoice generation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            Invalid JSON:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Invalid JSON
+                    title: Bad Request
+                    status: 400
+            Validation Error:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: >-
+                      Validation Error. Errors: [{'type': 'missing', 'loc':
+                      ('items',), 'msg': 'Field required'}]
+                    title: Bad Request
+                    status: 400
+            Generation Failed:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Invoice generation failed.
+                    title: Bad Request
+                    status: 400
+    ClaimLetterCreated:
+      description: Claim letter generated successfully
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GenerateDocumentResponse'
+          example:
+            file_token: c91f8b81-68d7-5449-aa3b-fbf61e748372
+            preview_url: https://s3.example.com/claim_letter.pdf?token=...
+    ClaimLetterGenerationFailed:
+      description: Claim letter generation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            Invalid JSON:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Invalid JSON
+                    title: Bad Request
+                    status: 400
+            Validation Error:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: >-
+                      Validation Error. Errors: [{'type': 'missing', 'loc':
+                      ('ticket_category',), 'msg': 'Field required'}]
+                    title: Bad Request
+                    status: 400
+            Generation Failed:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Claim letter generation failed.
+                    title: Bad Request
+                    status: 400
+    BadRequestResponse:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: bad_request
+                detail: Invalid JSON
+                title: Bad Request
+                status: 400
+    NotFoundResponse:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: not_found
+                detail: Not found
+                title: Not Found
+                status: 404
+    RequestIdNotFoundResponse:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          example:
+            errors:
+              - code: not_found
+                detail: request_id not found
+                title: Not Found
+                status: 400
+    ProvideRequestedDataBadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponseSchema'
+          examples:
+            Invalid JSON:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Invalid JSON
+                    title: Bad Request
+                    status: 400
+            Validation Error:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: >-
+                      Validation Error. Errors: [{'type': 'missing', 'loc':
+                      ('request_id',), 'msg': 'Field required'}]
+                    title: Bad Request
+                    status: 400
+            Action not allowed:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Action is not allowed or has already been completed
+                    title: Bad Request
+                    status: 400
+            Sales data required:
+              value:
+                errors:
+                  - code: bad_request
+                    detail: Sales data is required
+                    title: Bad Request
+                    status: 400
+  requestBodies: {}

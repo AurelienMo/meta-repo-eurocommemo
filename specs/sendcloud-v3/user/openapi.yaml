@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info:
+  title: User API
+  version: 3.0.0
+  description: View the user information that has been saved to your Sendcloud account.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: User
+paths:
+  /user/auth/metadata:
+    get:
+      summary: Retrieve metadata associated with the authentication method
+      description: >-
+        Retrieve information about the metadata associated with the
+        authentication method used in the request
+      x-mint:
+        href: >-
+          /api/v3/user/retrieve-metadata-associated-with-the-authentication-method
+      tags:
+        - User
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve User Authentication/Authorization
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UserAuthMetadata'
+                required:
+                  - data
+              examples:
+                RetrieveUserBasicAuth:
+                  summary: Retrieve metadata associated with the authentication method
+                  value:
+                    data:
+                      user_id: 1
+                      integration_id: 1
+        '429':
+          description: Throttled
+      operationId: sc-public-v3-scp-get-user_auth_metadata
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    UserAuthMetadata:
+      title: User Authentication Metadata
+      description: User Authentication Metadata
+      type: object
+      properties:
+        user_id:
+          type: integer
+          minimum: 1
+          description: User unique identifier
+        integration_id:
+          type: integer
+          minimum: 1
+          description: ID of the Integration owning the credentials used for authentication
+      examples:
+        - user_id: 1
+          integration_id: 1

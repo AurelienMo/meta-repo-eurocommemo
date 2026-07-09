@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: Parcel statuses API
+  version: 3.0.0
+  description: >
+    Tracking Statuses cover all of the delivery 'milestones' across the shipping
+    journey. They also indicate when
+
+    an action has been made (e.g. Delivery method changed) or an action is
+    required by the recipient (e.g. Ready for
+
+    collection) or by the sender (e.g. Address invalid). Certain delivery
+    milestones also trigger the sending of
+
+    [tracking
+    notifications](https://support.sendcloud.com/hc/en-us/articles/360024840812-Tracking/),
+
+    which you can be configured in the Sendcloud platform.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Parcel Statuses
+paths:
+  /parcels/statuses:
+    get:
+      summary: Retrieve a list of parcel statuses
+      x-mint:
+        href: /api/v3/parcel-statuses/retrieve-a-list-of-parcel-statuses
+      tags:
+        - Parcel Statuses
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve Parcel Statuses
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ParcelStatus'
+                    minItems: 1
+                    maxItems: 99
+                required:
+                  - data
+              examples:
+                RetrieveParcelStatuses:
+                  summary: Retrieve a list of Parcel Statuses
+                  value:
+                    data:
+                      - code: READY_TO_SEND
+                        message: Ready to send
+                      - code: ANNOUNCED
+                        message: Announced
+        '429':
+          description: Throttled
+      operationId: sc-public-v3-scp-get-all_parcel_statuses
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      description: >-
+        Get a list of all parcel statuses available in the Sendcloud system,
+        with their unique code and friendly description.
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    ParcelStatus:
+      title: Parcel Status
+      description: Parcel Status
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          description: Unique code identifier
+        message:
+          type: string
+          minLength: 1
+          description: Friendly description
+      examples:
+        - code: ANNOUNCED
+          message: Announced

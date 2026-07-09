@@ -1,0 +1,168 @@
+run_id: run-28062026-001
+ticket_id: MANUAL-sendcloud-integration
+slug: sendcloud-integration
+date: "2026-06-28"
+feature_branch: feature/sendcloud-integration
+base_branch: main
+repo: src-eurocommemo
+repo_path: /Users/aurelienmorvan/OrbStack/docker/volumes/src-eurocommemo
+head_commit: 2608bef5b30ea3e07fdbe1fd8b5c176a10a522f8
+max_retries: 3
+
+stack:
+  runtime: php
+  version: "8.3"
+  framework: symfony
+  framework_version: "6.4"
+  exec:
+    mode: compose
+    compose_file: "$HOME/IdeaProjects/stack-orb/docker-compose.yml"
+    service: php-fpm-per83
+    workdir: /var/www/eurocommemo
+  commands:
+    build: "composer install --no-interaction --no-progress"
+    validate: "php bin/console doctrine:schema:validate"
+    migrate: "php bin/console doctrine:migrations:migrate --no-interaction"
+
+dod:
+  schema_validate: true
+  composer_install: true
+  no_phpunit: true
+
+plan:
+  - id: T01
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: []
+    status: done
+    description: "Entités Sendcloud (SendcloudConfiguration, SendcloudShippingMethod, SendcloudParcel) + repositories (findFirst, findBySendcloudId, findActive, findByOrder, findActiveShipmentForOrder)"
+    notes: "Utiliser PHP 8 attributes ORM. ManyToOne côté SendcloudParcel (ne pas toucher Order). Singleton pattern pour SendcloudConfiguration (findFirst + auto-create)."
+
+  - id: T02
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: []
+    status: done
+    description: "Config Guzzle sendcloud_api dans eight_points_guzzle.yaml + bind $sendcloudApiClient dans services.yaml"
+    notes: "base_url: https://panel.sendcloud.sc/api/v2/ — timeout 30s — headers JSON."
+
+  - id: T03
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T01]
+    status: done
+    description: "Migration Doctrine — 3 tables: sendcloud_configuration, sendcloud_shipping_method, sendcloud_parcel. FK order_id NULLABLE ON DELETE SET NULL."
+    notes: "Générer via doctrine:migrations:diff puis inclure le fichier produit."
+
+  - id: T04
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T01]
+    status: done
+    description: "SendcloudApiException + SendcloudNotConfiguredException + GetSendcloudConfigurationUseCase + GlobalConstants::SENDCLOUD_CONFIGURATION_ID"
+    notes: "UseCase: findFirst() + persist vide si null. Ne pas lever d'exception ici (délégué au client)."
+
+  - id: T05
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T02, T04]
+    status: done
+    description: "SendcloudApiClient — Guzzle, Basic Auth (publicKey:secretKey construit à chaque appel), 6 méthodes API"
+    notes: "Si clé null → SendcloudNotConfiguredException. Erreur API non-2xx → SendcloudApiException avec message JSON."
+
+  - id: T06
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T03, T05]
+    status: done
+    description: "SendcloudShippingMethodSyncService::sync() + SendcloudParcelService (fetchAndSync, createLabel, cancel, createReturn, refreshParcelStatus)"
+    notes: "createLabel: guard doublon (findActiveShipmentForOrder), guard adresse, guard pickupPointId si carrier relais. fetchAndSync: upsert par sendcloudParcelId, enrichit numSuiviLivraison."
+
+  - id: T07
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T06]
+    status: done
+    description: "ParcelStatusUpdatedEvent (WebhookHandlerInterface) + route POST /sendcloud/notification dans WebhookController + vérification HMAC-SHA256"
+    notes: "header x-sendcloud-signature. Mismatch → 401. Clé null → 503. Sinon: WebhookLog platform=sendcloud + dispatch."
+
+  - id: T08
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T01]
+    status: done
+    description: "Order::ebayShippingService (string 255 nullable) + extraction ShippingServiceSelected.ShippingService dans PaymentReceiveEvent"
+    notes: "INTERDIT: ne pas toucher OrderListener. Uniquement ajout champ + setEbayShippingService dans defineOrderInformation()."
+
+  - id: T09
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T06]
+    status: done
+    description: "CreateSendcloudLabelType (EntityType active + pickupPointId JS-conditionné) + SendcloudExtension Twig (sendcloud_parcels_for_order)"
+    notes: "JS inline: masquer pickupPointId si carrier != mondial_relay/dhl_servicepoint/instabox."
+
+  - id: T10
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T06]
+    status: done
+    description: "SyncSendcloudExistingParcelsCommand — sendcloud:sync-existing-parcels — options --since, --force, --dry-run — batches 50 + usleep 500ms"
+    notes: "ProgressBar Symfony. Rapport: N importés / M non trouvés / P mis à jour / Q erreurs API."
+
+  - id: T11
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T07, T08, T09, T10]
+    status: done
+    description: "SendcloudConfigurationCrudController (singleton) + SendcloudShippingMethodCrudController (sync route) + SendcloudOrderController (create-label, cancel, create-return)"
+    notes: "Catch SendcloudNotConfiguredException + SendcloudApiException → flash danger dans chaque action."
+
+  - id: T12
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T11]
+    status: done
+    description: "OrderCrudController: 3 actions custom Sendcloud (linkToUrl + displayIf) + champ sendcloud_parcel EDIT/DETAIL + templates"
+    notes: "Template sendcloud_parcel.html.twig: affiche ebayShippingService + sendcloud_parcels_for_order(entity) avec lazy-sync."
+
+  - id: T13
+    skill: diff-writer
+    sub_skill: symfony
+    repo: src-eurocommemo
+    depends_on: [T11]
+    status: done
+    description: "DashboardController: MenuItem::subMenu Sendcloud avec Configuration (EDIT→id=1) + Méthodes d'expédition"
+    notes: "Icône fa-truck-fast. Placer dans la zone de menu livraisons ou après la section Ebay."
+
+  - id: T14
+    skill: validate
+    repo: src-eurocommemo
+    depends_on: [T12, T13]
+    status: done
+    description: "composer install + doctrine:migrations:migrate + doctrine:schema:validate"
+    dod: "schema:validate sans erreur, composer install OK"
+    notes: >
+      Fixed SendcloudShippingMethod#price PHP type from ?float to float|string|null (Doctrine decimal DBAL).
+      Ran 4 migrations total: V1+V2 (main schema), V3 (fix index names + type default), V4 (drop orphaned external_id indexes on user/orders).
+      schema:validate: mapping OK + DB in sync.
+
+  - id: T15
+    skill: pr-builder
+    repo: src-eurocommemo
+    depends_on: [T14]
+    status: pending
+    description: "PR feature/sendcloud-integration → main"
+    pr_title: "feat(sendcloud): integrate Sendcloud shipment management into EasyAdmin"

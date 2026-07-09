@@ -1,0 +1,2498 @@
+openapi: 3.1.0
+info:
+  title: Shipping Options API
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: |
+    The Sendcloud Shipping Options API
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Shipping Options
+    description: Shipping Options API
+paths:
+  /fetch-shipping-options:
+    post:
+      summary: Create a list of shipping options
+      description: >-
+        Allows you to retrieve available shipping options along with their
+        corresponding prices, referred to as shipping quotes.
+      x-mint:
+        href: /api/v3/shipping-options/create-a-list-of-shipping-options
+        content: >-
+          <Warning>
+            This endpoint is deprecated as of Wed, 14 Jan 2026 00:00:00 GMT. We recommend using the [Return a list of available shipping options](/api/v3/shipping-options/return-a-list-of-available-shipping-options) endpoint instead.
+          </Warning>
+
+
+          A shipping option is a shipping product that the carrier offers in
+          combination with a unique set of shipping functionalities. The quotes
+          serve to indicate the cost of this shipping option.
+
+
+          You must have either [enabled a carrier](/docs/getting-started/) in
+          your Sendcloud account, or connected your own direct [carrier
+          contract](/docs/getting-started/carrier-contracts/), in order to be
+          able to retrieve shipping options related to that carrier via this
+          endpoint. 
+
+
+          When shipping to a remote area, it's possible that a remote surcharge
+          will be invoiced. Make sure to provide the `from_country_code`,
+          `to_country_code` and `to_postal_code` to see remote surcharges in the
+          price breakdown. Similarly, to access **zonal prices**, provide
+          `from_country_code`, `to_country_code`, `from_postal_code`, and
+          `to_postal_code`. This information ensures accurate and customized
+          pricing based on the specific location, enabling you to understand any
+          additional charges associated with remote areas and access pricing
+          based on their designated zones.
+      tags:
+        - Shipping Options
+      deprecated: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type:
+                      - array
+                      - 'null'
+                    description: >-
+                      A list of options to ship a parcel. A shipping option is a
+                      shipping product that the carrier offers in combination
+                      with a unique set of shipping functionalities. Each
+                      shipping option will indicate the fully allowed weight
+                      range, the requirements, the contract and the billed
+                      weight (in case weight and dimensions are passed in the
+                      request) for this option. If the request doesn't pass
+                      basic details about the parcel (e.g. from_country,
+                      to_country, and weight), it's possible that the data will
+                      be null. This is to prevent sending too many results in
+                      the response.
+                    items:
+                      $ref: '#/components/schemas/shipping-option'
+                required:
+                  - data
+              examples:
+                RetrieveShippingQuotes:
+                  value:
+                    data:
+                      - code: postnl:small/home_address_only,signature
+                        name: >-
+                          PostNL Klein Pakket - 10 liter - Alleen Huisadres +
+                          Handtekening
+                        carrier:
+                          code: postnl
+                          name: PostNL
+                        product:
+                          code: postnl:small
+                          name: PostNL Klein Pakket
+                        functionalities:
+                          b2b: true
+                          b2c: true
+                          ers: false
+                          size: null
+                          tyres: false
+                          sorted: false
+                          boxable: false
+                          premium: false
+                          returns: false
+                          segment: null
+                          tracked: true
+                          id_check: false
+                          incoterm: null
+                          manually: false
+                          priority: null
+                          age_check: null
+                          insurance: null
+                          labelless: false
+                          last_mile: home_delivery
+                          signature: true
+                          surcharge: false
+                          first_mile: pickup_dropoff
+                          multicollo: true
+                          bulky_goods: false
+                          form_factor: parcel
+                          fresh_goods: false
+                          eco_delivery: false
+                          service_area: domestic
+                          flex_delivery: false
+                          fragile_goods: false
+                          non_conveyable: false
+                          dangerous_goods: false
+                          delivery_before: null
+                          cash_on_delivery: null
+                          harmonized_label: false
+                          weekend_delivery: null
+                          carrier_insurance: false
+                          delivery_attempts: null
+                          delivery_deadline: best_effort
+                          neighbor_delivery: false
+                          customs_value_limit: null
+                          registered_delivery: false
+                          carrier_billing_type: null
+                          personalized_delivery: false
+                          pick_up: false
+                          direct_contract_only: false
+                        contract:
+                          id: 60
+                          client_id: ''
+                          carrier_code: postnl
+                          name: PostNL Test
+                        weight:
+                          min:
+                            value: '0.001'
+                            unit: kg
+                          max:
+                            value: '23.001'
+                            unit: kg
+                        max_dimensions:
+                          length: '0.00'
+                          width: '0.00'
+                          height: '0.00'
+                          unit: cm
+                        billed_weight:
+                          unit: kg
+                          value: '2.000'
+                          volumetric: false
+                        requirements:
+                          fields: []
+                          export_documents: false
+                          is_service_point_required: false
+                        charging_type: label_creation
+                        quotes:
+                          - weight:
+                              min:
+                                value: '0.001'
+                                unit: kg
+                              max:
+                                value: '23.001'
+                                unit: kg
+                            price:
+                              breakdown:
+                                - type: price_without_insurance
+                                  label: Label
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                                - type: insurance_price
+                                  label: Shipment protection (incl. taxes)
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                              total:
+                                value: '0'
+                                currency: EUR
+                            lead_time: 24
+                      - code: postnl:small/signature
+                        carrier:
+                          code: postnl
+                          name: PostNL
+                        product:
+                          code: postnl:small
+                          name: PostNL Klein Pakket
+                        functionalities:
+                          b2b: true
+                          b2c: true
+                          ers: false
+                          size: null
+                          tyres: false
+                          sorted: false
+                          boxable: false
+                          premium: false
+                          returns: false
+                          segment: null
+                          tracked: true
+                          id_check: false
+                          incoterm: null
+                          manually: false
+                          priority: null
+                          age_check: null
+                          insurance: null
+                          labelless: false
+                          last_mile: home_delivery
+                          signature: true
+                          surcharge: false
+                          first_mile: pickup_dropoff
+                          multicollo: true
+                          bulky_goods: false
+                          form_factor: parcel
+                          fresh_goods: false
+                          eco_delivery: false
+                          service_area: domestic
+                          flex_delivery: false
+                          fragile_goods: false
+                          non_conveyable: false
+                          dangerous_goods: false
+                          delivery_before: null
+                          cash_on_delivery: null
+                          harmonized_label: false
+                          weekend_delivery: null
+                          carrier_insurance: false
+                          delivery_attempts: null
+                          delivery_deadline: best_effort
+                          neighbor_delivery: true
+                          customs_value_limit: null
+                          registered_delivery: false
+                          carrier_billing_type: null
+                          personalized_delivery: false
+                          pick_up: false
+                          direct_contract_only: false
+                        contract:
+                          id: 60
+                          client_id: ''
+                          carrier_code: postnl
+                          name: PostNL Test
+                        weight:
+                          min:
+                            value: '0.001'
+                            unit: kg
+                          max:
+                            value: '23.001'
+                            unit: kg
+                        max_dimensions:
+                          length: '0.00'
+                          width: '0.00'
+                          height: '0.00'
+                          unit: cm
+                        billed_weight:
+                          unit: kg
+                          value: '2.000'
+                          volumetric: false
+                        requirements:
+                          fields: []
+                          export_documents: false
+                          is_service_point_required: false
+                        charging_type: label_creation
+                        quotes:
+                          - weight:
+                              min:
+                                value: '0.001'
+                                unit: kg
+                              max:
+                                value: '23.001'
+                                unit: kg
+                            price:
+                              breakdown:
+                                - type: price_without_insurance
+                                  label: Label
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                                - type: insurance_price
+                                  label: Shipment protection (incl. taxes)
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                              total:
+                                value: '0'
+                                currency: EUR
+                            lead_time: 24
+                      - code: postnl:pakjegemak/agecheck=18
+                        carrier:
+                          code: postnl
+                          name: PostNL
+                        product:
+                          code: postnl:pakjegemak
+                          name: PostNL Service Point
+                        functionalities:
+                          b2b: true
+                          b2c: true
+                          ers: false
+                          size: null
+                          tyres: false
+                          sorted: false
+                          boxable: false
+                          premium: false
+                          returns: false
+                          segment: null
+                          tracked: true
+                          id_check: false
+                          incoterm: null
+                          manually: false
+                          priority: null
+                          age_check: 18
+                          insurance: null
+                          labelless: false
+                          last_mile: service_point
+                          signature: true
+                          surcharge: false
+                          first_mile: pickup_dropoff
+                          multicollo: true
+                          bulky_goods: false
+                          form_factor: parcel
+                          fresh_goods: false
+                          eco_delivery: false
+                          service_area: domestic
+                          flex_delivery: false
+                          fragile_goods: false
+                          non_conveyable: false
+                          dangerous_goods: false
+                          delivery_before: null
+                          cash_on_delivery: null
+                          harmonized_label: false
+                          weekend_delivery: null
+                          carrier_insurance: false
+                          delivery_attempts: null
+                          delivery_deadline: best_effort
+                          neighbor_delivery: false
+                          customs_value_limit: null
+                          registered_delivery: false
+                          carrier_billing_type: null
+                          personalized_delivery: false
+                          pick_up: false
+                          direct_contract_only: false
+                        contract:
+                          id: 60
+                          client_id: ''
+                          carrier_code: postnl
+                          name: PostNL Test
+                        weight:
+                          min:
+                            value: '0.001'
+                            unit: kg
+                          max:
+                            value: '23.001'
+                            unit: kg
+                        max_dimensions:
+                          length: '100.00'
+                          width: '70.00'
+                          height: '58.00'
+                          unit: cm
+                        billed_weight:
+                          unit: kg
+                          value: '2.000'
+                          volumetric: false
+                        requirements:
+                          fields: []
+                          export_documents: false
+                          is_service_point_required: true
+                        charging_type: label_creation
+                        quotes:
+                          - weight:
+                              min:
+                                value: '0.001'
+                                unit: kg
+                              max:
+                                value: '23.001'
+                                unit: kg
+                            price:
+                              breakdown:
+                                - type: price_without_insurance
+                                  label: Label
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                                - type: insurance_price
+                                  label: Shipment protection (incl. taxes)
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                              total:
+                                value: '0'
+                                currency: EUR
+                            lead_time: 24
+                      - code: postnl:standard/signature,home_only,eve
+                        carrier:
+                          code: postnl
+                          name: PostNL
+                        product:
+                          code: postnl:standard
+                          name: PostNL Standard
+                        functionalities:
+                          b2b: true
+                          b2c: true
+                          ers: false
+                          size: null
+                          tyres: false
+                          sorted: false
+                          boxable: false
+                          premium: false
+                          returns: false
+                          segment: null
+                          tracked: true
+                          id_check: false
+                          incoterm: null
+                          manually: false
+                          priority: null
+                          age_check: null
+                          insurance: null
+                          labelless: false
+                          last_mile: home_delivery
+                          signature: true
+                          surcharge: false
+                          first_mile: pickup_dropoff
+                          multicollo: true
+                          bulky_goods: false
+                          form_factor: parcel
+                          fresh_goods: false
+                          eco_delivery: false
+                          service_area: domestic
+                          flex_delivery: false
+                          fragile_goods: false
+                          non_conveyable: false
+                          dangerous_goods: false
+                          delivery_before: '2000'
+                          cash_on_delivery: null
+                          harmonized_label: false
+                          weekend_delivery: null
+                          carrier_insurance: false
+                          delivery_attempts: null
+                          delivery_deadline: best_effort
+                          neighbor_delivery: false
+                          customs_value_limit: null
+                          registered_delivery: false
+                          carrier_billing_type: null
+                          personalized_delivery: false
+                          pick_up: false
+                          direct_contract_only: false
+                        contract:
+                          id: 60
+                          client_id: ''
+                          carrier_code: postnl
+                          name: PostNL Test
+                        weight:
+                          min:
+                            value: '0.001'
+                            unit: kg
+                          max:
+                            value: '23.001'
+                            unit: kg
+                        max_dimensions:
+                          length: '175.00'
+                          width: '78.00'
+                          height: '58.00'
+                          unit: cm
+                        billed_weight:
+                          unit: kg
+                          value: '2.000'
+                          volumetric: false
+                        requirements:
+                          fields: []
+                          export_documents: false
+                          is_service_point_required: false
+                        charging_type: label_creation
+                        quotes:
+                          - weight:
+                              min:
+                                value: '0.001'
+                                unit: kg
+                              max:
+                                value: '23.001'
+                                unit: kg
+                            price:
+                              breakdown:
+                                - type: price_without_insurance
+                                  label: Label
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                                - type: insurance_price
+                                  label: Shipment protection (incl. taxes)
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                              total:
+                                value: '0'
+                                currency: EUR
+                            lead_time: 24
+                      - code: postnl:pakjegemak
+                        carrier:
+                          code: postnl
+                          name: PostNL
+                        product:
+                          code: postnl:pakjegemak
+                          name: PostNL Service Point
+                        functionalities:
+                          b2b: true
+                          b2c: true
+                          ers: false
+                          size: null
+                          tyres: false
+                          sorted: false
+                          boxable: false
+                          premium: false
+                          returns: false
+                          segment: null
+                          tracked: true
+                          id_check: false
+                          incoterm: null
+                          manually: false
+                          priority: null
+                          age_check: null
+                          insurance: null
+                          labelless: false
+                          last_mile: service_point
+                          signature: true
+                          surcharge: false
+                          first_mile: pickup_dropoff
+                          multicollo: true
+                          bulky_goods: false
+                          form_factor: parcel
+                          fresh_goods: false
+                          eco_delivery: false
+                          service_area: domestic
+                          flex_delivery: false
+                          fragile_goods: false
+                          non_conveyable: false
+                          dangerous_goods: false
+                          delivery_before: null
+                          cash_on_delivery: null
+                          harmonized_label: false
+                          weekend_delivery: null
+                          carrier_insurance: false
+                          delivery_attempts: null
+                          delivery_deadline: best_effort
+                          neighbor_delivery: false
+                          customs_value_limit: null
+                          registered_delivery: false
+                          carrier_billing_type: null
+                          personalized_delivery: false
+                          pick_up: false
+                          direct_contract_only: false
+                        contract:
+                          id: 60
+                          client_id: ''
+                          carrier_code: postnl
+                          name: PostNL Test
+                        weight:
+                          min:
+                            value: '0.001'
+                            unit: kg
+                          max:
+                            value: '23.001'
+                            unit: kg
+                        max_dimensions:
+                          length: '175.00'
+                          width: '78.00'
+                          height: '58.00'
+                          unit: cm
+                        billed_weight:
+                          unit: kg
+                          value: '2.000'
+                          volumetric: false
+                        requirements:
+                          fields: []
+                          export_documents: false
+                          is_service_point_required: true
+                        charging_type: label_creation
+                        quotes:
+                          - weight:
+                              min:
+                                value: '0.001'
+                                unit: kg
+                              max:
+                                value: '23.001'
+                                unit: kg
+                            price:
+                              breakdown:
+                                - type: price_without_insurance
+                                  label: Label
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                                - type: insurance_price
+                                  label: Shipment protection (incl. taxes)
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                              total:
+                                value: '0'
+                                currency: EUR
+                            lead_time: 24
+                      - code: postnl:standard/signature,home_only
+                        carrier:
+                          code: postnl
+                          name: PostNL
+                        product:
+                          code: postnl:standard
+                          name: PostNL Standard
+                        functionalities:
+                          b2b: true
+                          b2c: true
+                          ers: false
+                          size: null
+                          tyres: false
+                          sorted: false
+                          boxable: false
+                          premium: false
+                          returns: false
+                          segment: null
+                          tracked: true
+                          id_check: false
+                          incoterm: null
+                          manually: false
+                          priority: null
+                          age_check: null
+                          insurance: null
+                          labelless: false
+                          last_mile: home_delivery
+                          signature: true
+                          surcharge: false
+                          first_mile: pickup_dropoff
+                          multicollo: true
+                          bulky_goods: false
+                          form_factor: parcel
+                          fresh_goods: false
+                          eco_delivery: false
+                          service_area: domestic
+                          flex_delivery: false
+                          fragile_goods: false
+                          non_conveyable: false
+                          dangerous_goods: false
+                          delivery_before: null
+                          cash_on_delivery: null
+                          harmonized_label: false
+                          weekend_delivery: null
+                          carrier_insurance: false
+                          delivery_attempts: null
+                          delivery_deadline: best_effort
+                          neighbor_delivery: false
+                          customs_value_limit: null
+                          registered_delivery: false
+                          carrier_billing_type: null
+                          personalized_delivery: false
+                          pick_up: false
+                          direct_contract_only: false
+                        contract:
+                          id: 60
+                          client_id: ''
+                          carrier_code: postnl
+                          name: PostNL Test
+                        weight:
+                          min:
+                            value: '0.001'
+                            unit: kg
+                          max:
+                            value: '23.001'
+                            unit: kg
+                        max_dimensions:
+                          length: '175.00'
+                          width: '78.00'
+                          height: '58.00'
+                          unit: cm
+                        billed_weight:
+                          unit: kg
+                          value: '2.000'
+                          volumetric: false
+                        requirements:
+                          fields: []
+                          export_documents: false
+                          is_service_point_required: false
+                        charging_type: label_creation
+                        quotes:
+                          - weight:
+                              min:
+                                value: '0.001'
+                                unit: kg
+                              max:
+                                value: '23.001'
+                                unit: kg
+                            price:
+                              breakdown:
+                                - type: price_without_insurance
+                                  label: Label
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                                - type: insurance_price
+                                  label: Shipment protection (incl. taxes)
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                              total:
+                                value: '0'
+                                currency: EUR
+                            lead_time: 24
+                      - code: postnl:standard/signature
+                        carrier:
+                          code: postnl
+                          name: PostNL
+                        product:
+                          code: postnl:standard
+                          name: PostNL Standard
+                        functionalities:
+                          b2b: true
+                          b2c: true
+                          ers: false
+                          size: null
+                          tyres: false
+                          sorted: false
+                          boxable: false
+                          premium: false
+                          returns: false
+                          segment: null
+                          tracked: true
+                          id_check: false
+                          incoterm: null
+                          manually: false
+                          priority: null
+                          age_check: null
+                          insurance: null
+                          labelless: false
+                          last_mile: home_delivery
+                          signature: true
+                          surcharge: false
+                          first_mile: pickup_dropoff
+                          multicollo: true
+                          bulky_goods: false
+                          form_factor: parcel
+                          fresh_goods: false
+                          eco_delivery: false
+                          service_area: domestic
+                          flex_delivery: false
+                          fragile_goods: false
+                          non_conveyable: false
+                          dangerous_goods: false
+                          delivery_before: null
+                          cash_on_delivery: null
+                          harmonized_label: false
+                          weekend_delivery: null
+                          carrier_insurance: false
+                          delivery_attempts: null
+                          delivery_deadline: best_effort
+                          neighbor_delivery: true
+                          customs_value_limit: null
+                          registered_delivery: false
+                          carrier_billing_type: null
+                          personalized_delivery: false
+                          pick_up: false
+                          direct_contract_only: false
+                        contract:
+                          id: 60
+                          client_id: ''
+                          carrier_code: postnl
+                          name: PostNL Test
+                        weight:
+                          min:
+                            value: '0.001'
+                            unit: kg
+                          max:
+                            value: '23.001'
+                            unit: kg
+                        max_dimensions:
+                          length: '175.00'
+                          width: '78.00'
+                          height: '58.00'
+                          unit: cm
+                        billed_weight:
+                          unit: kg
+                          value: '2.000'
+                          volumetric: false
+                        requirements:
+                          fields: []
+                          export_documents: false
+                          is_service_point_required: false
+                        charging_type: label_creation
+                        quotes:
+                          - weight:
+                              min:
+                                value: '0.001'
+                                unit: kg
+                              max:
+                                value: '23.001'
+                                unit: kg
+                            price:
+                              breakdown:
+                                - type: price_without_insurance
+                                  label: Label
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                                - type: insurance_price
+                                  label: Shipment protection (incl. taxes)
+                                  price:
+                                    value: '0'
+                                    currency: EUR
+                              total:
+                                value: '0'
+                                currency: EUR
+                            lead_time: 24
+          headers: {}
+          description: List of shipping options.
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                InvalidContract:
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Invalid contract.
+      operationId: sc-public-v3-scp-post-shipping_options_simple
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/single-parcel-shipping-option-filter'
+            examples:
+              RetrievePostNLSignatureOptions:
+                value:
+                  from_country_code: NL
+                  to_country_code: NL
+                  weight:
+                    value: '2'
+                    unit: kg
+                  carrier_code: postnl
+                  functionalities:
+                    signature: true
+              RetrieveOptionsWithMeterDimensions:
+                value:
+                  from_country_code: NL
+                  to_country_code: NL
+                  dimensions:
+                    length: '15'
+                    width: '20.5'
+                    height: '37'
+                    unit: m
+                  weight:
+                    value: '14.5'
+                    unit: g
+        description: ''
+    description: ''
+    parameters: []
+  /shipping-options:
+    post:
+      summary: Return a list of available shipping options
+      description: >-
+        Retrieve available shipping options along with their corresponding
+        prices for entire shipments, supporting multicollo as well.
+      x-mint:
+        href: /api/v3/shipping-options/return-a-list-of-available-shipping-options
+        content: >-
+          Unlike the [Create a list of shipping
+          options](/api/v3/shipping-options/create-a-list-of-shipping-options)
+          endpoint, this endpoint accepts multiple parcels with individual
+          dimensions and weights, and returns total pricing for the entire
+          shipment.
+
+
+          You must have either [enabled a carrier](/docs/getting-started/) in
+          your Sendcloud account, or connected your own direct [carrier
+          contract](/docs/getting-started/carrier-contracts/), to retrieve
+          shipping options for that carrier.
+
+
+          Use `from_address` and `to_address` objects to specify origin and
+          destination. The more address details you provide (e.g. `postal_code`,
+          `city`, `address_line_1`, `state_province_code`), the more accurate
+          the pricing — including zonal prices and remote area surcharges. The
+          legacy flat fields (`from_country_code`, `from_postal_code`,
+          `to_country_code`, `to_postal_code`) are still supported but
+          deprecated. The two approaches are **mutually exclusive**.
+
+
+          <Tip>
+            For the most accurate pricing, use `from_address` and `to_address` with as many fields filled in as possible.
+          </Tip>
+
+
+          When no origin or destination is provided, shipping options are
+          returned without quotes regardless of `calculate_quotes`.
+      tags:
+        - Shipping Options
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type:
+                      - array
+                      - 'null'
+                    description: >-
+                      A list of shipping options suitable for entire shipments.
+                      Each option includes total pricing for the entire shipment
+                      and breakdown per parcel. If the request doesn't pass
+                      basic details about the parcels (e.g. from_country,
+                      to_country), it's possible that the data will be null.
+                    items:
+                      $ref: '#/components/schemas/shipping-option'
+                  message:
+                    type:
+                      - string
+                      - 'null'
+                    description: >-
+                      A human-readable message providing additional context
+                      about the response.
+                required:
+                  - data
+              examples:
+                EmptyResponse:
+                  value:
+                    data: []
+                    message: >-
+                      We couldn't find any shipping options for this request.
+                      Make sure your account has active shipping options that
+                      match the selected filters.
+                ShippingOptions:
+                  value:
+                    data:
+                      - code: postnl:standard/signature
+                        name: PostNL Standard + Handtekening
+                        carrier:
+                          code: postnl
+                          name: PostNL
+                        product:
+                          code: postnl:standard
+                          name: PostNL Standard
+                        functionalities:
+                          b2b: true
+                          b2c: true
+                          ers: false
+                          size: null
+                          tyres: false
+                          sorted: false
+                          boxable: false
+                          premium: false
+                          returns: false
+                          segment: null
+                          tracked: true
+                          id_check: false
+                          incoterm: null
+                          manually: false
+                          priority: null
+                          age_check: null
+                          insurance: null
+                          labelless: false
+                          last_mile: home_delivery
+                          signature: true
+                          surcharge: false
+                          first_mile: pickup_dropoff
+                          multicollo: true
+                          bulky_goods: false
+                          form_factor: parcel
+                          fresh_goods: false
+                          eco_delivery: false
+                          service_area: domestic
+                          flex_delivery: false
+                          fragile_goods: false
+                          non_conveyable: false
+                          dangerous_goods: false
+                          delivery_before: null
+                          cash_on_delivery: null
+                          harmonized_label: false
+                          weekend_delivery: null
+                          carrier_insurance: false
+                          delivery_attempts: null
+                          delivery_deadline: best_effort
+                          neighbor_delivery: true
+                          customs_value_limit: null
+                          registered_delivery: false
+                          carrier_billing_type: null
+                          personalized_delivery: false
+                          pick_up: false
+                          direct_contract_only: false
+                        contract:
+                          id: 60
+                          client_id: ''
+                          carrier_code: postnl
+                          name: PostNL Test
+                        weight:
+                          min:
+                            value: '0.001'
+                            unit: kg
+                          max:
+                            value: '23.001'
+                            unit: kg
+                        max_dimensions:
+                          length: '175.00'
+                          width: '78.00'
+                          height: '58.00'
+                          unit: cm
+                        parcel_billed_weights:
+                          - unit: kg
+                            value: '4.000'
+                            volumetric: false
+                            calculation: null
+                            parcel_number: 1
+                        requirements:
+                          fields: []
+                          export_documents: false
+                          is_service_point_required: false
+                        charging_type: label_creation
+                        quotes:
+                          - weight:
+                              min:
+                                value: '0.001'
+                                unit: kg
+                              max:
+                                value: '23.001'
+                                unit: kg
+                            price:
+                              breakdown:
+                                - type: price_without_insurance
+                                  label: Label
+                                  price:
+                                    value: '15.50'
+                                    currency: EUR
+                                - type: insurance_price
+                                  label: Shipment protection (incl. taxes)
+                                  price:
+                                    value: '2.00'
+                                    currency: EUR
+                              total:
+                                value: '17.50'
+                                currency: EUR
+                            lead_time: 24
+          headers: {}
+          description: List of shipping options for a shipment.
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                InvalidContract:
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Invalid contract.
+                EmptyParcels:
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: At least one parcel must be provided.
+      operationId: sc-public-v3-scp-post-shipping_options
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/shipping-option-filter'
+            examples:
+              Shipment:
+                value:
+                  from_country_code: NL
+                  to_country_code: NL
+                  from_postal_code: 1012AB
+                  to_postal_code: 2000AB
+                  parcels:
+                    - dimensions:
+                        length: '30'
+                        width: '20'
+                        height: '15'
+                        unit: cm
+                      weight:
+                        value: '2'
+                        unit: kg
+                      additional_insured_price:
+                        value: '50.00'
+                        currency: EUR
+                    - dimensions:
+                        length: '25'
+                        width: '18'
+                        height: '12'
+                        unit: cm
+                      weight:
+                        value: '1.5'
+                        unit: kg
+                      total_insured_price:
+                        value: '100.00'
+                        currency: EUR
+                  carrier_code: postnl
+                  functionalities:
+                    signature: true
+                  calculate_quotes: true
+              SpecificOption:
+                value:
+                  from_country_code: NL
+                  to_country_code: NL
+                  parcels:
+                    - weight:
+                        value: '2'
+                        unit: kg
+                    - weight:
+                        value: '1.8'
+                        unit: kg
+                  shipping_option_code: postnl:standard/signature
+                  calculate_quotes: true
+              ServicePointDelivery:
+                value:
+                  from_country_code: NL
+                  to_country_code: NL
+                  from_postal_code: 1012AB
+                  to_postal_code: 2000AB
+                  to_service_point:
+                    id: '12345'
+                  parcels:
+                    - weight:
+                        value: '2'
+                        unit: kg
+                  functionalities:
+                    last_mile: service_point
+                  calculate_quotes: true
+              ServicePointDeliveryWithCarrierId:
+                value:
+                  from_country_code: NL
+                  to_country_code: NL
+                  from_postal_code: 1012AB
+                  to_postal_code: 2000AB
+                  to_service_point:
+                    carrier_service_point_id: NL-123456
+                  parcels:
+                    - weight:
+                        value: '2'
+                        unit: kg
+                  functionalities:
+                    last_mile: service_point
+                  calculate_quotes: true
+              AddressObjects:
+                value:
+                  from_address:
+                    country_code: NL
+                    postal_code: 1012AB
+                    address_line_1: Stadhuisplein 10
+                    city: Eindhoven
+                  to_address:
+                    country_code: NL
+                    postal_code: 2000AB
+                    address_line_1: Dam 1
+                    city: Amsterdam
+                  parcels:
+                    - weight:
+                        value: '2'
+                        unit: kg
+                  carrier_code: postnl
+                  calculate_quotes: true
+              AddressObjectsWithStateProvince:
+                value:
+                  from_address:
+                    country_code: US
+                    postal_code: '10001'
+                    address_line_1: 350 Fifth Avenue
+                    city: New York
+                    state_province_code: US-NY
+                  to_address:
+                    country_code: US
+                    postal_code: '90001'
+                    address_line_1: 100 Main St
+                    city: Los Angeles
+                    state_province_code: US-CA
+                  parcels:
+                    - weight:
+                        value: '5'
+                        unit: kg
+                  calculate_quotes: true
+        description: Shipment details for quote calculation
+      parameters: []
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    carrier-shipping-functionalities:
+      title: Shipping Functionalities Object
+      type: object
+      x-examples: {}
+      properties:
+        age_check:
+          description: >-
+            Indicates the minimal age of the recipient to be able to receive a
+            shipment sent with this product/method
+          enum:
+            - null
+            - 16
+            - 18
+          type:
+            - integer
+            - 'null'
+        b2b:
+          description: Indicates whether this product/method can be used for B2B shipments
+          type: boolean
+        b2c:
+          description: >-
+            Indicates whether this product/method can be used for B2C shipments
+            (shipments between a business and a person)
+          type: boolean
+        boxable:
+          description: Indicates whether the shipment fits in a box
+          type: boolean
+        bulky_goods:
+          description: >-
+            Indicates that this method/product is suitable for sending bulky
+            goods
+          type: boolean
+        carrier_billing_type:
+          description: Indicates the carrier billing method
+          enum:
+            - country
+            - zonal
+            - null
+          type:
+            - string
+            - 'null'
+        cash_on_delivery:
+          description: >-
+            Indicates the maximum value of cash-on-delivery payment and that
+            this method/product can be used for COD shipments
+          type:
+            - integer
+            - 'null'
+        dangerous_goods:
+          description: >-
+            Indicates that this product/method can be used to ship dangerous
+            goods (ADR goods)
+          type: boolean
+        delivery_attempts:
+          description: >-
+            Indicates the future amount of attempts for
+
+            home deliveries until the package is rerouted to the sender or a
+            service point
+          type:
+            - integer
+            - 'null'
+        delivery_before:
+          description: >-
+            Indicates that a shipment sent with this method/product will be
+            delivered
+
+            before the time specified on the day of delivery. Should be
+            expressed in military time format (HHMM)
+          type:
+            - string
+            - 'null'
+          pattern: \d{4}
+        delivery_deadline:
+          description: >-
+            Indicates the delivery deadline, that is the guarantee of time to
+
+            deliver by a carrier. These usually come with some requirements,
+            e.g. same day delivery may only be available
+
+            if a shipment is acquired by a carrier before noon on the same day.
+
+
+            Values:
+
+            * BEST_EFFORT(best_effort): the shipment will be delivered by a
+            carrier ASAP
+
+            * SAMEDAY(sameday): the shipment will be delivered by a carrier on
+            the day of
+
+            acquiring the shipment
+
+            * NEXTDAY(nextday): the shipment will be delivered by a carrier on
+            the day next
+
+            to the day of acquiring the shipment
+
+            * WITHIN_24H(within_24h): the shipment will be delivered by a
+            carrier within 24
+
+            hours from acquiring the shipment
+
+            * WITHIN_48H(within_48h): the shipment will be delivered by a
+            carrier within 48
+
+            hours from acquiring the shipment
+
+            * WITHIN_72H(within_72h): the shipment will be delivered by a
+            carrier within 72
+
+            hours from acquiring the shipment
+          enum:
+            - best_effort
+            - sameday
+            - nextday
+            - within_24h
+            - within_48h
+            - within_72h
+            - null
+          type:
+            - string
+            - 'null'
+        direct_contract_only:
+          description: >-
+            Indicates that this method is only available for shipments with a
+            direct (SaaS) contract
+          type: boolean
+        eco_delivery:
+          description: >-
+            Indicates that a shipment with this method will be delivered in an
+            ecologically friendly way
+          type: boolean
+        first_mile:
+          description: >-
+            Indicates how a shipment should be acquired by a carrier using the
+            chosen method.
+
+            Values:
+
+            * PICKUP(pickup): the shipment should be picked up by the carrier's
+            drivers from the sender (one-time)
+
+            * DROPOFF(dropoff): the shipment should be handed in for delivery at
+            a service point
+
+            * PICKUP_DROPOFF(pickup_dropoff): the shipment can be either picked
+            up by a carrier's driver,
+              or be handed in for delivery at a service point
+            * FULFILMENT(filfilment): the shipment should be picked up by a
+            recurrent pickup
+          enum:
+            - pickup
+            - dropoff
+            - pickup_dropoff
+            - fulfilment
+            - null
+          type:
+            - string
+            - 'null'
+        flex_delivery:
+          description: >-
+            Indicates whether flexible rerouting is available for a shipment
+            sent with this product/method
+          type: boolean
+        form_factor:
+          description: |-
+            Indicates the form factor of a shipment in general terms
+
+            Values:
+            * LETTER(letter)
+            * PARCEL(parcel)
+            * MAILBOX(mailbox)
+            * PALLET(pallet)
+            * LONG(long)
+          enum:
+            - letter
+            - parcel
+            - mailbox
+            - pallet
+            - long
+            - null
+          type:
+            - string
+            - 'null'
+        fragile_goods:
+          description: >-
+            Indicates that fragile goods may be delivered with this
+            method/product
+          type: boolean
+        fresh_goods:
+          description: >-
+            Inicates that fresh/perishable goods may be delivered with this
+            method/product
+          type: boolean
+        harmonized_label:
+          description: >-
+            Indicates whether a harmonized label (a shipping label combined with
+            customs documents) will be created for a
+
+            shipment using this product/method
+          type: boolean
+        id_check:
+          description: >-
+            Indicates whether a recipient will be asked to show a proof of
+            identity when receiving a package.
+
+            Related to AgeCheck, but not the same.
+          type: boolean
+        incoterm:
+          description: >-
+            Indicates the customs terms of shipping, e.g. who is responsible for
+
+            paying taxes and duties for international shipments.
+
+            Values:
+
+            * DDU(ddu) - Delivery Duty Unpaid, recipient pays duties
+
+            * DDP(ddp) - Delivery Duty Paid, sender pays duties
+
+            * DAP(dap) - Delivery At Place, the seller is responsible for
+            delivery of the goods, ready for unloading,
+              at the named place of destination.
+            * DAP NP(dap_np) - Delivery At Place (duties & taxes Not Paid), the
+            seller is responsible for delivery
+              of the goods, ready for unloading, at the named place of destination. Seller bears costs of shipping
+              incl. clearance. Receiver bears the costs and risks of duties and VAT.
+            * DAP DP(dap_dp) - Delivery At Place (duties & taxes Paid), the
+            seller is responsible for delivery
+              of the goods, ready for unloading, at the named place of destination. Seller bears the costs and risks
+              of transport, clearance, duties and VAT.
+          enum:
+            - dap
+            - ddp
+            - ddu
+            - dap_np
+            - dap_dp
+            - null
+          type:
+            - string
+            - 'null'
+        insurance:
+          description: >-
+            Indicates the amount of insurance provided by a carrier for a
+            shipment with this method/product
+          type:
+            - integer
+            - 'null'
+        last_mile:
+          description: >-
+            Indicates the end destination of a shipment (i.e. where it will be
+            delivered)
+
+
+            Formerly known as Destination Type
+
+
+            Values:
+
+            * HOME_DELIVERY (home_delivery) - regular parcel delivery at home
+
+            * SERVICE_POINT (service_point) - the shipment will be delivered to
+            a service
+
+            point
+
+            * MAILBOX (mailbox) - the shipment will be delivered to a mailbox of
+            a recipient
+
+            (related to FormFactor.MAILBOX)
+
+            * LOCKER (locker) - the shipment will be delivered to a locker
+
+            * LOCKER_OR_SERVICE_POINT (locker_or_servicepoint) - - the shipment
+            will be delivered to a locker or a service point
+          enum:
+            - home_delivery
+            - service_point
+            - mailbox
+            - locker
+            - locker_or_service_point
+          type:
+            - string
+            - 'null'
+        manually:
+          description: >-
+            Indicates a subset of Deutsche Post shipping methods where a
+            consumer should manually attach the label to the parcel.
+          type: boolean
+        multicollo:
+          description: >-
+            Indicates whether multicollo shipments are possible with this
+            product/method.
+
+
+            Multicollo shipments consist of multiple packages
+
+            which are created and sent at the same moment to the same receiver
+            address. All parcels of a multicollo shipment will be delivered to
+
+            the recipient at once.
+          type: boolean
+        neighbor_delivery:
+          description: >-
+            Indicates the neighbour delivery availability.
+
+
+            If the recipient is unavailable at the moment of delivery, the
+            shipment sent with
+
+            this method/product can be delivered to neighbours.
+          type: boolean
+        non_conveyable:
+          description: >-
+            Indicates that a shipment sent with this product/method shouldn't be
+            transported by conveyors.
+          type: boolean
+        personalized_delivery:
+          description: >-
+            Indicates a subset of Deutsche Post shipping methods shipping to a
+            consumer.
+          type: boolean
+        premium:
+          description: >-
+            Indicates whether the carrier identifies the shipments shipping
+            process as premium.
+          type: boolean
+        priority:
+          description: >-
+            Indicates the priority of a shipment.
+
+
+            Values:
+
+            * ECONOMICAL(economical): cheap but slow
+
+            * STANDARD(standard): regular
+
+            * PRIORITY(priority): prioritzed delivery, might be the same as
+            EXPRESS
+
+            * EXPRESS(express): Express delivery
+          enum:
+            - economical
+            - standard
+            - priority
+            - express
+            - null
+          type:
+            - string
+            - 'null'
+        registered_delivery:
+          description: Indicates that the delivery of this shipment will be registered.
+          type: boolean
+        returns:
+          description: Indicates that this product/method can be used for return shipments
+          type: boolean
+        segment:
+          description: >-
+            Internal functionality we use to support different pricing for
+            PostNL shipments for users of different segments
+          enum:
+            - a+
+            - a
+            - b
+            - c
+            - d
+            - null
+          type:
+            - string
+            - 'null'
+        service_area:
+          description: >-
+            Indicates the service area of this product/method, for example —
+            where it can be used
+
+
+            Values:
+
+            * DOMESTIC (domestic): available for domestic (national) shipments
+
+            * DOMESTIC_REMOTE (domestic_remote): available for shipments to
+            domestic remote
+
+            territories (e.g. overseas)
+
+            * INTERNATIONAL (international): available for international
+            shipments
+          enum:
+            - domestic
+            - domestic_remote
+            - international
+            - null
+          type:
+            - string
+            - 'null'
+        signature:
+          description: >-
+            Indicates that a recipient signature will be required on delivery of
+            a shipment sent with this product/method.
+          type: boolean
+        size:
+          description: |-
+            Indicates the size of a shipment. Note that the concept of a size
+            may vary per carrier and per form factor.
+
+            Values:
+            * XS(xs)
+            * S(s)
+            * M(m)
+            * L(l)
+            * XL(xl)
+            * XXL(xxl)
+          enum:
+            - xs
+            - s
+            - m
+            - l
+            - xl
+            - xxl
+            - null
+          type:
+            - string
+            - 'null'
+        sorted:
+          description: >-
+            Indicates whether the shipment(s) are handed over the carrier in a
+            sorted fashion, decreasing costs.
+          type: boolean
+        surcharge:
+          description: >-
+            Indicates whether the carrier can surcharge the shipment later,
+            based on (volumetric) weight.
+          type: boolean
+        tracked:
+          description: Indicates that this shipment can be tracked.
+          type: boolean
+        tyres:
+          description: >-
+            Indicates that this shipping method/product can be used to ship
+            tyres
+          type: boolean
+        weekend_delivery:
+          description: |-
+            Indicates whether deliveries with this method/product are available
+            on the weekends
+
+            Values:
+            * SATURDAY (saturday) - can be delivered on Saturday
+            * SUNDAY (sunday) - can be delivered on Sunday
+            * WEEKENDS (weekends) - - can be delivered during the weekends'
+          enum:
+            - saturday
+            - sunday
+            - weekends
+            - null
+          type:
+            - string
+            - 'null'
+        ers:
+          type: boolean
+          description: >-
+            Indicates if a shipment with this method can be sent via the Easy
+            Return Solution for e-commerce parcels platform. Many national
+            carriers are part of this platform.
+        pick_up:
+          type: boolean
+          description: >-
+            Indicates that this shipping method/product will be picked up by the
+            carrier
+        labelless:
+          type: boolean
+          description: >
+            Indicates that this shipping method/product can be announced with a
+            QR code instead of a traditional label
+      description: Shipping functionalities
+    DimensionUnit:
+      title: Dimensional units
+      type: string
+      enum:
+        - cm
+        - mm
+        - m
+        - yd
+        - ft
+        - in
+      example: mm
+    Dimension:
+      title: Dimension
+      type: object
+      description: Dimension in the specified unit
+      properties:
+        length:
+          type: string
+          description: length in specified unit
+          example: '15'
+        width:
+          type: string
+          description: width in specified unit
+          example: '20.5'
+        height:
+          type: string
+          description: height in specified unit
+          example: '37.0'
+        unit:
+          $ref: '#/components/schemas/DimensionUnit'
+      required:
+        - length
+        - width
+        - height
+        - unit
+    WeightUnit:
+      title: Mass Units Object
+      type: string
+      enum:
+        - kg
+        - g
+        - lbs
+        - oz
+      example: g
+    Weight:
+      title: Weight
+      type: object
+      description: Weight in the specified unit
+      properties:
+        value:
+          type: string
+          description: Weight value
+          example: '3.6'
+        unit:
+          $ref: '#/components/schemas/WeightUnit'
+      required:
+        - value
+        - unit
+    lead-time-filter:
+      title: Lead Time Filter Object
+      type: object
+      description: Filter to trim down shipping options with a specific lead time.
+      properties:
+        gt:
+          type: number
+          description: Filter lead times greater than the specified number.
+        gte:
+          type: number
+          description: Filter lead times greater than or equal to the specified number.
+        eq:
+          type: number
+          description: Filter lead times equal to the specified number.
+        lt:
+          type: number
+          description: Filter lead times less than the specified number.
+        lte:
+          type: number
+          description: Filter lead times less than or equal to the specified number.
+    single-parcel-shipping-option-filter:
+      title: Single Parcel Shipping Options Filter
+      type: object
+      properties:
+        from_country_code:
+          type:
+            - string
+            - 'null'
+          description: Sender country code in ISO 3166-1 alpha-2 format.
+        to_country_code:
+          type:
+            - string
+            - 'null'
+          description: Destination country code in ISO 3166-1 alpha-2 format.
+        functionalities:
+          oneOf:
+            - $ref: '#/components/schemas/carrier-shipping-functionalities'
+            - type: 'null'
+        carrier_code:
+          type:
+            - string
+            - 'null'
+          description: Carrier code.
+        contract_id:
+          type:
+            - integer
+            - 'null'
+          description: Contract id.
+        shipping_product_code:
+          type:
+            - string
+            - 'null'
+        dimensions:
+          oneOf:
+            - $ref: '#/components/schemas/Dimension'
+            - type: 'null'
+        weight:
+          oneOf:
+            - $ref: '#/components/schemas/Weight'
+            - type: 'null'
+        from_postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 12
+          description: >-
+            The postal code of the sender address. Should be provided, to make
+            quotes as accurate as possible.
+        to_postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 12
+          description: >-
+            The postal code of the destination address. Should be provided, to
+            make quotes as accurate as possible.
+        total_insurance:
+          type:
+            - number
+            - 'null'
+          description: Total value that you want to insure the parcel for.
+        lead_time:
+          $ref: '#/components/schemas/lead-time-filter'
+    carrier:
+      title: Carrier
+      type: object
+      description: Carrier
+      properties:
+        code:
+          type: string
+          description: Unique identifier of the carrier.
+        name:
+          type: string
+          description: The carrier name in a representational format.
+    shipping-product:
+      title: Shipping Product
+      type: object
+      description: Shipping product
+      properties:
+        code:
+          type: string
+          description: Unique identifier of the shipping product.
+        name:
+          type: string
+          description: The shipping product name in a representational format.
+    billed-weight-type:
+      type: object
+      title: Billed Weight Type
+      properties:
+        volumetric:
+          type: boolean
+          description: Indicates if the parcel will be billed based on volumetric weight.
+    parcel-billed-weights:
+      allOf:
+        - $ref: '#/components/schemas/Weight'
+        - $ref: '#/components/schemas/billed-weight-type'
+      type: object
+      properties:
+        parcel_number:
+          description: Represent which parcel the billed weight belongs to.
+          type: number
+        calculation:
+          description: Calculation for how the volumetric weight is calculated.
+          type:
+            - string
+            - 'null'
+      title: Multicollo Billed Weight Fields
+    contract:
+      title: Contract
+      type: object
+      description: Contract
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the contract.
+        client_id:
+          type: string
+          description: Client ID of a contract.
+        carrier_code:
+          type: string
+          description: Carrier of this contract.
+        name:
+          type: string
+          description: >-
+            A custom name set by the user used to identify this contract
+            throughout the platform.
+    requirements:
+      type: object
+      properties:
+        fields:
+          type: array
+          uniqueItems: true
+          description: >-
+            Indicates which fields are required to ship a parcel with this
+            option.
+          items:
+            type: string
+            enum:
+              - to_email
+              - to_telephone
+              - length
+              - width
+              - height
+        export_documents:
+          type: boolean
+          description: >-
+            When true, custom documents must be provided for this shipment as it
+            crosses economic zones (i.e. EU to non-EU), whether by attaching the
+            necessary documents to the parcel or using [Paperless
+            Trade](https://support.sendcloud.com/hc/en-us/articles/4417349714452-Send-your-customs-documents-digitally-via-Paperless-Trade).
+        is_service_point_required:
+          type: boolean
+          description: >-
+            Indicates if service point id must be specified when announcing a
+            parcel.
+    price:
+      title: Price Object
+      type: object
+      description: Price in the specified currency
+      properties:
+        value:
+          type: string
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          enum:
+            - EUR
+            - GBP
+            - USD
+    shipping-price-breakdown:
+      title: Array of Shipping Price Breakdown Objects
+      description: A Sendcloud shipping price breakdown.
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            example: price_without_insurance
+            description: Type of price. It is an identifier for the category of the price.
+            enum:
+              - price_without_insurance
+              - insurance_price
+              - volume
+              - weight
+              - weight_volume
+              - internal_correction
+              - seasonal
+              - fuel
+              - remote
+              - toll
+              - dimensional
+              - customs
+              - returns
+              - label_quality
+              - packaging
+              - pickup
+              - residential
+              - address_corrections
+              - overcharge
+              - forbidden_item
+              - other
+          label:
+            type: string
+            example: Initial price per parcel
+            description: Friendly name for the price type.
+          price:
+            $ref: '#/components/schemas/price'
+            description: The price of the breakdown item.
+    shipping-quote:
+      type: object
+      title: Shipping Quote
+      description: >-
+        A shipping quote indicates the price to ship a parcel with the shipping
+        option within the mentioned weight range.
+      properties:
+        weight:
+          type: object
+          description: Weight range allowed for this qoute.
+          properties:
+            min:
+              $ref: '#/components/schemas/Weight'
+              description: Minimum allowed parcel dimensions for this quote.
+            max:
+              $ref: '#/components/schemas/Weight'
+              description: Maximum allowed parcel weight for this quote.
+        lead_time:
+          type:
+            - integer
+            - 'null'
+          description: Lead time of this quote in hours.
+          example: 24
+        estimated_surcharges:
+          type:
+            - array
+            - 'null'
+          description: >-
+            An estimate of surcharges that may be applied to this quote. These
+            are presented separately from the base quote as they are only
+            estimates. These surcharges are likely to affect the billed price at
+            a later price.
+          items:
+            type: object
+            properties:
+              price:
+                $ref: '#/components/schemas/price'
+                description: The price of the surcharge item.
+              label:
+                type: string
+                description: Friendly name for the surcharge type.
+              type:
+                type: string
+                description: >-
+                  Type of surcharge. It is an identifier for the category of the
+                  surcharge.
+                enum:
+                  - price_without_insurance
+                  - insurance_price
+                  - volume
+                  - weight
+                  - weight_volume
+                  - internal_correction
+                  - seasonal
+                  - fuel
+                  - remote
+                  - toll
+                  - dimensional
+                  - customs
+                  - returns
+                  - label_quality
+                  - packaging
+                  - pickup
+                  - residential
+                  - address_corrections
+                  - overcharge
+                  - forbidden_item
+                  - other
+        price:
+          type: object
+          description: Quote price.
+          properties:
+            breakdown:
+              $ref: '#/components/schemas/shipping-price-breakdown'
+            total:
+              $ref: '#/components/schemas/price'
+    shipping-option:
+      type: object
+      title: Shipping Option
+      description: >-
+        A shipping option is a shipping product that the carrier offers in
+        combination with a unique set of shipping functionalities.
+      examples: []
+      properties:
+        code:
+          type: string
+          description: >-
+            Unique identifier for this Shipping option. You can use this code to
+            announce a parcel in the Parcel API.
+          example: postnl:standard/insured=3000
+        name:
+          type: string
+          description: Shipping option friendly name
+          example: PostNL insured up to 3000 euro
+        carrier:
+          $ref: '#/components/schemas/carrier'
+        product:
+          $ref: '#/components/schemas/shipping-product'
+        functionalities:
+          $ref: '#/components/schemas/carrier-shipping-functionalities'
+        max_dimensions:
+          $ref: '#/components/schemas/Dimension'
+          description: Maximum allowed parcel dimensions for this option.
+        weight:
+          type: object
+          description: Weight range allowed for this qoute.
+          properties:
+            min:
+              $ref: '#/components/schemas/Weight'
+              description: Minimum allowed parcel dimensions for this option.
+            max:
+              $ref: '#/components/schemas/Weight'
+              description: Maximum allowed parcel dimensions for this option.
+        parcel_billed_weights:
+          type: array
+          items:
+            $ref: '#/components/schemas/parcel-billed-weights'
+          description: >-
+            If `dimensions` are provided, the volumetric weight will be
+            calculated. The billed weight will indicate which is the highest of
+            the regular weight and the volumetric weight.
+        contract:
+          $ref: '#/components/schemas/contract'
+          description: Carrier contract that will be used by this option.
+        requirements:
+          $ref: '#/components/schemas/requirements'
+        charging_type:
+          type: string
+          enum:
+            - first_scan
+            - label_creation
+          example: label_creation
+          description: >-
+            Specifies the timing of Sendcloud's invoicing for the shipping
+            label.
+
+
+            If set to `label_creation`, the label is invoiced at the moment it
+            is created.
+
+
+            If set to `first_scan`, the label is only invoiced when the carrier
+            first scans the parcel.
+
+
+            The `first_scan` value is only supported for return shipping
+            options.
+        quotes:
+          type:
+            - array
+            - 'null'
+          description: >-
+            List of available quotes.
+
+
+            Quotes will only be calculated if:
+              
+            - `from_country_code` and `to_country_code` are to provided.
+
+            - Direct contract prices are provided for the returned shipping
+            options.
+          items:
+            $ref: '#/components/schemas/shipping-quote'
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail
+    shipping-option-address:
+      title: Shipping Option Address
+      type: object
+      description: An address object for filtering shipping options.
+      required:
+        - country_code
+      properties:
+        country_code:
+          type: string
+          description: Country code in ISO 3166-1 alpha-2 format.
+          example: NL
+        postal_code:
+          type: string
+          description: >-
+            The postal code of the address. Should be provided, to make quotes
+            as accurate as possible.
+          example: 1012AB
+        address_line_1:
+          type: string
+          description: The first line of the address.
+          example: Stadhuisplein 10
+        city:
+          type: string
+          description: The city of the address.
+          example: Eindhoven
+        state_province_code:
+          type:
+            - string
+          description: The state or province code represented as ISO 3166-2 code.
+          example: RM-IT
+    service-point-request:
+      title: Service Point
+      description: >-
+        Node for service point information. Use the [Retrieve a list of service
+        points](/api/v2/service-points/retrieve-a-list-of-service-points)
+        endpoint to find service points, or pass in the carrier's id for the
+        service point.
+
+
+        If both the `id` and `carrier_service_point_id` are provided, the
+        `carrier_service_point_id` will be prioritised.
+      type: object
+      anyOf:
+        - title: Sendcloud ID
+          type: object
+          properties:
+            id:
+              type: string
+              description: The sendcloud `id` of a service point.
+              example: '123'
+          required:
+            - id
+        - title: Carrier Service Point ID
+          type: object
+          properties:
+            carrier_service_point_id:
+              type: string
+              description: The carrier's id of a service point
+              example: '123'
+          required:
+            - carrier_service_point_id
+    dimension-units:
+      type: string
+      title: Dimensional units
+      enum:
+        - cm
+        - mm
+        - m
+        - yd
+        - ft
+        - in
+      example: mm
+    str-dimensions:
+      title: Dimensions
+      type: object
+      description: Dimensions in the specified unit
+      properties:
+        length:
+          type: string
+          description: length in specified unit
+          example: '15'
+        width:
+          type: string
+          description: width in specified unit
+          example: '20.5'
+        height:
+          type: string
+          description: height in specified unit
+          example: '37'
+        unit:
+          $ref: '#/components/schemas/dimension-units'
+      required:
+        - length
+        - width
+        - height
+        - unit
+    weight-units:
+      type: string
+      title: Mass Units Object
+      enum:
+        - kg
+        - g
+        - lbs
+        - oz
+      example: g
+    str-weight:
+      title: Weight
+      type: object
+      description: Weight in the specified unit
+      properties:
+        value:
+          type: string
+          description: Weight value
+          example: '14.5'
+        unit:
+          $ref: '#/components/schemas/weight-units'
+      required:
+        - value
+        - unit
+    shipping-option-filter:
+      title: Shipping Options Filter
+      type: object
+      properties:
+        from_address:
+          description: >-
+            Sender address object. Cannot be combined with `from_country_code`
+            or `from_postal_code`.
+          oneOf:
+            - $ref: '#/components/schemas/shipping-option-address'
+            - type: 'null'
+        to_address:
+          description: >-
+            Destination address object. Cannot be combined with
+            `to_country_code` or `to_postal_code`.
+          oneOf:
+            - $ref: '#/components/schemas/shipping-option-address'
+            - type: 'null'
+        from_country_code:
+          type:
+            - string
+            - 'null'
+          deprecated: true
+          description: >-
+            Sender country code in ISO 3166-1 alpha-2 format. Cannot be combined
+            with `from_address`. **Deprecated**: Use `from_address` instead.
+        to_country_code:
+          type:
+            - string
+            - 'null'
+          deprecated: true
+          description: >-
+            Destination country code in ISO 3166-1 alpha-2 format. Cannot be
+            combined with `to_address`. **Deprecated**: Use `to_address`
+            instead.
+        from_postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 12
+          deprecated: true
+          description: >-
+            The postal code of the sender address. Cannot be combined with
+            `from_address`. **Deprecated**: Use `from_address` instead.
+        to_postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 12
+          deprecated: true
+          description: >-
+            The postal code of the destination address. Cannot be combined with
+            `to_address`. **Deprecated**: Use `to_address` instead.
+        to_service_point_id:
+          type:
+            - integer
+            - 'null'
+          deprecated: true
+          description: >-
+            Service point ID as specified in the [Retrieve a list of service
+            points](/api/v2/service-points/retrieve-a-list-of-service-points)
+            endpoints. **Deprecated**: Use `to_service_point` instead.
+        to_service_point:
+          $ref: '#/components/schemas/service-point-request'
+        parcels:
+          type:
+            - array
+            - 'null'
+          description: List of parcels in a shipment.
+          items:
+            type: object
+            properties:
+              dimensions:
+                $ref: '#/components/schemas/str-dimensions'
+                description: >-
+                  While dimensions are optional, some carriers require them
+                  present. If this is the case, an error will be thrown.
+              weight:
+                $ref: '#/components/schemas/str-weight'
+              additional_insured_price:
+                type:
+                  - number
+                  - 'null'
+                description: >-
+                  Amount for which you want to add additional insurance (on top
+                  of carrier insurance) to the parcel with our insurance
+                  provider XCover. You can insure up from 2 euros to 5000 euros
+                  per shipment.
+              total_insured_price:
+                type:
+                  - number
+                  - 'null'
+                description: >-
+                  Amount for which you want to insure the parcel with (including
+                  the carrier insurance) our insurance provider XCover. If both
+                  `additional_insured_price` and `total_insured_price` are
+                  provided, `additional_insured_price` will take precedence.
+            minItems: 1
+            maxItems: 50
+        functionalities:
+          oneOf:
+            - $ref: '#/components/schemas/carrier-shipping-functionalities'
+            - type: 'null'
+        carrier_code:
+          type:
+            - string
+            - 'null'
+          description: Carrier code.
+        contract_id:
+          type:
+            - integer
+            - 'null'
+          description: Contract id.
+        shipping_product_code:
+          type:
+            - string
+            - 'null'
+          description: Shipping product code.
+        shipping_option_code:
+          type:
+            - string
+            - 'null'
+          description: Specific shipping option code to use for pricing.
+        lead_time:
+          $ref: '#/components/schemas/lead-time-filter'
+        calculate_quotes:
+          type:
+            - boolean
+            - 'null'
+          description: >-
+            If `true`, the quotes will be retrieved for the provided parcels and
+            other parameters.
+
+
+            If `false`, the quotes will not be retrieved, and the shipping
+            options will be returned without quotes.
+
+
+            This is useful when you want to return shipping options with/without
+            retrieving quotes.
+
+
+            The default value is `false`.
+          default: false

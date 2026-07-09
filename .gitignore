@@ -1,0 +1,25 @@
+# Configuration locale par développeur (chemins machine-spécifiques) — NE PAS versionner
+workspace.local.yaml
+.env
+
+# Artefacts générés contenant des chemins absolus locaux
+docs/gen-docs-plan.yaml
+
+# Skills importés depuis meta-repo-resources (source de vérité externe — non versionnés)
+.claude/skills/*
+!.claude/skills/feed-llm-wiki/
+
+# Overrides de skills client : VERSIONNÉS, appliqués par scripts/sync_skills.py
+# PAR-DESSUS la base amont. Ne PAS placer sous .claude/ (skills fantômes au scan).
+# skills-overrides/ est versionné par défaut — on ignore juste les artefacts macOS.
+skills-overrides/**/.DS_Store
+
+# graphify : cache incrémental (régénérable, nombreux petits JSON) — non versionné
+docs/*/graphify-out/cache/
+
+# Divers
+.DS_Store
+.idea/
+.claude/.docs-state.json
+.claude/.wiki-pending.json
+.claude/settings.json

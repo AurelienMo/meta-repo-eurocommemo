@@ -1,0 +1,531 @@
+openapi: 3.1.0
+info:
+  title: Sender addresses API
+  version: 3.0.0
+  description: >
+    Carriers require sender address information to be present on the shipping
+    label. You can have multiple sender addresses associated with your Sendcloud
+    account, but one sender address must always be set as **default** in your
+    account [address
+    information](https://app.sendcloud.com/v2/settings/addresses/sender). If you
+    choose not to specify a sender address when you [create a
+    parcel](/api/v2/parcels/create-a-parcel-or-parcels), the default sender
+    address will be used.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Sender Address
+paths:
+  /addresses/sender-addresses:
+    get:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      summary: Retrieve a list of sender addresses
+      description: >-
+        Returns a list of all the sender addresses which have been saved to your
+        account.
+
+
+        This endpoint uses cursor-based pagination via `Link` headers. See
+        [Pagination](/api/v3/pagination) for details.
+      x-mint:
+        href: /api/v3/sender-addresses/retrieve-a-list-of-sender-addresses
+      tags:
+        - Sender Address
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - schema:
+            type: integer
+            maximum: 100
+          in: query
+          name: page_size
+          description: The size of the page to fetch
+          example: 100
+      responses:
+        '200':
+          description: List of sender addresses.
+          headers:
+            Link:
+              description: >-
+                The pagination links, according to the web linking specification
+                (RFC8288).
+              schema:
+                type: string
+                example: >-
+                  <https://panel.sendcloud.sc/api/v3/addresses/sender-addresses/?cursor=cj0xJnA9MjUzNTQyMzM3>;
+                  rel="prev",
+                  <https://panel.sendcloud.sc/api/v3/addresses/sender-addresses/?cursor=cD0yNTM1NDIyODI%3D>;
+                  rel="next"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: A list of the users configured sender addresses.
+                    items:
+                      $ref: '#/components/schemas/SenderAddressResponse'
+              examples:
+                RetrieveSenderAddresses:
+                  summary: Retrieve a list of sender addresses
+                  value:
+                    data:
+                      - city: Eindhoven
+                        company_name: Sendcloud
+                        name: John Doe
+                        country_code: NL
+                        state_province_code: 'null'
+                        email: johndoe@sendcloud.com
+                        house_number: '10'
+                        id: 1
+                        address_line_2: ''
+                        postal_code: 5611 EM
+                        address_line_1: Stadhuisplein
+                        phone_number: '+31626262626'
+                        tax_numbers:
+                          - name: VAT
+                            country_code: NL
+                            value: NL123456789B01
+                          - name: EORI
+                            country_code: NL
+                            value: NL123456789
+                          - name: VAT
+                            country_code: GB
+                            value: GB123456789
+                          - name: EORI
+                            country_code: GB
+                            value: GB987654312000
+                          - name: IOSS
+                            country_code: NL
+                            value: IM1234567890
+                        signature:
+                          full_name: John Doe
+                          initials: JD
+                      - city: Antwerp
+                        company_name: Sendcloud
+                        name: Frits-Hendrik Joep
+                        country_code: BE
+                        state_province_code: 'null'
+                        email: johndoe@sendcloud.com
+                        house_number: '123'
+                        id: 2
+                        address_line_2: ''
+                        postal_code: XXXX CV
+                        address_line_1: Klapstraat
+                        phone_number: '+32626262626'
+                        tax_numbers:
+                          - name: VAT
+                            country_code: NL
+                            value: NL123456789B01
+                          - name: EORI
+                            country_code: NL
+                            value: NL123456789
+                          - name: VAT
+                            country_code: GB
+                            value: GB123456789
+                          - name: EORI
+                            country_code: GB
+                            value: GB987654312000
+                          - name: IOSS
+                            country_code: NL
+                            value: IM1234567890
+                        signature:
+                          full_name: John Doe
+                          initials: JD
+      operationId: sc-public-v3-addresses-get-all_sender_addresses
+  /addresses/sender-addresses/{id}:
+    parameters:
+      - schema:
+          type: integer
+          example: 1234
+        name: id
+        in: path
+        required: true
+        description: The sender address unique identifier
+    get:
+      summary: Retrieve a sender address
+      description: >-
+        Retrieve information about a specific sender address saved to your
+        account.
+      x-mint:
+        href: /api/v3/sender-addresses/retrieve-a-sender-address
+        content: >-
+          A sender address `id` for use in this endpoint can be obtained from
+          the [Retrieve a list of sender
+          addresses](/api/v3/sender-addresses/retrieve-a-list-of-sender-addresses)
+          endpoint.
+      operationId: sc-public-v3-addresses-get-sender_address_by_id
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      responses:
+        '200':
+          description: Sender address information.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SenderAddressResponse'
+              examples:
+                RetrieveSenderAddress:
+                  summary: A single sender address
+                  value:
+                    data:
+                      city: Eindhoven
+                      company_name: Sendcloud
+                      name: John Doe
+                      country_code: NL
+                      state_province_code: 'null'
+                      email: johndoe@sendcloud.com
+                      house_number: '10'
+                      id: 1
+                      address_line_2: ''
+                      postal_code: 5611 EM
+                      address_line_1: Stadhuisplein
+                      phone_number: '+31626262626'
+                      tax_numbers:
+                        - name: VAT
+                          country_code: NL
+                          value: NL123456789B01
+                        - name: EORI
+                          country_code: NL
+                          value: NL123456789
+                        - name: VAT
+                          country_code: GB
+                          value: GB123456789
+                        - name: EORI
+                          country_code: GB
+                          value: GB987654312000
+                        - name: IOSS
+                          country_code: NL
+                          value: IM1234567890
+                      signature:
+                        full_name: John Doe
+                        initials: JD
+        '404':
+          description: Sender address not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                NotFound:
+                  summary: Not Found
+                  value:
+                    errors:
+                      - detail: No sender address found.
+                        status: '404'
+                        code: not_found
+      tags:
+        - Sender Address
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    SenderAddressResponse:
+      type: object
+      description: The SenderAddress response schema
+      allOf:
+        - $ref: '#/components/schemas/address'
+        - type: object
+          properties:
+            id:
+              type: integer
+              description: The identifier for this Sender Address
+              readOnly: true
+            signature:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                initials:
+                  type: string
+            tax_numbers:
+              type: array
+              items:
+                $ref: '#/components/schemas/TaxNumber'
+    address:
+      title: Address Object
+      type: object
+      description: Sendcloud Address object
+      properties:
+        name:
+          type: string
+          example: John Doe
+          description: Name of the person associated with the address
+          minLength: 1
+        company_name:
+          type: string
+          example: Sendcloud
+          description: Name of the company associated with the address
+        address_line_1:
+          type: string
+          example: Stadhuisplein
+          description: First line of the address
+        house_number:
+          type: string
+          example: '50'
+          description: House number of the address
+        address_line_2:
+          type: string
+          description: Additional address information, e.g. 2nd level
+          example: Apartment 17B
+        postal_code:
+          type: string
+          example: 1013 AB
+          description: Zip code of the address
+          minLength: 1
+        city:
+          type: string
+          example: Eindhoven
+          description: City of the address
+          minLength: 1
+        po_box:
+          type:
+            - string
+            - 'null'
+          description: Code required in case of PO Box or post locker delivery
+        state_province_code:
+          type: string
+          example: IT-RM
+          description: >-
+            The character state code of the customer represented as ISO 3166-2
+            code. This field is required for certain countries. See
+            [international
+            shipping](/docs/shipments/international-shipping#required-fields-for-international-shipments)
+            for details.
+        country_code:
+          type: string
+          example: NL
+          description: The country code of the customer represented as ISO 3166-1 alpha-2
+          minLength: 1
+        email:
+          type: string
+          format: email
+          example: johndoe@gmail.com
+          description: Email address of the person associated with the address
+        phone_number:
+          type: string
+          example: '+319881729999'
+          description: Phone number of the person associated with the address
+    TaxNumber:
+      title: Tax Number Object
+      description: >-
+        Identification numbers and codes used in different contexts. These
+        identifiers are used for taxation, customs, business registration, and
+        other purposes, depending on the country and the specific regulatory
+        requirements. Depending on these requirements you may need to pass one
+        or several numbers related to sender, receiver or importer of record
+        provider. These numbers and codes will be included into final Customs
+        documents.
+      type: object
+      properties:
+        name:
+          type: string
+          example: EORI
+          description: |
+            Tax number abbreviation
+              * VAT - Value-Added Tax → VOEC number for Norway should be shared here as advised by the [Norwegian Tax Authorities](https://www.skatteetaten.no/globalassets/bedrift-og-organisasjon/voec/sending-and-marking-goods-through-postal-services-and-transporters.pdf)
+              * EIN - Employer Identification Number
+              * GST - Goods and Service Tax
+              * SSN - Social Security Number
+              * EORI - Economic Operators Registration and Identification for the European Union
+              * DUN - Data Universal Numbering System
+              * FED - Federal Tax ID
+              * STA - State Tax ID
+              * CNP - Brazil CNPJ/CPF Federal Tax
+              * IE - Brazil type IE/RG Federal Tax
+              * INN - Russia bank details section INN
+              * KPP - Russia bank details section KPP
+              * OGR - Russia bank details section OGRN
+              * OKP - Russia bank details section OKPO
+              * IOSS - SDT or Overseas Registered Supplier or Import One-Stop-Shop or GB VAT (foreign) registration or AUSid GST Registration or VAT on E-Commerce
+              * FTZ - Free Trade Zone ID
+              * DAN - Deferment Account Duties Only
+              * TAN - Deferment Account Tax Only
+              * DTF - Deferment Account Duties, Taxes and Fees Only
+              * RGP - EU Registered Exporters Registration ID
+              * DLI - Driver's License
+              * NID - National Identity Card - A PID (Personal Identification Number) should be provided as NID (National Identity Card).
+              * PAS - Passport
+              * MID - Manufacturer ID
+              * UKIMS - UK Internal Market Scheme -> customs clearance for shipping from Great Britain to Northern Ireland under the Windsor Framework, for more information see [Windsor Framework](https://www.gov.uk/government/publications/the-windsor-framework)
+          enum:
+            - VAT
+            - EIN
+            - GST
+            - SSN
+            - EORI
+            - DUN
+            - FED
+            - STA
+            - CNP
+            - IE
+            - INN
+            - KPP
+            - OGR
+            - OKP
+            - IOSS
+            - FTZ
+            - DAN
+            - TAN
+            - DTF
+            - RGP
+            - DLI
+            - NID
+            - PAS
+            - MID
+            - UKIMS
+        country_code:
+          type: string
+          example: NL
+          description: Issuing country code (ISO 3166-1 alpha-2 code)
+          maxLength: 2
+        value:
+          type: string
+          example: NL123456789B01
+          description: Tax number itself
+          maxLength: 100
+      required:
+        - name
+        - country_code
+        - value
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      description: >-
+        The cursor query string is used as the pivot value to filter results. If
+        no value is provided, the first page of results will be returned. To get
+        this value, you must encode the offset, reverse and position into a
+        base64 string.
+
+
+        There are 3 possible parameters to encode:
+
+        - `o`: Offset
+
+        - `r`: Reverse
+
+        - `p`: Position
+          
+        For example, `r=1&p=300` encoded as a base64 string would be
+        `cj0xJnA9MzAw`. The query string would then be `cursor=cj0xJnA9MzAw`.
+      schema:
+        type: string
+        example: cj0xJnA9MzAw

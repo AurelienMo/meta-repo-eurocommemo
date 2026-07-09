@@ -1,0 +1,1479 @@
+openapi: 3.1.0
+info:
+  title: Event Subscriptions API
+  version: 3.0.0
+  description: >-
+    **BETA** - The Event Subscriptions API allows you to subscribe to parcel
+    events and have them delivered to external endpoints such as webhooks or
+    Klaviyo.
+
+
+    This API uses a two-part model:
+
+    - **Connections** define _where_ events are delivered (e.g., a webhook URL
+    or a Klaviyo account).
+
+    - **Subscriptions** define _which_ events are routed to a connection.
+
+
+    All resources are scoped to the authenticated user's organization.
+  contact:
+    name: Sendcloud API Support
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Connections
+  - name: Subscriptions
+  - name: OAuth2
+  - name: Broadcast
+  - name: Events
+paths:
+  /event-subscriptions/connections:
+    post:
+      summary: Create a connection
+      description: >-
+        Create a new connection to an external endpoint where event
+        notifications will be delivered.
+      tags:
+        - Connections
+      operationId: sc-public-v3-scp-post-create_connection
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/create-a-connection
+        content: >-
+          Create a new connection that defines an external endpoint for event
+          delivery.
+
+
+          **Webhook connections** require a `url` and optionally authentication
+          configuration. Supported authentication types are `none`, `bearer`,
+          `basic`, and `api_key`.
+
+
+          **Klaviyo connections** require only the `type` field set to `klaviyo`
+          with an empty `configuration` object. After creating the connection,
+          use the [Start OAuth2
+          authorization](/api/v3/event-subscriptions/start-oauth2-authorization)
+          endpoint to connect your Klaviyo account.
+
+
+          <Info>
+            Webhook URLs must be publicly accessible and respond with a `2xx` status code to acknowledge event delivery.
+          </Info>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/connection-create-request'
+            examples:
+              WebhookConnection:
+                summary: Create a webhook connection with bearer auth
+                value:
+                  type: webhook
+                  configuration:
+                    url: https://example.com/webhooks/sendcloud
+                    auth_type: bearer
+                    auth_config:
+                      token: my-secret-token
+                    extra_headers:
+                      X-Custom-Header: my-value
+              WebhookConnectionNoAuth:
+                summary: Create a webhook connection without auth
+                value:
+                  type: webhook
+                  configuration:
+                    url: https://example.com/webhooks/sendcloud
+                    auth_type: none
+              KlaviyoConnection:
+                summary: Create a Klaviyo connection
+                value:
+                  type: klaviyo
+                  configuration: {}
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                description: Connection created
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/connection'
+              examples:
+                WebhookCreated:
+                  summary: Webhook connection created
+                  value:
+                    data:
+                      id: 1
+                      type: webhook
+                      configuration:
+                        url: https://example.com/webhooks/sendcloud
+                        auth_type: bearer
+                        extra_headers:
+                          X-Custom-Header: my-value
+                      created_at: '2026-01-15T10:30:00Z'
+                      updated_at: '2026-01-15T10:30:00Z'
+                KlaviyoCreated:
+                  summary: Klaviyo connection created
+                  value:
+                    data:
+                      id: 2
+                      type: klaviyo
+                      configuration: {}
+                      created_at: '2026-01-15T10:30:00Z'
+                      updated_at: '2026-01-15T10:30:00Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                ValidationError:
+                  summary: Validation error
+                  value:
+                    errors:
+                      - detail: This field is required.
+                        status: '400'
+                        source:
+                          pointer: /data/type
+                        code: required
+        '429':
+          description: Throttled
+    get:
+      summary: List connections
+      description: Retrieve all connections for the authenticated user's organization.
+      tags:
+        - Connections
+      operationId: sc-public-v3-scp-get-list_connections
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/list-connections
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - webhook
+              - klaviyo
+          in: query
+          name: connection_type
+          description: Filter by connection type.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: List of connections
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/connection'
+                required:
+                  - data
+              examples:
+                ListConnections:
+                  summary: List of connections
+                  value:
+                    data:
+                      - id: 1
+                        type: webhook
+                        configuration:
+                          url: https://example.com/webhooks/sendcloud
+                          auth_type: bearer
+                          extra_headers:
+                            X-Custom-Header: my-value
+                        created_at: '2026-01-15T10:30:00Z'
+                        updated_at: '2026-01-15T10:30:00Z'
+                      - id: 2
+                        type: klaviyo
+                        configuration: {}
+                        created_at: '2026-01-16T09:00:00Z'
+                        updated_at: '2026-01-16T09:00:00Z'
+        '429':
+          description: Throttled
+  /event-subscriptions/connections/{id}:
+    parameters:
+      - schema:
+          type: integer
+        in: path
+        name: id
+        description: The id of the connection.
+        required: true
+    get:
+      summary: Get a connection
+      description: Retrieve a specific connection by its id.
+      tags:
+        - Connections
+      operationId: sc-public-v3-scp-get-connection
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/get-a-connection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Connection details
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/connection'
+              examples:
+                GetConnection:
+                  summary: Get a webhook connection
+                  value:
+                    data:
+                      id: 1
+                      type: webhook
+                      configuration:
+                        url: https://example.com/webhooks/sendcloud
+                        auth_type: bearer
+                        extra_headers:
+                          X-Custom-Header: my-value
+                      created_at: '2026-01-15T10:30:00Z'
+                      updated_at: '2026-01-15T10:30:00Z'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+    patch:
+      summary: Update a connection
+      description: >-
+        Update an existing connection by its id. Only the fields provided in the
+        request body will be updated.
+      tags:
+        - Connections
+      operationId: sc-public-v3-scp-patch-connection
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/update-a-connection
+        content: >-
+          Update the configuration of an existing connection.
+
+
+          Only the fields provided in the request body will be updated. For
+          example, you can update just the webhook URL or authentication
+          settings without changing other fields.
+
+
+          <Warning>
+            Updating a connection's configuration may affect all subscriptions that use this connection.
+          </Warning>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/connection-update-request'
+            examples:
+              UpdateWebhookUrl:
+                summary: Update the webhook URL
+                value:
+                  configuration:
+                    url: https://example.com/webhooks/sendcloud-v2
+              UpdateAuth:
+                summary: Update authentication settings
+                value:
+                  configuration:
+                    auth_type: api_key
+                    auth_config:
+                      header_name: X-Api-Key
+                      api_key: my-new-api-key
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Updated connection
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/connection'
+              examples:
+                UpdatedConnection:
+                  summary: Updated webhook connection
+                  value:
+                    data:
+                      id: 1
+                      type: webhook
+                      configuration:
+                        url: https://example.com/webhooks/sendcloud-v2
+                        auth_type: api_key
+                        extra_headers:
+                          X-Custom-Header: my-value
+                      created_at: '2026-01-15T10:30:00Z'
+                      updated_at: '2026-01-20T14:00:00Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                ValidationError:
+                  summary: Validation error
+                  value:
+                    errors:
+                      - detail: Enter a valid URL.
+                        status: '400'
+                        source:
+                          pointer: /data/configuration/url
+                        code: invalid
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+    delete:
+      summary: Delete a connection
+      description: >-
+        Delete a specific connection by its id. Any subscriptions associated
+        with this connection will also be deleted.
+      tags:
+        - Connections
+      operationId: sc-public-v3-scp-delete-connection
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/delete-a-connection
+        content: |-
+          Delete a connection and all its associated subscriptions.
+
+          <Warning>
+            This action is irreversible. All subscriptions linked to this connection will be permanently deleted and event delivery will stop immediately.
+          </Warning>
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+  /event-subscriptions/connections/{id}/authorization:
+    parameters:
+      - schema:
+          type: integer
+        in: path
+        name: id
+        description: The id of the connection to authorize.
+        required: true
+    post:
+      summary: Start OAuth2 authorization
+      description: >-
+        Initiate the OAuth2 authorization flow for a connection that requires it
+        (e.g., Klaviyo). Returns an authorization URL to redirect the user to.
+      tags:
+        - OAuth2
+      operationId: sc-public-v3-scp-post-start_authorization
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/start-oauth2-authorization
+        content: >-
+          Start the OAuth2 authorization flow for a Klaviyo connection. This
+          endpoint returns an authorization URL that the user should be
+          redirected to in their browser.
+
+
+          After the user authorizes access, the OAuth provider will redirect
+          back to the Sendcloud callback URL, completing the connection setup.
+
+
+          <Steps>
+            <Step title="Create a Klaviyo connection">
+              Use the [Create a connection](/api/v3/event-subscriptions/create-a-connection) endpoint with `type: "klaviyo"`.
+            </Step>
+            <Step title="Start OAuth2 authorization">
+              Call this endpoint to get the authorization URL.
+            </Step>
+            <Step title="Redirect the user">
+              Open the `authorization_url` in the user's browser to complete the OAuth2 flow.
+            </Step>
+          </Steps>
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: OAuth2 authorization URL
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/connection-authorization-response'
+              examples:
+                AuthorizationUrl:
+                  summary: OAuth2 authorization URL
+                  value:
+                    data:
+                      authorization_url: >-
+                        https://www.klaviyo.com/oauth/authorize?client_id=sendcloud&response_type=code&redirect_uri=https%3A%2F%2Fpanel.sendcloud.sc%2Fapi%2Fv3%2Fevent-subscriptions%2Fconnections%2Fauthorization%2Fcallback&state=abc123
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+  /event-subscriptions/subscriptions:
+    post:
+      summary: Create a subscription
+      description: >-
+        Create a new subscription that routes events of a specific type to a
+        connection.
+      tags:
+        - Subscriptions
+      operationId: sc-public-v3-scp-post-create_subscription
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/create-a-subscription
+        content: >-
+          Create a subscription that routes a specific event type to a
+          connection for delivery.
+
+
+          A subscription links an event type (e.g., `parcels.event.created`) to
+          a connection endpoint. When the event occurs, the event payload is
+          delivered to the connection's configured endpoint.
+
+
+          <Info>
+            Subscriptions are active by default. Set `is_active` to `false` to create a paused subscription.
+          </Info>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/subscription-create-request'
+            examples:
+              CreateSubscription:
+                summary: Create a subscription for parcel events
+                value:
+                  connection_id: 1
+                  event_type: parcels.event.created
+                  is_active: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                description: Subscription created
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/subscription'
+              examples:
+                SubscriptionCreated:
+                  summary: Subscription created
+                  value:
+                    data:
+                      id: 1
+                      connection_id: 1
+                      event_type: parcels.event.created
+                      is_active: true
+                      created_at: '2026-01-15T11:00:00Z'
+                      updated_at: '2026-01-15T11:00:00Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                ValidationError:
+                  summary: Validation error
+                  value:
+                    errors:
+                      - detail: This field is required.
+                        status: '400'
+                        source:
+                          pointer: /data/connection_id
+                        code: required
+        '429':
+          description: Throttled
+    get:
+      summary: List subscriptions
+      description: Retrieve all subscriptions for the authenticated user's organization.
+      tags:
+        - Subscriptions
+      operationId: sc-public-v3-scp-get-list_subscriptions
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/list-subscriptions
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: event_type
+          description: Filter by event type.
+        - schema:
+            type: boolean
+          in: query
+          name: is_active
+          description: Filter by active status.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: List of subscriptions
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/subscription'
+                required:
+                  - data
+              examples:
+                ListSubscriptions:
+                  summary: List of subscriptions
+                  value:
+                    data:
+                      - id: 1
+                        connection_id: 1
+                        event_type: parcels.event.created
+                        is_active: true
+                        created_at: '2026-01-15T11:00:00Z'
+                        updated_at: '2026-01-15T11:00:00Z'
+                      - id: 2
+                        connection_id: 2
+                        event_type: parcels.event.created
+                        is_active: false
+                        created_at: '2026-01-16T09:15:00Z'
+                        updated_at: '2026-01-16T09:15:00Z'
+        '429':
+          description: Throttled
+  /event-subscriptions/subscriptions/{id}:
+    parameters:
+      - schema:
+          type: integer
+        in: path
+        name: id
+        description: The id of the subscription.
+        required: true
+    get:
+      summary: Get a subscription
+      description: Retrieve a specific subscription by its id.
+      tags:
+        - Subscriptions
+      operationId: sc-public-v3-scp-get-subscription
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/get-a-subscription
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Subscription details
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/subscription'
+              examples:
+                GetSubscription:
+                  summary: Get a subscription
+                  value:
+                    data:
+                      id: 1
+                      connection_id: 1
+                      event_type: parcels.event.created
+                      is_active: true
+                      created_at: '2026-01-15T11:00:00Z'
+                      updated_at: '2026-01-15T11:00:00Z'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+    patch:
+      summary: Update a subscription
+      description: >-
+        Update an existing subscription by its id. Only the fields provided in
+        the request body will be updated.
+      tags:
+        - Subscriptions
+      operationId: sc-public-v3-scp-patch-subscription
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/update-a-subscription
+        content: >-
+          Update an existing subscription. You can change the connection, event
+          type, or toggle the active state.
+
+
+          <Info>
+            Set `is_active` to `false` to pause event delivery without deleting the subscription.
+          </Info>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/subscription-update-request'
+            examples:
+              PauseSubscription:
+                summary: Pause a subscription
+                value:
+                  is_active: false
+              ChangeConnection:
+                summary: Route events to a different connection
+                value:
+                  connection_id: 2
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Updated subscription
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/subscription'
+              examples:
+                UpdatedSubscription:
+                  summary: Updated subscription
+                  value:
+                    data:
+                      id: 1
+                      connection_id: 2
+                      event_type: parcels.event.created
+                      is_active: false
+                      created_at: '2026-01-15T11:00:00Z'
+                      updated_at: '2026-01-20T14:30:00Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+    delete:
+      summary: Delete a subscription
+      description: >-
+        Delete a specific subscription by its id. Event delivery for this
+        subscription will stop immediately.
+      tags:
+        - Subscriptions
+      operationId: sc-public-v3-scp-delete-subscription
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/delete-a-subscription
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+  /event-subscriptions/broadcast/test/{subscription_id}:
+    parameters:
+      - schema:
+          type: integer
+        in: path
+        name: subscription_id
+        description: The id of the subscription to send a test event to.
+        required: true
+    post:
+      summary: Broadcast test event
+      description: >-
+        Send a test event to the connection endpoint configured for a specific
+        subscription. Use this to verify that your connection is set up
+        correctly before relying on it for production events.
+      tags:
+        - Broadcast
+      operationId: sc-public-v3-scp-post-test_broadcast
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/event-subscriptions/test-event-delivery
+        content: >-
+          Send a test event to the connection endpoint configured for this
+          subscription. This is useful for verifying that your webhook URL or
+          Klaviyo integration is set up correctly.
+
+
+          The test event will contain a sample payload matching the
+          subscription's event type.
+
+
+          <Info>
+            The test broadcast will use the same authentication and headers configured on the connection.
+          </Info>
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Test broadcast result
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/broadcast-result'
+              examples:
+                SuccessfulBroadcast:
+                  summary: Successful test broadcast
+                  value:
+                    data:
+                      success: true
+                      status_code: 200
+                      response_body: OK
+                FailedBroadcast:
+                  summary: Failed test broadcast
+                  value:
+                    data:
+                      success: false
+                      status_code: 500
+                      response_body: Internal Server Error
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+webhooks:
+  ParcelEventCreated:
+    post:
+      operationId: sc-public-v3-event-subscriptions-parcel_event_created
+      summary: Parcel event created
+      description: >-
+        Delivered to your connection endpoint when a parcel tracking event
+        occurs (e.g., a status change such as shipped, delivered, or returned).
+
+
+        Subscribe to this event type using `parcels.event.created` when creating
+        a subscription.
+      x-mint:
+        href: /api/v3/event-subscriptions/parcel-event-created
+      tags:
+        - Events
+      security: []
+      requestBody:
+        description: Event data delivered to your endpoint
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParcelEventCreatedPayload'
+            examples:
+              InTransit:
+                summary: Parcel in transit
+                value:
+                  event_type: parcels.event.created
+                  data:
+                    parcel:
+                      parcel_id: 12345678
+                      tracking_number: 3SYZXG132912330
+                      carrier_code: dpd
+                      announced_at: '2026-01-15T10:00:00Z'
+                    event:
+                      event_type: carrier
+                      timestamp: '2026-01-15T10:30:00Z'
+                      phase: in_transit
+                      exception: none
+                      status_type: success
+                      sub_status: none
+                      description: Parcel is on its way
+                      end_of_tracking: false
+                      is_offered: false
+                      is_carrier_responsible: null
+                      is_returned: false
+                      location_details:
+                        city: Eindhoven
+                        country: NL
+                        house_number: null
+                        postal_code: null
+                        street: null
+                        service_point_id: null
+                        depot: null
+                      extra_data: null
+              Delivered:
+                summary: Parcel delivered
+                value:
+                  event_type: parcels.event.created
+                  data:
+                    parcel:
+                      parcel_id: 12345678
+                      tracking_number: 3SYZXG132912330
+                      carrier_code: dpd
+                      announced_at: '2026-01-15T10:00:00Z'
+                    event:
+                      event_type: carrier
+                      timestamp: '2026-01-16T14:22:00Z'
+                      phase: delivered
+                      exception: none
+                      status_type: success
+                      sub_status: none
+                      description: Parcel has been delivered
+                      end_of_tracking: true
+                      is_offered: true
+                      is_carrier_responsible: null
+                      is_returned: false
+                      location_details: null
+                      extra_data: null
+      responses:
+        '200':
+          description: Return a 2xx status to acknowledge receipt of the event.
+components:
+  schemas:
+    ParcelEventCreatedPayload:
+      type: object
+      description: >-
+        Event payload delivered to your endpoint when a parcel tracking event
+        occurs.
+      required:
+        - event_type
+        - data
+      properties:
+        event_type:
+          type: string
+          description: The event type identifier.
+          example: parcels.event.created
+          enum:
+            - parcels.event.created
+        data:
+          type: object
+          description: The event payload.
+          required:
+            - parcel
+            - event
+          properties:
+            parcel:
+              $ref: '#/components/schemas/WebhookParcelData'
+            event:
+              $ref: '#/components/schemas/WebhookEventData'
+    WebhookParcelData:
+      type: object
+      description: Parcel identifiers included in event deliveries.
+      required:
+        - parcel_id
+        - carrier_code
+      properties:
+        parcel_id:
+          type: integer
+          description: Sendcloud parcel identifier.
+          example: 12345678
+        tracking_number:
+          type:
+            - string
+            - 'null'
+          description: Carrier-issued tracking number.
+          example: 3SYZXG132912330
+        carrier_code:
+          type: string
+          description: Short carrier code (e.g. `dpd`, `dhl`, `postnl`).
+          example: dpd
+        announced_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: >-
+            ISO 8601 timestamp of when the carrier was announced for this
+            parcel.
+          example: '2026-01-15T10:00:00Z'
+    WebhookEventData:
+      type: object
+      description: Parcel tracking event data.
+      required:
+        - event_type
+        - timestamp
+        - phase
+        - exception
+        - status_type
+        - sub_status
+      properties:
+        event_type:
+          $ref: '#/components/schemas/parcel-event-type'
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the event occurred.
+          example: '2026-01-15T10:30:00Z'
+        phase:
+          $ref: '#/components/schemas/parcel-event-phase'
+        exception:
+          $ref: '#/components/schemas/parcel-event-exception'
+        status_type:
+          $ref: '#/components/schemas/parcel-event-status-type'
+        sub_status:
+          $ref: '#/components/schemas/parcel-event-sub-status'
+        description:
+          type:
+            - string
+            - 'null'
+          description: Human-readable carrier description of the event.
+          example: Parcel is on its way
+        end_of_tracking:
+          type:
+            - boolean
+            - 'null'
+          description: True when there will be no further tracking updates.
+          example: false
+        is_offered:
+          type:
+            - boolean
+            - 'null'
+          description: True when the parcel was offered for delivery.
+          example: false
+        is_carrier_responsible:
+          type:
+            - boolean
+            - 'null'
+          description: True when the carrier is responsible for the event.
+          example: null
+        is_returned:
+          type:
+            - boolean
+            - 'null'
+          description: True when this event belongs to a return shipment.
+          example: false
+        location_details:
+          oneOf:
+            - $ref: '#/components/schemas/WebhookLocationData'
+            - type: 'null'
+          description: Location where the event occurred, if available.
+        extra_data:
+          type:
+            - object
+            - 'null'
+          description: Additional carrier-specific data. Structure varies per carrier.
+          example: null
+    WebhookLocationData:
+      type: object
+      description: Location details associated with a carrier event.
+      properties:
+        city:
+          type:
+            - string
+            - 'null'
+          description: City where the event occurred.
+          example: Eindhoven
+        country:
+          type:
+            - string
+            - 'null'
+          description: ISO 3166-1 alpha-2 country code.
+          example: NL
+        house_number:
+          type:
+            - string
+            - 'null'
+          description: Street house number.
+          example: '10'
+        postal_code:
+          type:
+            - string
+            - 'null'
+          description: Postal / zip code.
+          example: 5611 EM
+        street:
+          type:
+            - string
+            - 'null'
+          description: Street name.
+          example: Stadhuisplein
+        service_point_id:
+          type:
+            - integer
+            - 'null'
+          description: Service point identifier, if applicable.
+          example: null
+        depot:
+          type:
+            - string
+            - 'null'
+          description: Carrier depot name, if applicable.
+          example: null
+    connection:
+      title: Connection
+      description: >-
+        A connection defines an external endpoint where event notifications are
+        delivered.
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Unique identifier of the connection.
+        type:
+          type: string
+          description: The type of connection.
+          enum:
+            - webhook
+            - klaviyo
+        configuration:
+          type: object
+          description: >-
+            The configuration for the connection. The shape depends on the
+            connection type.
+        created_at:
+          type: string
+          format: date-time
+          description: >-
+            The date and time when the connection was created, in ISO 8601
+            format.
+        updated_at:
+          type: string
+          format: date-time
+          description: >-
+            The date and time when the connection was last updated, in ISO 8601
+            format.
+    connection-create-request:
+      title: Create Connection request
+      description: Request body for creating a new connection.
+      type: object
+      required:
+        - type
+        - configuration
+      properties:
+        type:
+          type: string
+          description: The type of connection.
+          enum:
+            - webhook
+            - klaviyo
+        configuration:
+          type: object
+          description: >-
+            The configuration for the connection. The shape depends on the
+            connection type.
+
+
+            For `webhook` connections, see the webhook configuration fields.
+
+            For `klaviyo` connections, configuration can be an empty object as
+            credentials are managed via OAuth2.
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail
+    connection-update-request:
+      title: Update Connection request
+      description: >-
+        Request body for updating an existing connection. All fields are
+        optional.
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of connection.
+          enum:
+            - webhook
+            - klaviyo
+        configuration:
+          type: object
+          description: >-
+            The configuration for the connection. The shape depends on the
+            connection type.
+
+
+            For `webhook` connections, see the webhook configuration fields.
+
+            For `klaviyo` connections, configuration can be an empty object as
+            credentials are managed via OAuth2.
+    connection-authorization-response:
+      title: Authorization Response
+      description: >-
+        Response containing the OAuth2 authorization URL for connecting external
+        services like Klaviyo.
+      type: object
+      properties:
+        authorization_url:
+          type: string
+          format: uri
+          description: >-
+            The URL to redirect the user to for OAuth2 authorization with the
+            external service.
+    subscription:
+      title: Subscription
+      description: >-
+        A subscription routes a specific event type to a connection for
+        delivery.
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Unique identifier of the subscription.
+        connection_id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            The identifier of the connection this subscription delivers events
+            to.
+        event_type:
+          type: string
+          description: The type of event this subscription listens for.
+          enum:
+            - parcels.event.created
+        is_active:
+          type: boolean
+          description: Whether the subscription is currently active and delivering events.
+        created_at:
+          type: string
+          format: date-time
+          description: >-
+            The date and time when the subscription was created, in ISO 8601
+            format.
+        updated_at:
+          type: string
+          format: date-time
+          description: >-
+            The date and time when the subscription was last updated, in ISO
+            8601 format.
+    subscription-create-request:
+      title: Create Subscription request
+      description: Request body for creating a new subscription.
+      type: object
+      required:
+        - connection_id
+        - event_type
+      properties:
+        connection_id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The identifier of the connection to deliver events to.
+        event_type:
+          type: string
+          description: The type of event to subscribe to.
+          enum:
+            - parcels.event.created
+        is_active:
+          type: boolean
+          description: >-
+            Whether the subscription should be active immediately. Defaults to
+            `true`.
+          default: true
+    subscription-update-request:
+      title: Update Subscription request
+      description: >-
+        Request body for updating an existing subscription. All fields are
+        optional.
+      type: object
+      properties:
+        connection_id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: The identifier of the connection to deliver events to.
+        event_type:
+          type: string
+          description: The type of event to subscribe to.
+          enum:
+            - parcels.event.created
+        is_active:
+          type: boolean
+          description: Whether the subscription should be active.
+    broadcast-result:
+      title: Broadcast Result
+      description: >-
+        The result of a test event broadcast to a subscription's connection
+        endpoint.
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the test event was successfully delivered.
+        status_code:
+          type: integer
+          description: The HTTP status code returned by the connection endpoint.
+        response_body:
+          type: string
+          description: The response body returned by the connection endpoint.
+    parcel-event-type:
+      type: string
+      title: Parcel Event Type
+      description: Classification of the event source.
+      enum:
+        - carrier
+        - internal
+        - calculated
+        - claim
+      example: carrier
+    parcel-event-phase:
+      type: string
+      title: Parcel Event Phase
+      description: Current delivery phase.
+      enum:
+        - accepted
+        - announced
+        - announcing
+        - attempted
+        - cancelled
+        - customs
+        - delivered
+        - delivery_forced
+        - dropped
+        - in_delivery
+        - in_transit
+        - labelled
+        - none
+        - no_label
+        - pup
+        - ready_to_send
+        - sorted
+        - unknown
+      example: in_transit
+    parcel-event-exception:
+      type: string
+      title: Parcel Event Exception
+      description: Exception on the current phase, or `none` when on the expected path.
+      enum:
+        - address_error
+        - announcement_failed
+        - cancellation_failed
+        - cancelled
+        - cancelled_upstream
+        - cancelling
+        - cancelling_upstream
+        - changed
+        - claim
+        - claimable
+        - customer_rejected
+        - customer_support
+        - customs_issue
+        - damaged
+        - delay_unknown
+        - delivery_delay
+        - dropoff_expiration
+        - handover_delay
+        - hold
+        - missing
+        - none
+        - non_conformity
+        - off_radar
+        - pup_expiration
+        - refused
+        - relabelled
+        - returned_sender
+        - sorting_delay
+        - unknown
+      example: none
+    parcel-event-status-type:
+      type: string
+      title: Parcel Event Status Type
+      description: Severity of the event.
+      enum:
+        - error
+        - success
+        - warning
+      example: success
+    parcel-event-sub-status:
+      type: string
+      title: Parcel Event Sub Status
+      description: Additional granularity within the phase/exception combination.
+      enum:
+        - accepted
+        - additional_information
+        - carrier
+        - company_closed
+        - connection_missed
+        - content
+        - cut_off
+        - damaged
+        - delay
+        - delivery_change
+        - disposed
+        - documents
+        - duplicate
+        - expired
+        - high_volume
+        - inaccessible
+        - incorrect_information
+        - in_progress
+        - late
+        - locker
+        - mailbox
+        - max_measure
+        - max_weight
+        - mechanical
+        - misrouted
+        - missort
+        - neighbour
+        - none
+        - not_home
+        - not_ordered
+        - one
+        - packaging
+        - parcel_found
+        - partly
+        - passed
+        - payment
+        - postal_box
+        - prohibited_item
+        - pup
+        - pup_closed
+        - receiver
+        - rejected
+        - requested
+        - resolved
+        - safeplace
+        - sender
+        - shop
+        - signature
+        - three
+        - traffic
+        - two
+        - undeliverable
+        - unknown
+        - unknown_receiver
+        - updated
+        - weather_conditions
+      example: none
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.

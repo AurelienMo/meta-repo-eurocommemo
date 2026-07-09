@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>meta-repo — présentation smartpush</title>
+<style>
+  :root {
+    /* Fonds */
+    --bg: #120d1e;
+    --bg2: #1a1030;
+    --bg3: #221540;
+
+    /* Accents */
+    --pink: #e040a0;
+    --pink-light: #f080c0;
+    --pink-glow: rgba(224,64,160,0.18);
+    --orange: #f5a623;
+    --orange-light: #ffc55a;
+    --orange-glow: rgba(245,166,35,0.15);
+
+    /* Texte */
+    --white: #ffffff;
+    --white60: rgba(255,255,255,0.6);
+    --white30: rgba(255,255,255,0.3);
+    --white10: rgba(255,255,255,0.08);
+
+    /* Utilitaires */
+    --border: rgba(255,255,255,0.18);
+    --green: #3ab77a;
+
+    --client-color: #f5c842;
+
+    --font-display: 'Aptos Display', 'Aptos', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-body: 'Aptos', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: var(--font-body); background: #000; padding: 24px 0; }
+  code { font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace; font-size: .88em; color: var(--orange-light); background: rgba(255,255,255,0.05); padding: .05em .35em; border-radius: 4px; }
+
+  /* ── Slide ─────────────────────────────────────── */
+  .slide {
+    width: 1280px;
+    height: 720px;
+    background: var(--bg);
+    padding: 44px 56px;
+    margin: 0 auto 24px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    page-break-after: always;
+    page-break-inside: avoid;
+    color: var(--white);
+  }
+  .slide::before {
+    content: '';
+    position: absolute;
+    top: -150px; right: -150px;
+    width: 480px; height: 480px;
+    background: radial-gradient(circle, var(--pink-glow) 0%, transparent 65%);
+    border-radius: 50%;
+  }
+  .slide::after {
+    content: '';
+    position: absolute;
+    bottom: -100px; left: 5%;
+    width: 380px; height: 380px;
+    background: radial-gradient(circle, var(--orange-glow) 0%, transparent 65%);
+    border-radius: 50%;
+  }
+  .slide > * { position: relative; z-index: 1; }
+
+  /* ── Header ─────────────────────────────────────── */
+  .slide-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex: 0 0 auto; }
+  .logos { display: flex; align-items: center; gap: 10px; }
+  .logo-pill { padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 700; font-family: var(--font-display); }
+  .logo-sp { background: var(--pink); color: #fff; }
+  .logo-client { background: var(--client-color); color: #1a1200; }
+  .logo-sep { color: var(--white30); font-size: 14px; }
+  .slide-num { font-size: 11px; color: var(--white30); font-family: var(--font-display); letter-spacing: .12em; }
+
+  /* ── Texte ──────────────────────────────────────── */
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .14em; color: var(--pink); margin-bottom: 10px; }
+  .eyebrow .dot { width: 6px; height: 6px; background: var(--pink); border-radius: 50%; }
+  h2 { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1.08; margin-bottom: 8px; }
+  h2 .accent { color: var(--pink-light); }
+  .lead { font-size: 15px; color: var(--white60); max-width: 940px; line-height: 1.5; margin-bottom: 20px; }
+  .content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+  /* ── Grilles ────────────────────────────────────── */
+  .grid { display: grid; gap: 14px; }
+  .cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  /* ── Cards ──────────────────────────────────────── */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; }
+  .card-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--white); }
+  .card-body { font-size: 12.5px; color: var(--white60); line-height: 1.5; }
+  .card-body code { font-size: 11.5px; }
+  .card.pink { border-top: 3px solid var(--pink); }
+  .card.orange { border-top: 3px solid var(--orange); }
+  .card.green { border-top: 3px solid var(--green); }
+
+  /* ── Bandeaux ───────────────────────────────────── */
+  .info-band { display: flex; align-items: center; gap: 12px; background: var(--pink-glow); border: 1px solid var(--pink); border-radius: 12px; padding: 12px 18px; }
+  .ib-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--pink); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; font-family: var(--font-display); flex-shrink: 0; }
+  .ib-text { font-size: 13px; color: var(--white); flex: 1; line-height: 1.45; }
+  .ib-text strong { font-family: var(--font-display); }
+
+  .info-band.orange { background: var(--orange-glow); border-color: var(--orange); }
+  .info-band.orange .ib-icon { background: var(--orange); color: #1a1200; }
+
+  /* ── KPI ────────────────────────────────────────── */
+  .kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 14px; text-align: center; }
+  .kpi-value { font-family: var(--font-display); font-size: 34px; font-weight: 700; color: var(--white); line-height: 1; }
+  .kpi-value.pink { color: var(--pink-light); }
+  .kpi-value.orange { color: var(--orange-light); }
+  .kpi-value.green { color: var(--green); }
+  .kpi-label { font-size: 11px; color: var(--white60); text-transform: uppercase; letter-spacing: .06em; margin-top: 7px; }
+
+  /* ── Tableaux ───────────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--bg2); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  thead { background: var(--bg3); }
+  th { padding: 9px 14px; text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--white60); }
+  td { padding: 8px 14px; border-bottom: 1px solid var(--border); color: rgba(255,255,255,0.92); line-height: 1.4; }
+  tr:last-child td { border-bottom: none; }
+  td code { color: var(--orange-light); }
+
+  /* ── Pills couche ───────────────────────────────── */
+  .pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .3px; text-transform: uppercase; white-space: nowrap; }
+  .pill.analyse { background: var(--pink-glow); color: var(--pink-light); }
+  .pill.orch { background: var(--orange-glow); color: var(--orange-light); }
+  .pill.exec { background: rgba(58,183,122,0.18); color: var(--green); }
+  .pill.review { background: var(--orange-glow); color: var(--orange-light); }
+  .pill.valid { background: var(--pink-glow); color: var(--pink-light); }
+  .pill.livraison { background: rgba(58,183,122,0.18); color: var(--green); }
+  .pill.support { background: var(--white10); color: var(--white60); }
+
+  /* ── Pipeline ───────────────────────────────────── */
+  .pipeline { display: flex; flex-direction: column; gap: 7px; }
+  .layer { display: flex; align-items: center; gap: 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 11px 18px; }
+  .layer .num { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff; }
+  .layer .body { flex: 1; }
+  .layer .body .name { font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+  .layer .body .skills { font-size: 11.5px; color: var(--white60); margin-top: 1px; }
+  .layer .body .skills code { font-size: 11px; }
+  .l1 { border-left: 4px solid var(--pink); } .l1 .num { background: var(--pink); }
+  .l2 { border-left: 4px solid var(--orange); } .l2 .num { background: var(--orange); color: #1a1200; }
+  .l3 { border-left: 4px solid var(--green); } .l3 .num { background: var(--green); }
+  .l4 { border-left: 4px solid var(--pink-light); } .l4 .num { background: var(--pink-light); color: #1a1200; }
+  .l5 { border-left: 4px solid var(--orange-light); } .l5 .num { background: var(--orange-light); color: #1a1200; }
+  .l6 { border-left: 4px solid var(--green); } .l6 .num { background: var(--green); }
+  .gate { display: inline-flex; align-items: center; gap: 5px; background: var(--bg3); border: 1px solid var(--orange); color: var(--orange-light); font-size: 10px; font-weight: 700; padding: 1px 8px; border-radius: 6px; margin-left: 8px; vertical-align: middle; }
+
+  /* ── Listes ─────────────────────────────────────── */
+  .pre-block { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; line-height: 1.55; color: rgba(255,255,255,0.85); white-space: pre; overflow: hidden; }
+  .pre-block .c { color: var(--white30); }
+
+  ul.tags { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  ul.tags li { font-size: 12px; color: rgba(255,255,255,0.9); display: flex; gap: 8px; align-items: baseline; }
+  ul.tags li code { color: var(--orange-light); }
+  ul.tags li .t { color: var(--white60); font-size: 11.5px; }
+
+  .footnote { background: var(--bg3); border-radius: 10px; padding: 10px 16px; font-size: 11.5px; color: var(--white60); display: flex; gap: 10px; align-items: center; }
+  .footnote.green { border-left: 3px solid var(--green); }
+  .footnote.orange { border-left: 3px solid var(--orange); }
+  .footnote.pink { border-left: 3px solid var(--pink); }
+  .footnote strong { color: var(--white); font-family: var(--font-display); }
+
+  .spacer { flex: 1; }
+  .slide-foot { margin-top: 14px; font-size: 11px; color: var(--white30); font-family: var(--font-display); letter-spacing: .04em; display: flex; justify-content: space-between; flex: 0 0 auto; }
+
+  /* ── Title slide ────────────────────────────────── */
+  .title-slide { justify-content: center; }
+  .title-slide h1 { font-family: var(--font-display); font-size: 56px; font-weight: 700; line-height: 1.02; margin-bottom: 14px; }
+  .title-slide h1 .accent { color: var(--pink-light); }
+  .title-slide .lead { font-size: 19px; max-width: 760px; margin-bottom: 34px; }
+
+  /* ── Bouton impression ──────────────────────────── */
+  .print-bar { position: fixed; top: 16px; right: 16px; z-index: 1000; background: var(--pink); color: #fff; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 20px var(--pink-glow); border: none; font-family: var(--font-body); }
+
+  @page { size: 1280px 720px; margin: 0; }
+  @media print {
+    body { background: #000; padding: 0; }
+    .print-bar { display: none; }
+    .slide { margin: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<button class="print-bar" onclick="window.print()">Imprimer en PDF ↓</button>
+
+<!-- ════════════ SLIDE 1 — Titre ════════════ -->
+<div class="slide title-slide">
+  <div class="slide-top" style="position:absolute;top:40px;left:56px;right:56px;">
+    <div class="logos">
+      <div class="logo-pill logo-sp">smartpush</div>
+      <div class="logo-sep">×</div>
+      <div class="logo-pill logo-client">meta-repo</div>
+    </div>
+    <div class="slide-num">documentation technique</div>
+  </div>
+
+  <div class="eyebrow"><span class="dot"></span>socle d'orchestration</div>
+  <h1>le <span class="accent">meta-repo</span></h1>
+  <p class="lead">le pipeline agentique de recode multi-techno et multi-repo : un dépôt
+  d'orchestration qui porte la configuration, les specs, les plans et les sorties, et pilote
+  une chaîne de skills de l'intention jusqu'à la pull request.</p>
+
+  <div class="grid cols-4" style="max-width:900px;">
+    <div class="kpi"><div class="kpi-value pink">18</div><div class="kpi-label">skills</div></div>
+    <div class="kpi"><div class="kpi-value orange">23</div><div class="kpi-label">sous-skills techno</div></div>
+    <div class="kpi"><div class="kpi-value green">6</div><div class="kpi-label">couches</div></div>
+    <div class="kpi"><div class="kpi-value pink">2</div><div class="kpi-label">gates bloquants</div></div>
+  </div>
+
+  <div class="slide-foot" style="position:absolute;bottom:32px;left:56px;right:56px;">
+    <span>meta-repo · version 1.0</span>
+    <span id="gen-date-1"></span>
+  </div>
+</div>
+
+<!-- ════════════ SLIDE 2 — Présentation ════════════ -->
+<div class="slide">
+  <div class="slide-top">
+    <div class="logos"><div class="logo-pill logo-sp">smartpush</div></div>
+    <div class="slide-num">présentation · 2</div>
+  </div>
+  <div class="content">
+    <div class="eyebrow"><span class="dot"></span>présentation</div>
+    <h2>un dépôt d'orchestration, <span class="accent">pas de code applicatif</span></h2>
+    <p class="lead">le meta-repo pilote le recode multi-techno sur les dépôts d'un client. il porte
+    la configuration et les contrats, génère les plans et collecte les sorties. les skills, eux,
+    sont installés depuis un dépôt amont et personnalisés par des overrides versionnés.</p>
+
+    <div class="grid cols-3" style="margin-bottom:14px;">
+      <div class="card pink"><div class="card-title">configuration</div><div class="card-body">racine (<code>workspace.yaml</code>, <code>context.yaml</code>, <code>CLAUDE.md</code>) et contrats dans <code>specs/</code>.</div></div>
+      <div class="card orange"><div class="card-title">plans générés</div><div class="card-body">le DAG d'exécution produit par le planner : un rendu Markdown daté et <code>plan-last.yaml</code>.</div></div>
+      <div class="card green"><div class="card-title">sorties</div><div class="card-body">doc de synthèse, <code>stack-snapshot.yaml</code>, wiki LLM et journaux d'action par repo.</div></div>
+    </div>
+
+    <div class="grid cols-2" style="flex:1;align-items:stretch;">
+      <div class="pre-block"><span class="c"># structure du dépôt</span>
+meta-repo/
+├── workspace.yaml        <span class="c"># repos + chemins ${REPOS_ROOT}</span>
+├── context.yaml          <span class="c"># politiques + DoD mesurable</span>
+├── CLAUDE.md             <span class="c"># contexte + garde-fous</span>
+├── scripts/              <span class="c"># init · résolution · scan · run · exec</span>
+├── specs/                <span class="c"># dod.md + guidelines/</span>
+├── skills-overrides/     <span class="c"># personnalisations client</span>
+├── plans/ · docs/ · logs/ <span class="c"># sorties</span>
+└── .claude/skills/       <span class="c"># skills matérialisés</span></div>
+      <div class="info-band" style="align-items:flex-start;">
+        <div class="ib-icon">i</div>
+        <div class="ib-text"><strong>frontière meta / sous-repo.</strong> on ne commit jamais de
+        code applicatif depuis la racine. les changements applicatifs vivent dans les sous-dépôts ;
+        les commits du meta-repo concernent uniquement le scaffolding (config, scripts, docs, <code>.claude/</code>).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SLIDE 3 — Concepts clés ════════════ -->
+<div class="slide">
+  <div class="slide-top">
+    <div class="logos"><div class="logo-pill logo-sp">smartpush</div></div>
+    <div class="slide-num">concepts clés · 3</div>
+  </div>
+  <div class="content">
+    <div class="eyebrow"><span class="dot"></span>concepts clés</div>
+    <h2>six idées <span class="accent">structurantes</span></h2>
+    <p class="lead">à comprendre avant tout usage du meta-repo.</p>
+
+    <div class="grid cols-3" style="flex:1;align-content:center;gap:14px;">
+      <div class="card pink"><div class="card-title">configuration portable</div><div class="card-body">les chemins utilisent <code>${REPOS_ROOT}</code>. aucune donnée machine dans le versionné : chacun fournit son <code>workspace.local.yaml</code>.</div></div>
+      <div class="card orange"><div class="card-title">init idempotente</div><div class="card-body">en deux phases : placeholders et config, puis clone des repos et détection des stacks. ré-exécutable sans danger.</div></div>
+      <div class="card green"><div class="card-title">skills amont + overrides</div><div class="card-body">matérialisés par <code>sync_skills.py</code> ; les overrides client versionnés survivent aux mises à jour amont.</div></div>
+      <div class="card pink"><div class="card-title">validation tolérante</div><div class="card-body">un repo non cloné est ignoré par défaut. <code>--strict</code> exige tous les repos présents pour la CI.</div></div>
+      <div class="card orange"><div class="card-title">wiki LLM automatique</div><div class="card-body">les éditions de docs de synthèse déclenchent l'ingestion via des hooks. aucune invocation manuelle requise.</div></div>
+      <div class="card green"><div class="card-title">journaux par repo</div><div class="card-body">chaque action sur un sous-repo est consignée dans <code>logs/&lt;repo&gt;.md</code> en append-only.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SLIDE 4 — Pipeline ════════════ -->
+<div class="slide">
+  <div class="slide-top">
+    <div class="logos"><div class="logo-pill logo-sp">smartpush</div></div>
+    <div class="slide-num">pipeline · 4</div>
+  </div>
+  <div class="content">
+    <div class="eyebrow"><span class="dot"></span>fonctionnement</div>
+    <h2>le pipeline en <span class="accent">6 couches</span></h2>
+    <p class="lead" style="margin-bottom:14px;">de l'intention brute à la pull request, en passant par deux gates bloquants.</p>
+
+    <div class="pipeline">
+      <div class="layer l1"><div class="num">1</div><div class="body"><div class="name">analyse<span class="gate">gate spec.validated</span><span class="gate">gate toolchain_verified</span></div><div class="skills"><code>ticket-fetcher</code> · <code>clarification-loop</code> · <code>intent-parser</code> · <code>repo-resolver</code> · <code>tech-detector</code> · <code>toolchain-preflight</code></div></div></div>
+      <div class="layer l2"><div class="num">2</div><div class="body"><div class="name">orchestration</div><div class="skills"><code>planner</code> construit le DAG de tâches et sélectionne les sous-skills techno</div></div></div>
+      <div class="layer l3"><div class="num">3</div><div class="body"><div class="name">exécution</div><div class="skills"><code>code-reader</code> · <code>diff-writer</code> (code métier) · <code>test-generator</code> (tests)</div></div></div>
+      <div class="layer l4"><div class="num">4</div><div class="body"><div class="name">review</div><div class="skills"><code>code-reviewer</code> produit un rapport structuré et route le retry</div></div></div>
+      <div class="layer l5"><div class="num">5</div><div class="body"><div class="name">validation</div><div class="skills"><code>validator</code> enchaîne lint, build, tests et retry dans le conteneur déclaré</div></div></div>
+      <div class="layer l6"><div class="num">6</div><div class="body"><div class="name">livraison</div><div class="skills"><code>pr-builder</code> crée des branches et des PRs neutres, cross-référencées</div></div></div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="info-band orange">
+      <div class="ib-icon">!</div>
+      <div class="ib-text"><strong>deux gates bloquants.</strong> <code>clarification-loop</code> ne
+      laisse pas démarrer le pipeline tant que <code>spec.validated</code> est faux ;
+      <code>toolchain-preflight</code> suspend avant le planner si le runtime ou le gestionnaire de
+      paquet ne sont pas à la version épinglée.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SLIDE 5 — Skills cœur ════════════ -->
+<div class="slide">
+  <div class="slide-top">
+    <div class="logos"><div class="logo-pill logo-sp">smartpush</div></div>
+    <div class="slide-num">skills · 5</div>
+  </div>
+  <div class="content">
+    <div class="eyebrow"><span class="dot"></span>catalogue</div>
+    <h2>les <span class="accent">13 skills cœur</span> du pipeline</h2>
+
+    <table>
+      <thead><tr><th style="width:160px">skill</th><th style="width:120px">couche</th><th>rôle</th></tr></thead>
+      <tbody>
+        <tr><td><code>ticket-fetcher</code></td><td><span class="pill analyse">analyse</span></td><td>normalise une source externe (jira, clickup, texte) en <code>intent_raw</code></td></tr>
+        <tr><td><code>clarification-loop</code></td><td><span class="pill analyse">analyse</span></td><td>questions ciblées, une à la fois, jusqu'à <code>spec.validated</code></td></tr>
+        <tr><td><code>intent-parser</code></td><td><span class="pill analyse">analyse</span></td><td>spec + guidelines vers une spec structurée (contraintes, zones interdites)</td></tr>
+        <tr><td><code>repo-resolver</code></td><td><span class="pill analyse">analyse</span></td><td>résout les repos, le graphe de dépendances et l'ordre de traitement</td></tr>
+        <tr><td><code>tech-detector</code></td><td><span class="pill analyse">analyse</span></td><td>détecte la stack vers <code>stack-snapshot.yaml</code></td></tr>
+        <tr><td><code>toolchain-preflight</code></td><td><span class="pill analyse">analyse</span></td><td>gate : runtime et gestionnaire de paquet à la version épinglée (vérifié dans le conteneur si <code>exec</code> déclaré)</td></tr>
+        <tr><td><code>planner</code></td><td><span class="pill orch">orchestration</span></td><td>produit le DAG ordonné et sélectionne les sous-skills techno</td></tr>
+        <tr><td><code>code-reader</code></td><td><span class="pill exec">exécution</span></td><td>lecture seule vers le context-cache (interfaces, patterns)</td></tr>
+        <tr><td><code>diff-writer</code></td><td><span class="pill exec">exécution</span></td><td>seul producteur de code métier ; délègue au sous-skill techno</td></tr>
+        <tr><td><code>test-generator</code></td><td><span class="pill exec">exécution</span></td><td>produit les tests ; délègue au sous-skill du framework</td></tr>
+        <tr><td><code>code-reviewer</code></td><td><span class="pill review">review</span></td><td>analyse selon spec, guidelines et checklists ; route le retry</td></tr>
+        <tr><td><code>validator</code></td><td><span class="pill valid">validation</span></td><td>exécute lint, build, tests dans le conteneur (ou l'hôte) déclaré ; route le retry</td></tr>
+        <tr><td><code>pr-builder</code></td><td><span class="pill livraison">livraison</span></td><td>crée les branches et PRs neutres, cross-référencées entre repos</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════ SLIDE 6 — Sous-skills + support ════════════ -->
+<div class="slide">
+  <div class="slide-top">
+    <div class="logos"><div class="logo-pill logo-sp">smartpush</div></div>
+    <div class="slide-num">sous-skills · 6</div>
+  </div>
+  <div class="content">
+    <div class="eyebrow"><span class="dot"></span>spécialisation</div>
+    <h2>sous-skills techno <span class="accent">et skills support</span></h2>
+    <p class="lead" style="margin-bottom:14px;">les sous-skills sont sélectionnés dynamiquement par le planner selon la stack détectée.</p>
+
+    <div class="grid cols-3" style="flex:1;align-items:stretch;">
+      <div class="card">
+        <div class="card-title" style="color:var(--pink-light)">diff-writer · 10</div>
+        <ul class="tags">
+          <li><code>write-java</code> <span class="t">11+ / java8</span></li>
+          <li><code>write-typescript</code></li>
+          <li><code>write-dotnet</code> · <code>write-go</code></li>
+          <li><code>write-python</code> · <code>write-php</code></li>
+          <li><code>write-symfony</code></li>
+          <li><code>write-reactjs</code> · <code>write-nextjs</code></li>
+        </ul>
+        <div class="card-body" style="margin-top:auto;padding-top:10px;">génération de code métier par techno.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--orange-light)">test-generator · 7</div>
+        <ul class="tags">
+          <li><code>test-junit4</code> · <code>test-junit5</code></li>
+          <li><code>test-jest</code> · <code>test-vitest</code></li>
+          <li><code>test-xunit</code></li>
+          <li><code>test-pytest</code></li>
+          <li><code>test-phpunit</code></li>
+        </ul>
+        <div class="card-body" style="margin-top:auto;padding-top:10px;">tests indiscernables d'un écrit manuel.</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--green)">détection · 6 + checklists · 10</div>
+        <ul class="tags">
+          <li><code>detect-java</code> · <code>detect-node</code></li>
+          <li><code>detect-dotnet</code> · <code>detect-go</code></li>
+          <li><code>detect-python</code> · <code>detect-php</code></li>
+        </ul>
+        <div class="card-body" style="margin-top:auto;padding-top:10px;">checklists de review : java, typescript, dotnet, php, symfony, react, nextjs, node-backend, express, nestjs.</div>
+      </div>
+    </div>
+
+    <div class="grid cols-4" style="margin-top:14px;">
+      <div class="footnote pink"><span><strong>commit-message</strong> · <strong>git-atomic-history</strong> — git</span></div>
+      <div class="footnote orange"><span><strong>pr-review-feedback</strong> — feedback PR</span></div>
+      <div class="footnote orange"><span><strong>thermo-nuclear</strong> — audit qualité</span></div>
+      <div class="footnote green"><span><strong>feed-llm-wiki</strong> — wiki LLM</span></div>
+    </div>
+    <div class="grid cols-1" style="margin-top:10px;">
+      <div class="footnote pink"><span><strong>graphify</strong> — cartographie cross-repo (graphe de connaissances AST-only) ; skill livré par <code>meta-repo-resources</code>, lanceur <code>graphify-map.sh</code> versionné, CLI externe sur le <code>PATH</code></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SLIDE 7 — Exécution conteneurisée ════════════ -->
+<div class="slide">
+  <div class="slide-top">
+    <div class="logos"><div class="logo-pill logo-sp">smartpush</div></div>
+    <div class="slide-num">exécution · 7</div>
+  </div>
+  <div class="content">
+    <div class="eyebrow"><span class="dot"></span>exécution conteneurisée</div>
+    <h2>chaque commande <span class="accent">dans le bon conteneur</span></h2>
+    <p class="lead">version, build, lint, test, coverage : un point d'exécution central enveloppe
+    chaque commande d'un repo selon son bloc <code>exec</code>, vers un service docker-compose ou
+    l'hôte. plus aucune dépendance aux toolchains installées localement.</p>
+
+    <div class="grid cols-3" style="margin-bottom:14px;">
+      <div class="card pink"><div class="card-title">bloc exec par repo</div><div class="card-body">déclaré dans <code>workspace.yaml</code>, surchargeable dans <code>workspace.local.yaml</code> : <code>mode</code>, <code>service</code>, <code>compose_file</code>, <code>workdir</code>.</div></div>
+      <div class="card orange"><div class="card-title">point d'exécution central</div><div class="card-body"><code>repo_exec.py</code> (et <code>repo-exec.sh</code>) route toute commande vers <code>docker compose exec</code> ou l'hôte. jamais d'appel direct à <code>mvn</code> / <code>npm</code>.</div></div>
+      <div class="card green"><div class="card-title">deux modes</div><div class="card-body"><code>compose</code> exécute dans un service déjà lancé ; <code>native</code> (défaut) sur l'hôte. le gate <code>--check</code> vérifie docker et le service avant de lancer.</div></div>
+    </div>
+
+    <div class="grid cols-2" style="flex:1;align-items:stretch;">
+      <div class="pre-block"><span class="c"># workspace.yaml — bloc exec</span>
+repos:
+  src-api:
+    exec:
+      mode: compose
+      compose_file: ~/infra/dc.yml  <span class="c"># hors du repo</span>
+      service: api
+      workdir: /workspace/src-api   <span class="c"># projet dans le conteneur</span>
+
+<span class="c"># lancer une commande dans le conteneur</span>
+repo-exec.sh src-api -- mvn test</div>
+      <div class="info-band" style="align-items:flex-start;">
+        <div class="ib-icon">i</div>
+        <div class="ib-text"><strong>routage automatique.</strong> <code>toolchain-preflight</code> et
+        <code>validator</code> passent par ce point : checks de version et build/test s'exécutent
+        dans le conteneur déclaré. <code>compose_file</code> peut vivre hors du repo (<code>~</code>,
+        <code>$VAR</code>) et <code>workdir</code> cible le projet quand un même conteneur en héberge
+        plusieurs.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SLIDE 8 — Graphify ════════════ -->
+<div class="slide">
+  <div class="slide-top">
+    <div class="logos"><div class="logo-pill logo-sp">smartpush</div></div>
+    <div class="slide-num">cartographie · 8</div>
+  </div>
+  <div class="content">
+    <div class="eyebrow"><span class="dot"></span>cartographie cross-repo</div>
+    <h2>graphify — un graphe <span class="accent">de tout le code</span></h2>
+    <p class="lead">chaque repo devient un graphe de connaissances (god nodes, communautés, relations
+    inter-fichiers). extraction <strong>ast-only</strong> : déterministe, sans llm ni clé api,
+    reproductible et hors-ligne.</p>
+
+    <div class="grid cols-3" style="margin-bottom:14px;">
+      <div class="card pink"><div class="card-title">initialisation</div><div class="card-body">le skill <code>/graphify</code> est livré par <code>meta-repo-resources</code> et matérialisé par <code>sync_skills.py</code> (étape 2). le lanceur <code>scripts/graphify-map.sh</code> est versionné dans ce meta-repo. le cli <code>graphify</code> reste un prérequis sur le <code>PATH</code>.</div></div>
+      <div class="card orange"><div class="card-title">lancement</div><div class="card-body"><code>graphify-map.sh</code> résout <code>workspace.yaml</code> et génère le graphe de chaque repo cloné. le skill <code>/graphify</code> interroge le graphe : <code>query</code>, <code>explain</code>, <code>path</code>.</div></div>
+      <div class="card green"><div class="card-title">sorties</div><div class="card-body"><code>graphify-out/</code> dans chaque repo cloné (<code>graph.json</code>, <code>graph.html</code>, <code>GRAPH_REPORT.md</code>). <code>cache/</code> et <code>.graphify_root</code> gitignorés.</div></div>
+    </div>
+
+    <div class="grid cols-2" style="flex:1;align-items:stretch;">
+      <div class="pre-block"><span class="c"># matérialiser le skill puis cartographier</span>
+python3 scripts/sync_skills.py
+scripts/graphify-map.sh            <span class="c"># tous les repos clonés</span>
+scripts/graphify-map.sh --repo src-esp
+
+<span class="c"># interroger la cartographie (/graphify)</span>
+graphify query   "comment les stats sont calculées ?"
+graphify explain "AccountStats"</div>
+      <div class="info-band" style="align-items:flex-start;">
+        <div class="ib-icon">i</div>
+        <div class="ib-text"><strong>extraction ast-only, hors-ligne.</strong> aucun appel llm ni clé
+        api : le graphe est déterministe et reproductible. <code>graphify-out/</code> est régénérable
+        à tout moment via <code>scripts/graphify-map.sh</code>.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SLIDE 9 — Gouvernance ════════════ -->
+<div class="slide">
+  <div class="slide-top">
+    <div class="logos"><div class="logo-pill logo-sp">smartpush</div></div>
+    <div class="slide-num">gouvernance · 9</div>
+  </div>
+  <div class="content">
+    <div class="eyebrow"><span class="dot"></span>règles et gouvernance</div>
+    <h2>contraintes de comportement <span class="accent">et definition of done</span></h2>
+
+    <div class="grid cols-2" style="margin-bottom:14px;">
+      <div class="card">
+        <div class="card-title">règles <code>.claude/rules/</code></div>
+        <ul class="tags" style="gap:7px;">
+          <li><code>english.md</code> <span class="t">tout le contenu en anglais</span></li>
+          <li><code>git-workflow.md</code> <span class="t">conventional commits, aucun commit autonome</span></li>
+          <li><code>action-logging.md</code> <span class="t">journal append-only par repo</span></li>
+          <li><code>llm-wiki-auto.md</code> <span class="t">maintenance wiki via hooks</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">politiques <code>context.yaml</code></div>
+        <ul class="tags" style="gap:7px;">
+          <li><code>ai_visibility</code> <span class="t">none — zéro fichier ia versionné</span></li>
+          <li><code>guidelines_location</code> <span class="t">meta-repo</span></li>
+          <li><code>review_position</code> <span class="t">after_tests (défaut)</span></li>
+          <li><code>commit_convention</code> <span class="t">conventional-commits</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card orange" style="border-top:3px solid var(--orange);">
+      <div class="card-title">definition of done mesurable</div>
+      <div class="grid cols-4" style="margin-top:4px;">
+        <div class="kpi" style="padding:12px"><div class="kpi-value orange">80%</div><div class="kpi-label">couverture min.</div></div>
+        <div class="kpi" style="padding:12px"><div class="kpi-value green">≠ ↓</div><div class="kpi-label">ne doit pas baisser</div></div>
+        <div class="kpi" style="padding:12px"><div class="kpi-value pink">PR</div><div class="kpi-label">review requise</div></div>
+        <div class="kpi" style="padding:12px"><div class="kpi-value">0</div><div class="kpi-label">nouveau warning</div></div>
+      </div>
+      <div class="card-body" style="margin-top:12px;">documentation à jour · migration requise si changement de schéma · branche de base <code>develop</code>.</div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="slide-foot">
+      <span>documentation du meta-repo · version 1.0</span>
+      <span id="gen-date-2"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var d = new Date();
+    var txt = d.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    ['gen-date-1', 'gen-date-2'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    });
+  })();
+</script>
+</body>
+</html>

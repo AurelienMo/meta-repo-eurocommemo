@@ -1,0 +1,303 @@
+openapi: 3.1.0
+info:
+  title: Events API
+  version: 3.0.0
+  description: Provides the audit trail of events for the organization.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Events
+paths:
+  /events:
+    get:
+      summary: Retrieve a list of events
+      description: >-
+        Retrieves a list of events for the authenticated organization.
+
+
+        This endpoint uses cursor-based pagination via `Link` headers. See
+        [Pagination](/api/v3/pagination) for details.
+      x-mint:
+        href: /api/v3/events/retrieve-a-list-of-events
+        metadata:
+          tag: Beta
+      operationId: sc-public-v3-events-get-events
+      tags:
+        - Events
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - schema:
+            type: integer
+            maximum: 100
+          in: query
+          name: page_size
+          description: The size of the page to fetch.
+          example: 100
+        - schema:
+            type: string
+            enum:
+              - shipment
+          in: query
+          name: resource_type
+          description: Filter events by resource type.
+          example: shipment
+        - schema:
+            type: string
+          in: query
+          name: resource_id
+          description: Filter events by the identifier of the affected resource.
+          example: '12345'
+        - schema:
+            type: string
+            enum:
+              - create
+              - update
+              - delete
+          in: query
+          name: operation
+          description: Filter events by operation type.
+          example: create
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: start_datetime
+          description: Include events at or after this timestamp (ISO 8601).
+          example: '2024-01-01T00:00:00Z'
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: end_datetime
+          description: Include events at or before this timestamp (ISO 8601).
+          example: '2024-12-31T23:59:59Z'
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-sendcloud-paginated: true
+      x-sendcloud-paginated-discriminator: data
+      responses:
+        '200':
+          description: OK
+          headers:
+            Link:
+              description: >-
+                The pagination links, according to the web linking specification
+                (RFC8288).
+              schema:
+                type: string
+                example: >-
+                  <https://panel.sendcloud.sc/api/v3/events?cursor=cj0xJnA9MjUzNTQyMzM3>;
+                  rel="prev",
+                  <https://panel.sendcloud.sc/api/v3/events?cursor=cD0yNTM1NDIyODI%3D>;
+                  rel="next"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: A list of events for the organization.
+                    items:
+                      $ref: '#/components/schemas/Event'
+              example:
+                data:
+                  - user_id: 123456
+                    organization_id: 789012
+                    resource_type: shipment
+                    operation: create
+                    resource_id: b7c82d93-4429-5992-9806-561d848dg3b5
+                    timestamp: '2026-06-15T11:11:41.484461Z'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Standardized format for errors in JSON:API responses.
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ErrorObject'
+                required:
+                  - errors
+              example:
+                errors:
+                  - status: '403'
+                    code: authentication_failed
+                    detail: Authentication credentials were not provided.
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    Event:
+      description: >-
+        Schema representing a single event. An event is a record of something
+        that occurred in the system, such as a user creating a shipment or an
+        automated process updating a resource.
+      type: object
+      title: Event
+      properties:
+        user_id:
+          type:
+            - integer
+            - 'null'
+          description: >-
+            The ID of the user who performed the action. Null for
+            system-initiated actions.
+          example: 42
+        organization_id:
+          type: integer
+          description: >-
+            The ID of the organization the event belongs to, automatically
+            scoped to the authenticated organization.
+          example: 1001
+        resource_type:
+          type: string
+          enum:
+            - shipment
+          description: The type of resource affected by the event.
+          example: shipment
+        operation:
+          type: string
+          enum:
+            - create
+            - update
+            - delete
+          description: The operation performed on the resource.
+          example: create
+        resource_id:
+          type: string
+          description: The identifier of the affected resource.
+          example: '12345'
+        timestamp:
+          type: string
+          format: date-time
+          description: The time at which the event occurred (ISO 8601).
+          example: '2024-06-17T10:30:00Z'
+      required:
+        - organization_id
+        - resource_type
+        - operation
+        - resource_id
+        - timestamp
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      description: >-
+        The cursor query string is used as the pivot value to filter results. If
+        no value is provided, the first page of results will be returned. To get
+        this value, you must encode the offset, reverse and position into a
+        base64 string.
+
+
+        There are 3 possible parameters to encode:
+
+        - `o`: Offset
+
+        - `r`: Reverse
+
+        - `p`: Position
+          
+        For example, `r=1&p=300` encoded as a base64 string would be
+        `cj0xJnA9MzAw`. The query string would then be `cursor=cj0xJnA9MzAw`.
+      schema:
+        type: string
+        example: cj0xJnA9MzAw

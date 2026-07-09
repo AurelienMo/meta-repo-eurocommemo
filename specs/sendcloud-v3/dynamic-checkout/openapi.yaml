@@ -1,0 +1,1407 @@
+openapi: 3.1.0
+info:
+  title: Dynamic Checkout [BETA]
+  version: 3.0.0
+  description: >-
+    Customize your checkout by setting up delivery methods and customizations
+    for each country, and decide which options appear at checkout.
+  contact:
+    name: Sendcloud API Support
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Dynamic Checkout
+    description: Dynamic Checkout API
+paths:
+  /checkout/configurations/{configuration_id}/delivery-options:
+    get:
+      summary: Retrieve a list of delivery options
+      operationId: sc-public-v3-checkout_api-get-delivery_options
+      x-mint:
+        href: /api/v3/dynamic-checkout/retrieve-a-list-of-delivery-options
+        content: >-
+          <Warning>
+            This endpoint is deprecated as of Tue, 09 Jun 2026. We recommend using the [Generate a list of delivery options](/api/v3/dynamic-checkout/generate-a-list-of-delivery-options) endpoint instead.
+          </Warning>
+
+
+          ## Why is this endpoint deprecated?
+
+
+          We've introduced a simpler, more flexible way to fetch delivery
+          options, and we're focusing future Dynamic Checkout improvements
+          there.
+
+
+          With the [Generate a list of delivery
+          options](/api/v3/dynamic-checkout/generate-a-list-of-delivery-options)
+          endpoint, you no longer need to keep track of a configuration ID or
+          pass it in the URL. It automatically picks up the Dynamic Checkout
+          configuration you've published for your API integration, so there's
+          nothing to hardcode and your checkout always reflects your latest
+          published setup.
+
+
+          It also accepts your cart and order details in a request body instead
+          of as query parameters. This makes room for richer, nested information
+          today and lets us keep adding new Dynamic Checkout features over time.
+
+
+          ---
+
+
+          <Note>
+            To use this API, you first need to [create your own Dynamic Checkout configuration](https://support.sendcloud.com/hc/en-us/articles/360057944932-How-to-configure-Dynamic-Checkout) in the Sendcloud platform.
+          </Note>
+
+
+          Follow these steps to get started:
+
+
+          1. Log in to your Sendcloud account and navigate to the **Dynamic
+          Checkout** tab.
+
+          2. Select your API integration from the **Shops** section to customize
+          your delivery options.
+
+          3. When you're done, click **Publish** to connect your configuration
+          to the selected API integration.
+
+
+          This API allows your customers to choose their preferred delivery
+          options during checkout.
+
+
+          The options returned by this endpoint are based on the [delivery
+          methods](https://support.sendcloud.com/hc/en-us/articles/360057944932-How-to-configure-Dynamic-Checkout#4)
+          previously configured in addition to cart or order information, such
+          as parcel weight, total order value, destination country, and more.
+
+
+          You can display the returned delivery options to your customers on
+          your checkout page, where they can select their preferred option for
+          their order.
+
+
+          ## How do delivery options correspond to configured delivery methods?
+
+
+          This API returns one delivery option per carrier configured in Dynamic
+          Checkout.
+
+          If a delivery method is configured with multiple carriers, then
+          multiple delivery options will be returned - one per carrier.
+
+          In cases when delivery options correspond to the same delivery method,
+
+          delivery options' ids will refer to the same delivery method id,
+
+          leaving API users with a flexibility to perform grouping based on a
+          delivery method id, if desired.
+
+
+          ## How can I create a shipment out of the selected delivery option?
+
+
+          Use the `checkout_identifier_type=shipping_option_code` parameter when
+          requesting delivery options.
+
+          This makes the `checkout_identifier` field of the selected delivery
+          option contain the shipping option code required for creating a
+          shipment.
+
+
+          To proceed, call the [Create and announce a shipment
+          asynchronously](/api/v3/shipments/create-and-announce-a-shipment-asynchronously)
+          endpoint,
+
+          setting `ship_with.type` to `"shipping_option_code"` and
+          `ship_with.properties.shipping_option_code` to the value of the
+          `checkout_identifier` field.
+      description: >-
+        The options returned by this endpoint are based on the [delivery
+        methods](https://support.sendcloud.com/hc/en-us/articles/360057944932-How-to-configure-Dynamic-Checkout#4)
+        previously configured in addition to cart or order information, such as
+        parcel weight, total order value, destination country, and more.
+      parameters:
+        - $ref: '#/components/parameters/ConfigurationID'
+        - $ref: '#/components/parameters/WeightValue'
+        - $ref: '#/components/parameters/TotalOrderValue'
+        - $ref: '#/components/parameters/FromCountry'
+        - $ref: '#/components/parameters/ToCountry'
+        - $ref: '#/components/parameters/CheckoutIdentifierType'
+        - $ref: '#/components/parameters/ToPostalCode'
+        - $ref: '#/components/parameters/ParcelLength'
+        - $ref: '#/components/parameters/ParcelWidth'
+        - $ref: '#/components/parameters/ParcelHeight'
+        - $ref: '#/components/parameters/CheckoutMetadata'
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/delivery-options-response'
+              examples:
+                StandardDeliveryOption:
+                  $ref: '#/components/examples/StandardDeliveryOption'
+                ServicePointDeliveryOptions:
+                  $ref: '#/components/examples/ServicePointDeliveryOptions'
+                NominatedDayDeliveryOption:
+                  $ref: '#/components/examples/NominatedDayDeliveryOption'
+                SameDayDeliveryOption:
+                  $ref: '#/components/examples/SameDayDeliveryOption'
+        '400':
+          $ref: '#/components/responses/Error400BadRequest'
+        '404':
+          $ref: '#/components/responses/Error404NotFound'
+      tags:
+        - Delivery Options
+      deprecated: true
+  /checkout/delivery-options:
+    post:
+      summary: Generate a list of delivery options
+      operationId: sc-public-v3-checkout_api-post-delivery_options
+      description: >-
+        Generates a list of delivery options based on the provided cart or order
+        details.
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Delivery Options
+      x-mint:
+        href: /api/v3/dynamic-checkout/generate-a-list-of-delivery-options
+        metadata:
+          tag: Beta
+        content: >-
+          <Note>
+            To use this API, you first need to [create your own Dynamic Checkout configuration](https://support.sendcloud.com/hc/en-us/articles/360057944932-How-to-configure-Dynamic-Checkout) in the Sendcloud platform.
+          </Note>
+
+
+          Follow these steps to get started:
+
+
+          1. Log in to your Sendcloud account and navigate to the **Dynamic
+          Checkout** tab.
+
+          2. Select your API integration from the **Shops** section to customize
+          your delivery options.
+
+          3. When you're done, click **Publish** to connect your configuration
+          to the selected API integration.
+
+
+          This API allows your customers to choose their preferred delivery
+          options during checkout. 
+
+
+          The delivery options returned by this endpoint are computed from the
+          [delivery
+          methods](https://support.sendcloud.com/hc/en-us/articles/360057944932-How-to-configure-Dynamic-Checkout#4)
+          configured in the currently active Dynamic Checkout configuration. 
+
+
+          The endpoint also takes into account the cart or order details
+          provided in the request body, such as parcel weight, total order
+          value, destination country, and other parameters.
+
+
+          You can display the returned delivery options to your customers on
+          your checkout page, where they can select their preferred option for
+          their order.
+
+
+          ## How do delivery options correspond to configured delivery methods?
+
+
+          This API returns one delivery option per carrier configured in Dynamic
+          Checkout.
+
+          If a delivery method is configured with multiple carriers, then
+          multiple delivery options will be returned - one per carrier.
+
+          In cases when delivery options correspond to the same delivery method,
+
+          delivery options' ids will refer to the same delivery method id,
+
+          leaving API users with a flexibility to perform grouping based on a
+          delivery method id, if desired.
+
+
+          ## Which Dynamic Checkout configuration is used?
+
+
+          This endpoint uses the currently active Dynamic Checkout configuration
+          for the authenticated API integration.
+
+
+          Unlike previous Dynamic Checkout endpoints, you do not need to provide
+          a `configuration_id` in the URL. Instead, the configuration is
+          determined by the API integration used to authenticate the request.
+          When you publish a Dynamic Checkout configuration in the Sendcloud
+          platform, it becomes the active configuration for the selected API
+          integration.
+
+          An API integration can have only one published Dynamic Checkout
+          configuration at a time. If the authenticated API integration does not
+          have a published configuration, this endpoint returns a `400`
+          response.
+
+
+          ## How can I create a shipment out of the selected delivery option?
+
+
+          The `checkout_identifier` field of the selected delivery option
+          contains the shipping option code required to create a shipment.
+
+
+          To create and announce the shipment, call the [Create and announce a
+          shipment
+          asynchronously](/api/v3/shipments/create-and-announce-a-shipment-asynchronously)
+          endpoint,
+
+          setting `ship_with.type` to `"shipping_option_code"` and
+          `ship_with.properties.shipping_option_code` to the value of the
+          `checkout_identifier` field.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/delivery-options-request'
+            examples:
+              BasicRequest:
+                summary: Basic request with required fields only
+                value:
+                  total_weight:
+                    value: '2500'
+                  total_price:
+                    value: '45.90'
+                  from_address:
+                    country_code: NL
+                  to_address:
+                    country_code: NL
+                    postal_code: 5611EM
+              FullRequest:
+                summary: Request with all fields
+                value:
+                  total_weight:
+                    value: '2500'
+                    unit: g
+                  total_price:
+                    value: '45.90'
+                  parcel_dimensions:
+                    length: '5.00'
+                    width: '15.00'
+                    height: '20.00'
+                    unit: cm
+                  from_address:
+                    sender_address_id: 123
+                  to_address:
+                    country_code: NL
+                    postal_code: 5611EM
+                  metadata:
+                    checkout_metadata: electronics
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/delivery-options-response'
+              examples:
+                StandardDeliveryOption:
+                  $ref: '#/components/examples/StandardDeliveryOption'
+                ServicePointDeliveryOptions:
+                  $ref: '#/components/examples/ServicePointDeliveryOptions'
+                NominatedDayDeliveryOption:
+                  $ref: '#/components/examples/NominatedDayDeliveryOption'
+                SameDayDeliveryOption:
+                  $ref: '#/components/examples/SameDayDeliveryOption'
+                NoDeliveryOptions:
+                  $ref: '#/components/examples/NoDeliveryOptions'
+        '400':
+          $ref: '#/components/responses/Error400BadRequestPost'
+components:
+  parameters:
+    ConfigurationID:
+      name: configuration_id
+      in: path
+      schema:
+        type: string
+        format: uuid
+        example: 465e2fe8-4589-4ae2-b49c-0c64153e5169
+      required: true
+      description: >-
+        The unique ID of the checkout configuration used to retrieve delivery
+        options
+    WeightValue:
+      name: weight_value
+      in: query
+      schema:
+        type: integer
+        example: 2500
+        minimum: 1
+      required: true
+      description: >
+        The total weight of the cart or order, specified in grams by default.
+        This parameter is used to select the most suitable shipping option.
+    TotalOrderValue:
+      name: total_order_value
+      in: query
+      schema:
+        type: string
+        example: '45.90'
+        minLength: 1
+      required: true
+      description: >
+        The total price of the cart or order, specified in the currency of the
+        checkout configuration. This parameter is used to calculate the shipping
+        rate if rates are configured for the delivery method. It can also be
+        used to determine if free shipping is applicable based on the configured
+        pricing rules.
+    FromCountry:
+      name: from_country_code
+      in: query
+      schema:
+        $ref: '#/components/schemas/country-code'
+      required: true
+      description: >-
+        The sender's country code for the shipment, formatted as an [ISO 3166-1
+        alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code
+    ToCountry:
+      name: to_country_code
+      in: query
+      schema:
+        $ref: '#/components/schemas/country-code'
+      required: true
+      description: >-
+        The recipient's country code for the shipment, formatted as an [ISO
+        3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) code
+    CheckoutIdentifierType:
+      name: checkout_identifier_type
+      in: query
+      schema:
+        type: string
+        default: shipping_option_code
+        enum:
+          - shipping_option_code
+      required: false
+      description: >
+        Specifies how to retrieve the shipping label. Currently, only the
+        `shipping_option_code` type is supported.  When this type is used, the
+        `checkout_identifier` field in each delivery option contains the
+        shipping option code, which is required to [create and announce a
+        shipment
+        asynchronously](/api/v3/shipments/create-and-announce-a-shipment-asynchronously).
+    ToPostalCode:
+      name: to_postal_code
+      in: query
+      schema:
+        type: string
+        example: 5611EM
+        maxLength: 15
+      required: false
+      description: >-
+        The recipient's postal code. Use this in combination with [Checkout
+        Rules](https://support.sendcloud.com/hc/en-us/articles/18580048370705-Checkout-rules)
+        to show or hide delivery options for specific locations.
+    ParcelLength:
+      name: parcel_length
+      in: query
+      schema:
+        type: number
+        example: 48
+      required: false
+      description: The parcel's length in centimeters (e.g., "48" or "52.3")
+    ParcelWidth:
+      name: parcel_width
+      in: query
+      schema:
+        type: number
+        example: 48
+      required: false
+      description: The parcel's width in centimeters (e.g., "48" or "52.3")
+    ParcelHeight:
+      name: parcel_height
+      in: query
+      schema:
+        type: number
+        example: 48
+      required: false
+      description: The parcel's height in centimeters (e.g., "48" or "52.3")
+    CheckoutMetadata:
+      name: checkout_metadata
+      in: query
+      schema:
+        type: string
+        example: demo_sku_12345
+        maxLength: 128
+      required: false
+      description: >
+        An arbitrary text field that can be used with [Checkout
+        Rules](https://support.sendcloud.com/hc/en-us/articles/18580048370705-Checkout-rules)
+        to control which delivery options are displayed during checkout. For
+        example, you might use it to pass a product SKU, goods category, or any
+        other custom property to show or hide specific delivery options during
+        checkout
+  responses:
+    Error400BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+          examples:
+            RequiredParametersMissing:
+              summary: Required parameters are missing
+              value:
+                errors:
+                  - status: '400'
+                    code: required
+                    detail: Field required
+                    source:
+                      parameter: weight_value
+                  - status: '400'
+                    code: required
+                    detail: Field required
+                    source:
+                      parameter: value
+            InvalidParameterValue:
+              summary: Invalid parameter value
+              value:
+                errors:
+                  - status: '400'
+                    code: validation_error
+                    detail: Invalid country code
+                    source:
+                      parameter: to_country_code
+                  - status: '400'
+                    code: validation_error
+                    detail: Input should be greater than 0
+                    source:
+                      parameter: weight_value
+    Error400BadRequestPost:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+          examples:
+            NoActiveConfiguration:
+              summary: No active configuration
+              value:
+                errors:
+                  - status: '400'
+                    code: non_field_errors
+                    detail: >-
+                      There is no active configuration for the authenticated
+                      integration
+            RequiredFieldsMissing:
+              summary: Required fields are missing
+              value:
+                errors:
+                  - status: '400'
+                    code: required
+                    detail: Field required
+                    source:
+                      pointer: /data/attributes/total_weight
+                  - status: '400'
+                    code: required
+                    detail: Field required
+                    source:
+                      pointer: /data/attributes/from_address
+            InvalidFieldValue:
+              summary: Invalid field value
+              value:
+                errors:
+                  - status: '400'
+                    code: validation_error
+                    detail: Invalid country code
+                    source:
+                      pointer: /data/attributes/to_address/country_code
+                  - status: '400'
+                    code: validation_error
+                    detail: Input should be greater than 0
+                    source:
+                      pointer: /data/attributes/total_weight/value
+    Error404NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+          examples:
+            ConfigurationNotFound:
+              summary: Configuration not found
+              value:
+                errors:
+                  - status: '404'
+                    code: not_found
+                    detail: >-
+                      Configuration with ID bae462c1-d659-48d0-aacd-fb7e3550de14
+                      doesn't exist
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    country-code:
+      type: string
+      title: ISO Alpha-2 Country Code Object
+      description: A country represented by its ISO 3166-1 alpha-2 code
+      example: NL
+    delivery-option:
+      title: Delivery Option Object
+      type: object
+      description: >
+        Delivery option that is available at the time of the request based on
+        the passed cart/order details. Delivery option is computed from a
+        [configured delivery method
+        type](https://support.sendcloud.com/hc/en-us/articles/360057944932-How-to-configure-Dynamic-Checkout#h_01HQAJ4V59P9EX6STZ0321068J)'
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: >-
+            The unique identifier of the delivery method that applies to the
+            current cart or order
+          example: ec9ce3b9-7d3f-4298-bc1c-8f3aaa8d27e9
+        title:
+          type: string
+          minLength: 1
+          description: >-
+            The public title of the delivery method. This can be displayed to
+            customers during checkout
+          example: Same day delivery
+        internal_title:
+          type: string
+          minLength: 1
+          description: >
+            A customizable internal name of the delivery method. It can serve as
+            an internal identifier for the delivery option or be used for any
+            other purpose that fits your needs
+          example: same_day_delivery_trunkrs
+        description:
+          type:
+            - string
+            - 'null'
+          minLength: 0
+          description: >
+            A brief description of the delivery method. This can be used to
+            provide additional details about the delivery option to customers
+            during checkout
+          example: Order now and get your delivery today!
+        delivery_method_type:
+          type: string
+          enum:
+            - standard_delivery
+            - same_day_delivery
+            - nominated_day_delivery
+            - service_point_delivery
+          description: >-
+            The type of the delivery method that applies to the current cart or
+            order
+          example: same_day_delivery
+        cut_off_time:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: >-
+            The time until which a delivery option is valid and can be selected
+            by the end buyer. It returns the corresponding [delivery method
+            cut-off
+            time](https://support.sendcloud.com/hc/en-us/articles/4404548941460#6),
+            as configured by the merchant in Dynamic Checkout.
+          example: '2024-11-27T15:00:00+01:00'
+        checkout_identifier:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - shipping_option_code
+              description: >-
+                The type of checkout identifier, determined by the
+                `checkout_identifier_type` query parameter
+              example: shipping_option_code
+            value:
+              type: string
+              minLength: 1
+              description: >-
+                The identifier value corresponding to the checkout identifier
+                type
+              example: trunkrs:same_day
+          description: >
+            An object containing the type and value of the checkout identifier. 
+            The type is determined by the `checkout_identifier_type` query
+            parameter, and the value depends on the specified type. For example,
+            if `shipping_option_code` is used, the value contains the shipping
+            option code needed to [create a
+            shipment](/api/v3/shipments/create-and-announce-a-shipment-asynchronously)
+            with the Shipments API.
+          required:
+            - type
+            - value
+        shipping_rate:
+          type: object
+          properties:
+            value:
+              type:
+                - string
+                - 'null'
+              minLength: 1
+              example: '5.00'
+              description: >
+                The calculated shipping rate price displayed to the end
+                customer, based on the cart or order details, such as weight and
+                value, and the configured shipping rates for the delivery
+                method.
+
+                * A value greater than `0` indicates the shipping rate based on
+                the configured weight classes and rates * A value of `0` means
+                free shipping applies, either because the cart value exceeds the
+                free shipping threshold or a zero rate is explicitly configured
+                * A `null` value means shipping rates are not configured for
+                this delivery method
+            currency:
+              type: string
+              description: >-
+                The currency of the shipping rate, as defined by the checkout
+                configuration
+              example: EUR
+          description: >
+            A price object containing the shipping rate shown to the customer at
+            checkout. This rate is calculated based on the cart's weight, value,
+            and the [configured shipping
+            rates](https://support.sendcloud.com/hc/en-us/articles/4414673031700-How-to-add-Dynamic-Checkout-rates)
+            for the matched delivery method.
+          required:
+            - value
+            - currency
+        carrier:
+          description: >-
+            Information about the carrier associated with the matching delivery
+            option
+          properties:
+            code:
+              type: string
+              title: Carrier Code
+            name:
+              type: string
+              example: PostNL
+              description: Carrier friendly name
+              minLength: 1
+            logo_url:
+              type: string
+              format: uri
+              example: >-
+                https://sendcloud-prod-scp-static-files.s3.amazonaws.com/postnl/img/logo.svg
+              description: Carrier logo URL
+              minLength: 12
+          required:
+            - code
+            - name
+            - logo_url
+        delivery_dates:
+          type:
+            - array
+            - 'null'
+          maxItems: 14
+          uniqueItems: true
+          description: >-
+            A list of available delivery dates that can be presented to the
+            customer during checkout,
+
+            allowing them to select when their parcel will be delivered.
+
+
+            Delivery dates are calculated based on:
+
+            1. Carrier delivery days
+
+            2. Configured parcel handover days in the delivery method settings
+
+            3. Configured cut-off times in the delivery method settings
+
+            4. Any holidays defined for the delivery method
+
+
+            The calculation of delivery dates depends on the delivery method
+            type:
+
+
+            #### Nominated Day Delivery
+
+
+            For `nominated_day_delivery`, up to **14** delivery dates are
+            provided, starting from the earliest available date.
+
+            Customers can choose their preferred delivery date from the list of
+            available options.
+
+
+            #### Same Day Delivery
+
+            For `same_day_delivery`, only **one** delivery date is provided,
+            which always corresponds to the same day the order is placed,
+            provided that same-day delivery is possible.
+
+
+            #### Standard Delivery and Service Point Delivery
+
+
+            For `standard_delivery` and `service_point_delivery`, delivery dates
+            are not calculated, and the field is always set to `null`.
+
+
+            <Info>
+              The calculated dates are timezone-aware and are based on the timezone settings of the delivery method.
+            </Info>
+          items:
+            type: object
+            maxProperties: 2
+            minProperties: 2
+            properties:
+              delivery_date:
+                type: string
+                example: '2022-08-09T16:00:00+01:00'
+                description: Define when the parcel will be delivered to the customer
+                format: date-time
+              parcel_handover_date:
+                type: string
+                example: '2022-08-08T16:00:00+01:00'
+                description: >-
+                  Define when the parcel will be handed over to the carrier by
+                  the merchant
+                format: date-time
+            required:
+              - delivery_date
+              - parcel_handover_date
+        lead_time_hours:
+          type:
+            - object
+            - 'null'
+          description: >-
+            Estimated shipping lead times, in hours, 
+
+            representing how long it typically takes from when the parcel is
+            shipped to when the first delivery attempt is made.
+
+
+            This data is useful for tracking and optimizing delivery times.
+
+            These figures are based on historical data and are not specific to
+            any individual parcel.
+
+
+            The estimates are broken down by percentiles (`p10` to `p95`), 
+
+            which indicate how many hours it takes for different percentages of
+            parcels to be delivered.
+
+
+            For example:
+              - If `p50` is **72**, it means that **50%** of parcels are delivered within **72 hours** or less.
+              - If `p90` is **120**, it means that **90%** of parcels are delivered within **120 hours** or less.
+          properties:
+            p10:
+              type: integer
+              description: Estimated delivery time in hours for the 10th percentile.
+              example: 1
+            p20:
+              type: integer
+              description: Estimated delivery time in hours for the 20th percentile.
+              example: 1
+            p30:
+              type: integer
+              description: Estimated delivery time in hours for the 30th percentile.
+              example: 2
+            p40:
+              type: integer
+              description: Estimated delivery time in hours for the 40th percentile.
+              example: 2
+            p50:
+              type: integer
+              description: >-
+                Estimated delivery time in hours for the 50th percentile
+                (median).
+              example: 3
+            p60:
+              type: integer
+              description: Estimated delivery time in hours for the 60th percentile.
+              example: 3
+            p70:
+              type: integer
+              description: Estimated delivery time in hours for the 70th percentile.
+              example: 4
+            p80:
+              type: integer
+              description: Estimated delivery time in hours for the 80th percentile.
+              example: 4
+            p90:
+              type: integer
+              description: Estimated delivery time in hours for the 90th percentile.
+              example: 5
+            p95:
+              type: integer
+              description: Estimated delivery time in hours for the 95th percentile.
+              example: 6
+          required:
+            - p10
+            - p20
+            - p30
+            - p40
+            - p50
+            - p60
+            - p70
+            - p80
+            - p90
+            - p95
+        sustainability_rating:
+          type:
+            - string
+            - 'null'
+          enum:
+            - low
+            - medium
+            - high
+          description: >-
+            A string representing how environmentally friendly the delivery
+            option is, with possible values being: **low**, **medium**, and
+            **high**, based on factors such as delivery location, delivery time,
+            and the type of delivery vehicle.
+          example: medium
+      required:
+        - id
+        - title
+        - internal_title
+        - description
+        - delivery_method_type
+        - cut_off_time
+        - checkout_identifier
+        - shipping_rate
+        - carrier
+        - delivery_dates
+        - lead_time_hours
+        - sustainability_rating
+    delivery-options-response:
+      title: Delivery Options Response Object
+      type: object
+      description: Delivery options response
+      properties:
+        configuration_id:
+          type: string
+          format: uuid
+          example: bae462c1-d659-48d0-aacd-fb7e3550de14
+          description: >-
+            The unique ID of the checkout configuration used to generate the
+            delivery options in the response
+        delivery_options:
+          type: array
+          description: >
+            A list of delivery options available for the given cart or order
+            details. Each delivery option corresponds to a configured delivery
+            method and includes detailed information, such as shipping rates,
+            delivery dates, and carrier information.
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/delivery-option'
+          example:
+            - id: ec9ce3b9-7d3f-4298-bc1c-8f3aaa8d27e9
+              title: Same day delivery
+              internal_title: same_day_delivery_trunkrs
+              description: Order now and get your delivery today!
+              delivery_method_type: same_day_delivery
+              cut_off_time: '2024-11-27T15:00:00+01:00'
+              checkout_identifier:
+                type: shipping_option_code
+                value: trunkrs:same_day
+              shipping_rate:
+                value: '5.00'
+                currency: EUR
+              carrier:
+                code: trunkrs
+                name: Trunkrs
+                logo_url: >-
+                  https://sendcloud-prod-scp-static-files.s3.amazonaws.com/trunkrs/img/logo.svg
+              delivery_dates:
+                - delivery_date: '2024-11-27T15:00:00+01:00'
+                  parcel_handover_date: '2024-11-27T15:00:00+01:00'
+              lead_time_hours:
+                p10: 0
+                p20: 0
+                p30: 0
+                p40: 0
+                p50: 0
+                p60: 0
+                p70: 0
+                p80: 24
+                p90: 24
+                p95: 24
+              sustainability_rating: low
+      required:
+        - configuration_id
+        - delivery_options
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      description: A standardized format for errors in JSON:API responses.
+      type: array
+      items:
+        allOf:
+          - $ref: '#/components/schemas/ErrorObject'
+          - required:
+              - status
+              - code
+              - detail
+    address-with-country-and-postal-code:
+      title: Address Object
+      type: object
+      description: Address object with country_code and postal_code
+      properties:
+        country_code:
+          type: string
+          example: NL
+          description: The country code of the customer represented as ISO 3166-1 alpha-2
+          minLength: 1
+        postal_code:
+          type: string
+          example: 1013 AB
+          description: Zip code of the address
+          minLength: 1
+      required:
+        - country_code
+    address-with-sender-address-id:
+      title: Sender Address ID
+      type: object
+      description: A sender address referenced by ID.
+      properties:
+        sender_address_id:
+          description: >-
+            The ID of a pre-configured sender address to ship from.
+
+
+            A sender address can be added through the [Sendcloud
+            platform](https://app.sendcloud.com/v2/settings/addresses/sender)
+            and be retrieved using the [Retrieve a list of sender
+            addresses](/api/v3/sender-addresses/retrieve-a-list-of-sender-addresses)
+            endpoint.
+
+
+            Note: if the sender address has a brand or tax numbers configured,
+            those will be used by default. However, explicitly provided
+            `brand_id` or `tax_numbers` in the request will always take
+            precedence over the values from the sender address.
+          example: 192
+          type: integer
+      required:
+        - sender_address_id
+    delivery-options-request:
+      title: Delivery Options Request Object
+      description: >-
+        Request body for searching delivery options based on cart or order
+        details
+      type: object
+      required:
+        - total_weight
+        - total_price
+        - from_address
+        - to_address
+      properties:
+        total_weight:
+          type: object
+          description: >
+            The total weight of the cart or order. Used to select the most
+            suitable shipping option.
+          properties:
+            value:
+              type: string
+              description: Weight value
+              example: '2500'
+            unit:
+              type: string
+              description: Weight unit. Defaults to grams (g) if not specified.
+              enum:
+                - kg
+                - g
+                - lbs
+                - oz
+              default: g
+              example: g
+          required:
+            - value
+        total_price:
+          type: object
+          description: >
+            The total price of the cart or order, specified in the currency of
+            the checkout configuration. Used to calculate the shipping rate and
+            determine free shipping eligibility.
+          properties:
+            value:
+              type: string
+              description: The total price value
+              example: '45.90'
+          required:
+            - value
+        parcel_dimensions:
+          type: object
+          description: >
+            The dimensions of the parcel. All properties are optional. Can be
+            used with [Checkout
+            Rules](https://support.sendcloud.com/hc/en-us/articles/18580048370705-Checkout-rules)
+            to control which delivery options are displayed during checkout.
+          properties:
+            length:
+              type: string
+              description: Length in the specified unit
+              example: '5.00'
+            width:
+              type: string
+              description: Width in the specified unit
+              example: '15.00'
+            height:
+              type: string
+              description: Height in the specified unit
+              example: '20.00'
+            unit:
+              type: string
+              description: Dimension unit. Defaults to centimeters (cm) if not specified.
+              enum:
+                - cm
+                - mm
+                - m
+                - yd
+                - ft
+                - in
+              default: cm
+              example: cm
+        from_address:
+          description: >
+            The sender address for the shipment. You can either provide a
+            `sender_address_id` to reference a pre-configured sender address, or
+            provide address fields directly with at least `country_code`.
+          oneOf:
+            - $ref: '#/components/schemas/address-with-country-and-postal-code'
+            - $ref: '#/components/schemas/address-with-sender-address-id'
+        to_address:
+          $ref: '#/components/schemas/address-with-country-and-postal-code'
+          description: >
+            The recipient's address. Must include at least `country_code`.
+            Providing `postal_code` enables more precise delivery options via
+            Checkout Rules.
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 128
+          maxProperties: 5
+          description: >
+            A free-form object for passing key-value pairs related to the cart
+            or order (maximum 5 keys, each value up to 128 characters).
+
+            To use metadata with existing Checkout Rules, pass the value under
+            the `checkout_metadata` key. This maps to the existing
+            `checkout_metadata` rule condition.
+
+            Support for arbitrary metadata keys in Checkout Rules will be added
+            separately.
+          example:
+            checkout_metadata: electronics
+  examples:
+    StandardDeliveryOption:
+      summary: Standard delivery option
+      value:
+        configuration_id: bae462c1-d659-48d0-aacd-fb7e3550de14
+        delivery_options:
+          - id: 431c1736-9a8f-480a-bf27-234016918417
+            title: DHL Delivery - Standard
+            internal_title: standard_delivery_dhl
+            description: Reliable and cost-effective delivery for your order
+            delivery_method_type: standard_delivery
+            cut_off_time: '2024-11-27T15:00:00+01:00'
+            checkout_identifier:
+              type: shipping_option_code
+              value: dhl:complete/standard
+            shipping_rate:
+              value: '5.00'
+              currency: EUR
+            carrier:
+              code: dhl
+              name: DHL
+              logo_url: >-
+                https://sendcloud-prod-scp-static-files.s3.amazonaws.com/dhl/img/logo.svg
+            delivery_dates: null
+            lead_time_hours:
+              p10: 48
+              p20: 48
+              p30: 72
+              p40: 72
+              p50: 96
+              p60: 96
+              p70: 120
+              p80: 120
+              p90: 144
+              p95: 168
+            sustainability_rating: high
+    ServicePointDeliveryOptions:
+      summary: Service point delivery options
+      value:
+        configuration_id: bae462c1-d659-48d0-aacd-fb7e3550de14
+        delivery_options:
+          - id: es9ce3b9-7d3f-4298-bc1c-8f3aaa8d27d6
+            title: Service point delivery (Any carrier)
+            internal_title: service_point_delivery_any_carrier
+            description: Pick up your order at a nearby service point
+            delivery_method_type: service_point_delivery
+            cut_off_time: null
+            checkout_identifier:
+              type: shipping_option_code
+              value: postnl:pakjegemak
+            shipping_rate:
+              value: '4.50'
+              currency: EUR
+            carrier:
+              code: postnl
+              name: PostNL
+              logo_url: >-
+                https://sendcloud-prod-scp-static-files.s3.amazonaws.com/postnl/img/logo.svg
+            delivery_dates: null
+            lead_time_hours: null
+            sustainability_rating: null
+          - id: es9ce3b9-7d3f-4298-bc1c-8f3aaa8d27d6
+            title: Service point delivery (Any carrier)
+            internal_title: service_point_delivery_any_carrier
+            description: Pick up your order at a nearby service point
+            delivery_method_type: service_point_delivery
+            cut_off_time: null
+            checkout_identifier:
+              type: shipping_option_code
+              value: dpd:classic/service_point
+            shipping_rate:
+              value: '4.50'
+              currency: EUR
+            carrier:
+              code: dpd
+              name: DPD
+              logo_url: >-
+                https://sendcloud-prod-scp-static-files.s3.amazonaws.com/dpd/img/logo.svg
+            delivery_dates: null
+            lead_time_hours: null
+            sustainability_rating: null
+          - id: b332aab6-4e1a-41b9-8a98-697202224271
+            title: Service point delivery (DHL)
+            internal_title: service_point_delivery_dhl
+            description: Pick up your order at a nearby DHL service point
+            delivery_method_type: service_point_delivery
+            cut_off_time: '2024-11-27T18:00:00+01:00'
+            checkout_identifier:
+              type: shipping_option_code
+              value: dhl:complete/standard,service_point
+            shipping_rate:
+              value: '5.00'
+              currency: EUR
+            carrier:
+              code: dhl
+              name: DHL
+              logo_url: >-
+                https://sendcloud-prod-scp-static-files.s3.amazonaws.com/dhl/img/logo.svg
+    NominatedDayDeliveryOption:
+      summary: Nominated day delivery option
+      value:
+        configuration_id: bae462c1-d659-48d0-aacd-fb7e3550de14
+        delivery_options:
+          - id: 068607a1-f591-47c6-af47-fcbb01dcdfd9
+            title: PostNL Delivery - Signature Required
+            internal_title: nominated_day_postnl_signature
+            description: PostNL - Select your preferred delivery day
+            delivery_method_type: nominated_day_delivery
+            cut_off_time: '2024-11-27T12:00:00+01:00'
+            checkout_identifier:
+              type: shipping_option_code
+              value: postnl:standard
+            shipping_rate:
+              value: '8.00'
+              currency: EUR
+            carrier:
+              code: postnl
+              name: PostNL
+              logo_url: >-
+                https://sendcloud-prod-scp-static-files.s3.amazonaws.com/postnl/img/logo.svg
+            delivery_dates:
+              - parcel_handover_date: '2024-11-28T12:00:00+01:00'
+                delivery_date: '2024-11-29T12:00:00+01:00'
+              - parcel_handover_date: '2024-11-29T12:00:00+01:00'
+                delivery_date: '2024-12-02T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-02T12:00:00+01:00'
+                delivery_date: '2024-12-03T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-03T12:00:00+01:00'
+                delivery_date: '2024-12-04T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-04T12:00:00+01:00'
+                delivery_date: '2024-12-05T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-05T12:00:00+01:00'
+                delivery_date: '2024-12-06T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-09T12:00:00+01:00'
+                delivery_date: '2024-12-10T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-10T12:00:00+01:00'
+                delivery_date: '2024-12-11T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-11T12:00:00+01:00'
+                delivery_date: '2024-12-12T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-12T12:00:00+01:00'
+                delivery_date: '2024-12-13T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-13T12:00:00+01:00'
+                delivery_date: '2024-12-16T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-16T12:00:00+01:00'
+                delivery_date: '2024-12-17T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-17T12:00:00+01:00'
+                delivery_date: '2024-12-18T12:00:00+01:00'
+              - parcel_handover_date: '2024-12-18T12:00:00+01:00'
+                delivery_date: '2024-12-19T12:00:00+01:00'
+            lead_time_hours:
+              p10: 24
+              p20: 24
+              p30: 48
+              p40: 48
+              p50: 72
+              p60: 72
+              p70: 96
+              p80: 96
+              p90: 120
+              p95: 144
+            sustainability_rating: medium
+    SameDayDeliveryOption:
+      summary: Same day delivery option
+      value:
+        configuration_id: bae462c1-d659-48d0-aacd-fb7e3550de14
+        delivery_options:
+          - id: ec9ce3b9-7d3f-4298-bc1c-8f3aaa8d27e9
+            title: Same day delivery
+            internal_title: same_day_delivery_trunkrs
+            description: Order now and get your delivery today!
+            delivery_method_type: same_day_delivery
+            cut_off_time: '2024-11-27T15:00:00+01:00'
+            checkout_identifier:
+              type: shipping_option_code
+              value: trunkrs:same_day
+            shipping_rate:
+              value: '5.00'
+              currency: EUR
+            carrier:
+              code: trunkrs
+              name: Trunkrs
+              logo_url: >-
+                https://sendcloud-prod-scp-static-files.s3.amazonaws.com/trunkrs/img/logo.svg
+            delivery_dates:
+              - parcel_handover_date: '2024-11-27T15:00:00+01:00'
+                delivery_date: '2024-11-27T15:00:00+01:00'
+            lead_time_hours:
+              p10: 0
+              p20: 0
+              p30: 0
+              p40: 0
+              p50: 0
+              p60: 0
+              p70: 0
+              p80: 24
+              p90: 24
+              p95: 24
+            sustainability_rating: low
+    NoDeliveryOptions:
+      summary: No delivery option
+      value:
+        configuration_id: bae462c1-d659-48d0-aacd-fb7e3550de14
+        delivery_options: []

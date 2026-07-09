@@ -1,0 +1,32 @@
+# workspace.local.example.yaml — MODÈLE versionné
+# ─────────────────────────────────────────────────────────────────────────────
+# Copiez ce fichier en `workspace.local.yaml` (NON versionné, gitignoré) et
+# adaptez les chemins à VOTRE machine. C'est le seul endroit où vivent des
+# chemins machine-spécifiques : `workspace.yaml` reste portable.
+#
+#   cp workspace.local.example.yaml workspace.local.yaml
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Racine commune où vivent vos repos enfants. Alimente ${REPOS_ROOT} dans
+# workspace.yaml. $HOME et les variables d'environnement sont expansés.
+repos_root: "$HOME/IdeaProjects/mes-repos"
+
+# (Optionnel) Overrides par repo — propres à VOTRE machine, prioritaires sur workspace.yaml.
+# repos:
+#   projet-alpha:
+#     # Repo situé HORS de repos_root :
+#     path: "/chemin/totalement/different/projet-alpha"
+#     # Forcer l'exécution en natif (ex. ce dev n'utilise pas Docker) — le bloc 'exec'
+#     # remplace en entier celui de workspace.yaml :
+#     exec:
+#       mode: native
+#   projet-beta:
+#     # Stack Docker hébergée HORS du repo (dossier d'infra propre à la machine).
+#     # compose_file accepte un chemin absolu, ~, $HOME ou $VAR (expansés). 'workdir' cible le
+#     # chemin du projet DANS le conteneur — utile quand ce conteneur héberge plusieurs projets :
+#     exec:
+#       mode: compose
+#       compose_file: "~/infra/projet-beta/docker-compose.yml"
+#       service: "app"
+#       workdir: "/workspace/projet-beta"

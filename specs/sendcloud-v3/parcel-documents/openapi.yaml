@@ -1,0 +1,439 @@
+openapi: 3.1.0
+info:
+  title: Parcel documents API
+  description: >
+    For international shipments, customs documentation is generated alongside
+    the shipping label. These documents can be downloaded separately from the
+    shipping label in various formats and resolutions via this API.
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Parcel Documents
+paths:
+  /parcels/{id}/documents/{type}:
+    get:
+      summary: Retrieve a parcel document
+      x-mint:
+        href: /api/v3/parcel-documents/retrieve-a-parcel-document
+        content: >-
+          Sendcloud generates the correct type of document for your shipment
+          when you [Create a
+          parcel](/api/v2/parcels/create-a-parcel-or-parcels), provided that you
+          have filled in all the information related to the parcel contents,
+          value and invoice. Use this endpoint to retrieve these documents in
+          your preferred format. 
+
+
+          This endpoint supports the following document types:
+
+
+          - `label`
+
+          - `customs-declaration`
+
+          - `air-waybill`
+
+          - `proof-of-delivery`
+
+
+          <Note>
+            For international shipments, customs declaration must be attached (either physically or [digitally](https://support.sendcloud.com/hc/en-us/articles/4417349714452-Send-your-customs-documents-digitally-via-Paperless-Trade-) for some carriers) to the shipment for customs officials to access.
+          </Note>
+
+
+          <Note>
+            `proof-of-delivery` is retrieved directly from the carrier on request and is only available once the parcel has been delivered. It is only returned in PDF format (`application/pdf`), and availability depends on the carrier supporting proof of delivery.
+          </Note>
+      tags:
+        - Parcel Documents
+      responses:
+        '200':
+          description: Requested parcel document file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/zpl:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                InvalidType:
+                  value:
+                    errors:
+                      - code: invalid
+                        status: '400'
+                        detail: Invalid document type.
+        '404':
+          description: Document type requested is not available for the parcel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                NotFound:
+                  summary: Parcel Document Not Found
+                  value:
+                    errors:
+                      - code: not_found
+                        status: '404'
+                        detail: No Parcel matches the given query.
+      operationId: sc-public-v3-scp-get-retrieve_parcel_documents
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/typeSingle'
+        - $ref: '#/components/parameters/dpi'
+        - $ref: '#/components/parameters/rendering_format'
+        - $ref: '#/components/parameters/paper-size'
+      description: >-
+        Retrieve a specific document for a given parcel, and download it in your
+        preferred format and resolution.
+  /parcel-documents/{type}:
+    get:
+      summary: Retrieve multiple parcel documents
+      tags:
+        - Parcel Documents
+      x-mint:
+        href: /api/v3/parcel-documents/retrieve-multiple-parcel-documents
+        content: >-
+          Sendcloud generates the correct type of document for your shipment
+          when you [Create a
+          parcel](/api/v2/parcels/create-a-parcel-or-parcels), provided that you
+          have filled in all the information related to the parcel contents,
+          value and invoice. Use this endpoint to retrieve these documents in
+          bulk.
+
+
+          This endpoint supports the following document types:
+
+            - `label`
+            - `customs-declaration`
+            - `air-waybill`
+
+          <Note>
+            For international shipments, customs declaration must be attached (either physically or [digitally](https://support.sendcloud.com/hc/en-us/articles/4417349714452-Send-your-customs-documents-digitally-via-Paperless-Trade-) for some carriers) to the shipment for customs officials to access.
+          </Note>
+
+
+          <Note>
+            `proof-of-delivery` is not available on this bulk endpoint. Unlike the other document types, which are generated and stored by Sendcloud, proof of delivery is fetched with a live call to the carrier for each individual parcel, so it cannot be retrieved in bulk. Use [Retrieve a parcel document](/api/v3/parcel-documents/retrieve-a-parcel-document) to request proof of delivery for a single parcel.
+          </Note>
+      responses:
+        '200':
+          description: Requested parcel document files of a specific type.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/zpl:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                InvalidType:
+                  value:
+                    errors:
+                      - code: invalid
+                        status: '400'
+                        detail: Invalid document type.
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                NotFound:
+                  value:
+                    errors:
+                      - code: not_found
+                        status: '404'
+                        detail: No Parcel matches the given query.
+      operationId: sc-public-v3-scp-get-retrieve_parcel_documents_bulk
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      parameters:
+        - $ref: '#/components/parameters/parcels'
+        - $ref: '#/components/parameters/type'
+        - $ref: '#/components/parameters/paper-size'
+      description: Download multiple parcel documents of the same type in bulk.
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  parameters:
+    id:
+      name: id
+      in: path
+      schema:
+        type: integer
+        example: 1
+        minimum: 1
+      description: Identifier of the parcel which you want to retrieve a document from
+      required: true
+    type:
+      name: type
+      in: path
+      schema:
+        type: string
+        example: customs-declaration
+        enum:
+          - label
+          - customs-declaration
+          - air-waybill
+      description: Document type you want to retrieve.
+      required: true
+    typeSingle:
+      name: type
+      in: path
+      schema:
+        type: string
+        example: customs-declaration
+        enum:
+          - label
+          - customs-declaration
+          - air-waybill
+          - proof-of-delivery
+      description: >-
+        Document type you want to retrieve.
+
+
+        **Note:** `proof-of-delivery` is only available in PDF format
+        (`application/pdf`) and depends on the carrier supporting proof of
+        delivery.
+      required: true
+    dpi:
+      name: dpi
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 72
+        enum:
+          - 72
+          - 150
+          - 203
+          - 300
+          - 600
+        example: 300
+        minimum: 1
+      description: >
+        DPI, or dots per inch, refers to the printing resolution of your
+        shipping labels. Labels must be printed at a high enough resolution to
+        ensure the clarity of address details and the barcode for scanning
+        purposes.
+
+
+        Use the following table to find the appropriate DPI for each file
+        format:
+
+
+        | File format | Default DPI | Valid DPI |
+
+        |-------------|-------------|-----------|
+
+        | pdf         | 72          | 72        |
+
+        | png         | 300         | 150, 300  |
+
+
+        ZPL labels are not affected by the DPI setting, as the resolution is
+        determined by the carrier itself. Most carriers use a resolution of 203
+        DPI. Zebra printers need to be configured to print at the specific DPI
+        of the label if they have higher resolution capabilities.
+    rendering_format:
+      name: Accept
+      in: header
+      required: false
+      schema:
+        type: string
+        default: application/pdf
+        enum:
+          - application/pdf
+          - application/zpl
+          - image/png
+        example: image/png
+      description: >-
+        The returned format of the document.
+
+
+        **Note:** If a label is requested as native ZPL from the carrier it
+        can't be converted to another format and will always be returned in ZPL.
+    parcels:
+      name: parcels
+      in: query
+      required: true
+      schema:
+        type: array
+        items:
+          type: integer
+        example:
+          - 1
+          - 2
+          - 3
+        maxItems: 20
+        minItems: 1
+      description: Parcels for which you want to retrieve the documents
+    paper-size:
+      in: query
+      name: paper_size
+      description: >
+        The paper size of the document you would like to retrieve. Paper size
+        can be one of:
+
+
+        - A4
+
+        - A5
+
+        - A6
+
+
+        Omitting this query parameter leads to the internal paper size of the
+        document being used. Generally this is A6 for labels and A4 for larger
+        documents, like customs documents.
+      schema:
+        type: string
+        enum:
+          - A4
+          - A5
+          - A6
+        example: A4
+  schemas:
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail

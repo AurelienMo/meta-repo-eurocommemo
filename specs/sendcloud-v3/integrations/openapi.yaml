@@ -1,0 +1,1648 @@
+openapi: 3.1.0
+info:
+  title: Integrations
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: >-
+    The Integrations API lets you manage some aspects of your integrations, and
+    set and retrieve available shop order statuses.
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Integrations
+    description: IntegrationsAPI
+  - name: Exception logs
+    description: Integration exception logs API
+paths:
+  /integrations/{id}:
+    parameters:
+      - schema:
+          type: integer
+          minimum: 1
+        name: id
+        in: path
+        required: true
+        description: Filtering on the Sendcloud integration ID
+    delete:
+      summary: Delete an integration
+      description: Safely delete one of your integrations from the Sendcloud system
+      x-mint:
+        href: /api/v3/integrations/delete-an-integration
+      responses:
+        '204':
+          description: No content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                OrderDoesNotExist:
+                  summary: Integration does not exist
+                  value:
+                    errors:
+                      - status: 404
+                        code: not_found
+                        title: Not Found
+                        detail: >-
+                          The Integration could not be found with the search
+                          criteria given
+      operationId: sc-public-v3-integrations-delete-delete_integration
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Integrations
+    patch:
+      summary: Update certain parts of an integration
+      description: >-
+        Update the shop name, shop URL, service point settings, webhook
+        settings, and feedback type of an integration.
+      x-mint:
+        href: /api/v3/integrations/update-certain-parts-of-an-integration
+        content: >-
+          You can update certain parts of an integration with this endpoint:
+
+
+          - Update the shop name of an integration
+
+          - Update the shop URL of an integration
+
+          - Enable service points and select the appropriate service point
+          carriers
+
+          - Enable webhooks and set the webhook URL
+
+          - Change the type of feedback you would like the integration to follow
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/integration-model'
+            examples:
+              UpdatingShopName:
+                summary: Update the shop name on your integration
+                description: Update the shop name on your integration.
+                value:
+                  shop_name: My Webshop
+              EnableServicePointsIntegration:
+                summary: Update an integration to enable service points.
+                description: Update an integration to enable service points.
+                value:
+                  service_point_enabled: true
+                  service_point_carriers:
+                    - ups
+                    - dhl
+              EnableWebhooksForAnIntegration:
+                summary: Update an integration to enable webhook feedback.
+                description: >
+                  Update an integration to enable Sendcloud to call your webhook
+                  to provide parcel status feedback.
+                value:
+                  webhook_active: true
+                  webhook_url: https://mywebshop.com/feedback
+              UpdateFeedbackType:
+                summary: Update type of feedback an integration will use.
+                description: |
+                  Update type of feedback an integration will use.
+                value:
+                  feedback_type: none
+      responses:
+        '204':
+          description: No content
+        '400':
+          description: Webhook URL required when enable webhook is set to `true`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                WebhookDoesNotExist:
+                  summary: Webhook url missing
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        title: Invalid
+                        detail: >-
+                          Webhook URL required when enable webhook is set to
+                          true
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                IntegrationDoesNotExist:
+                  summary: Integration does not exist
+                  value:
+                    errors:
+                      - status: 404
+                        code: not_found
+                        title: Not Found
+                        detail: >-
+                          The Integration could not be found with the search
+                          criteria given
+      operationId: sc-public-v3-integrations-patch-update_integration
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Integrations
+    get:
+      summary: Retrieve an integration
+      description: Get a valid integration from the Sendcloud system
+      x-mint:
+        href: /api/v3/integrations/retrieve-an-integration
+      responses:
+        '200':
+          description: Retrieved integration corresponding to the provided integration_id
+          content:
+            application/json:
+              schema:
+                title: Integration Get Response
+                type: object
+                description: >-
+                  Integration object as represented in the response of the get
+                  request.
+                properties:
+                  data:
+                    type: object
+                    $ref: '#/components/schemas/integration-response-model'
+              examples:
+                Response:
+                  value:
+                    data:
+                      id: 23452345
+                      shop_name: 'Integration #1'
+                      shop_url: https://www.my-shop-integration.com/
+                      type: api
+                      started_failing_at: '2023-11-10T16:16:42Z'
+                      last_fetched_at: '2023-11-10T16:15:09Z'
+                      created_at: '2023-11-04T14:15:22Z'
+                      updated_at: '2023-11-08T12:23:56Z'
+                      service_point_enabled: true
+                      service_point_carriers:
+                        - ups
+                        - dhl
+                      webhook_active: true
+                      webhook_url: >-
+                        https://my-shop-integration.integrator/api/webhooks/sendcloud
+                      feedback_type: eager
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                OrderDoesNotExist:
+                  summary: Integration does not exist
+                  value:
+                    errors:
+                      - status: 404
+                        code: not_found
+                        title: Not Found
+                        detail: >-
+                          The Integration could not be found with the search
+                          criteria given
+      operationId: sc-public-v3-integrations-get-retrieve_integration
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Integrations
+  /integrations:
+    get:
+      summary: Retrieve a list of integrations
+      description: >-
+        Retrieve all valid integrations from the Sendcloud system for a given
+        user.
+      x-mint:
+        href: /api/v3/integrations/retrieve-a-list-of-integrations
+      parameters:
+        - in: query
+          name: sort
+          schema:
+            type: string
+          description: >
+            Set the order for the response items:
+
+            - Sorting is supported by the `integration_type`, `created_at`,
+            `updated_at`, `last_fetch`, and `failing_since` attributes in the
+            response object.
+
+            - To sort the response in descending order, add the prefix `-` to
+            the query param value.
+
+            - By default, the items will be ordered by `last_fetch` and then
+            `created_at`.
+          example: updated_at
+      responses:
+        '200':
+          description: All valid integrations from the Sendcloud System for a given user.
+          content:
+            application/json:
+              schema:
+                title: Integration List Response
+                type: object
+                description: >-
+                  Integration object as represented in the response of the list
+                  request.
+                properties:
+                  data:
+                    items:
+                      $ref: '#/components/schemas/integration-response-model'
+              examples:
+                Response:
+                  value:
+                    data:
+                      - id: 23452345
+                        shop_name: 'Integration #1'
+                        shop_url: https://www.my-shop-integration.com/
+                        type: api
+                        started_failing_at: '2023-11-10T16:16:42Z'
+                        last_fetched_at: '2023-11-10T16:15:09Z'
+                        created_at: '2023-11-04T14:15:22Z'
+                        updated_at: '2023-11-08T12:23:56Z'
+                        service_point_enabled: true
+                        service_point_carriers:
+                          - ups
+                          - dhl
+                        webhook_active: true
+                        webhook_url: >-
+                          https://my-shop-integration.integrator/api/webhooks/sendcloud
+                        feedback_type: eager
+      operationId: sc-public-v3-integrations-get-list_integrations
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Integrations
+  /integrations/logs:
+    get:
+      summary: Retrieve all integration exception logs
+      operationId: sc-public-v3-integrations-get-retrieve_integrations_logs
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/integrations/retrieve-all-integration-exception-logs
+        content: >-
+          Integration exception logs might be generated, for example:
+
+
+          - if some resource cannot be found
+
+          - if API credentials are no longer valid
+
+
+          Each log record may contain information about the request and
+          response, the status code and code exception, and can be used as a
+          reference to identify issues between Sendcloud and a webshop.
+
+
+          Pagination is cursor-based. Use the `cursor` query parameter to
+          navigate through pages. The `Link` response header contains the URL
+          for the next page when more results are available.
+      description: >-
+        Retrieve all integration exception logs. These logs are created when
+        integrations have problems making API requests to shop systems.
+      tags:
+        - Exception logs
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+            format: date-time
+          description: >-
+            Cursor for pagination. Use the value from the `Link` response header
+            to fetch the next page.
+          example: '2023-03-01T02:02:00+01:00'
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+          description: Number of results per page.
+          example: 25
+      responses:
+        '200':
+          description: OK
+          headers:
+            Link:
+              schema:
+                type: string
+              description: >-
+                Contains the URL for the next page of results (RFC 5988).
+                Example:
+                `<https://panel.sendcloud.sc/api/v3/integrations/logs?cursor=2023-03-01T02:02:00&page_size=25>;
+                rel="next"`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/integration-log'
+              examples:
+                RetrieveIntegrationLogs:
+                  summary: Retrieve a list of integration logs
+                  value:
+                    data:
+                      - id: 123
+                        base_url: https://example.com
+                        full_url: https://example.com/order-note.json
+                        method: POST
+                        response_code: 495
+                        response:
+                          headers:
+                            Cache-Control: max-age=3600
+                            Content-Type: text/html; charset=utf-8
+                            Connection: keep-alive
+                          body: |
+                            <!doctype html>
+                            <html>
+                             <head>
+                             <title>SSL Certificate Error</title>
+                             </head>
+                             </html>
+                        request:
+                          headers:
+                            Cache-Control: max-age=3600
+                            Content-Type: text/html; charset=utf-8
+                            Connection: keep-alive
+                          payload:
+                            order_note:
+                              note: Success
+                        created_at: '2023-03-01T02:02:00+01:00'
+                        exception_type: requests.exceptions.SSLError
+                        exception: An SSL error occurred
+                        protected: false
+                        additional_data: ''
+  /integrations/{id}/logs:
+    parameters:
+      - schema:
+          type: integer
+        name: id
+        in: path
+        required: true
+        description: The id of the integration
+    get:
+      summary: Retrieve exception logs for a specific integration
+      operationId: sc-public-v3-integrations-get-retrieve_integration_logs
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: >-
+          /api/v3/integrations/retrieve-exception-logs-for-a-specific-integration
+        content: >-
+          Integration exception logs might be generated, for example:
+
+
+          - if some resource cannot be found
+
+          - if API credentials are no longer valid
+
+
+          Each log record may contain information about the request and
+          response, the status code and code exception, and can be used as a
+          reference to identify issues between Sendcloud and a webshop.
+
+
+          Pagination is cursor-based. Use the `cursor` query parameter to
+          navigate through pages. The `Link` response header contains the URL
+          for the next page when more results are available.
+      description: >-
+        Retrieve exception logs for a specific integration. These logs are
+        created when integrations have problems making API requests to shop
+        systems.
+      tags:
+        - Exception logs
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+            format: date-time
+          description: >-
+            Cursor for pagination. Use the value from the `Link` response header
+            to fetch the next page.
+          example: '2023-03-01T02:02:00+01:00'
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+          description: Number of results per page.
+          example: 25
+      responses:
+        '200':
+          description: OK
+          headers:
+            Link:
+              schema:
+                type: string
+              description: >-
+                Contains the URL for the next page of results (RFC 5988).
+                Example:
+                `<https://panel.sendcloud.sc/api/v3/integrations/{id}/logs?cursor=2023-03-01T02:02:00&page_size=25>;
+                rel="next"`
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/integration-log'
+              examples:
+                RetrieveIntegrationLogs:
+                  summary: Retrieve a list of integration logs
+                  value:
+                    data:
+                      - id: 123
+                        base_url: https://example.com
+                        full_url: https://example.com/order-note.json
+                        method: POST
+                        response_code: 495
+                        response:
+                          headers:
+                            Cache-Control: max-age=3600
+                            Content-Type: text/html; charset=utf-8
+                            Connection: keep-alive
+                          body: |
+                            <!doctype html>
+                            <html>
+                             <head>
+                             <title>SSL Certificate Error</title>
+                             </head>
+                             </html>
+                        request:
+                          headers:
+                            Cache-Control: max-age=3600
+                            Content-Type: text/html; charset=utf-8
+                            Connection: keep-alive
+                          payload:
+                            order_note:
+                              note: Success
+                        created_at: '2023-03-01T02:02:00+01:00'
+                        exception_type: requests.exceptions.SSLError
+                        exception: An SSL error occurred
+                        protected: false
+                        additional_data: ''
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                IntegrationDoesNotExist:
+                  summary: Integration does not exist
+                  value:
+                    errors:
+                      - status: 404
+                        code: not_found
+                        title: Not Found
+                        detail: >-
+                          The Integration could not be found with the search
+                          criteria given
+    post:
+      summary: Create integration exception logs
+      operationId: sc-public-v3-integrations-post-create_integration_logs
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/integrations/create-integration-exception-logs
+      description: >-
+        Create integration exception logs, which will appear in the connection
+        issue log screen of the user's integration.
+      tags:
+        - Exception logs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/integration-log-create'
+            examples:
+              CreateIntegrationLog:
+                summary: Create an integration log
+                value:
+                  base_url: https://example.com
+                  full_url: https://example.com/order-note.json
+                  method: POST
+                  response_code: 495
+                  response:
+                    headers:
+                      Cache-Control: max-age=3600
+                      Content-Type: text/html; charset=utf-8
+                      Connection: keep-alive
+                    body: |
+                      <!doctype html>
+                      <html>
+                       <head>
+                       <title>SSL Certificate Error</title>
+                       </head>
+                       </html>
+                  request:
+                    headers:
+                      Cache-Control: max-age=3600
+                      Content-Type: text/html; charset=utf-8
+                      Connection: keep-alive
+                    payload:
+                      order_note:
+                        note: Success
+                  created_at: '2023-03-01T02:02:00+01:00'
+                  exception_type: requests.exceptions.SSLError
+                  exception: An SSL error occurred
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/integration-log'
+              examples:
+                CreateIntegrationLog:
+                  summary: Create an integration log
+                  value:
+                    data:
+                      id: 123
+                      integration_id: 123
+                      base_url: https://example.com
+                      full_url: https://example.com/order-note.json
+                      method: POST
+                      response_code: 495
+                      response:
+                        headers:
+                          Cache-Control: max-age=3600
+                          Content-Type: text/html; charset=utf-8
+                          Connection: keep-alive
+                        body: |
+                          <!doctype html>
+                          <html>
+                           <head>
+                           <title>SSL Certificate Error</title>
+                           </head>
+                           </html>
+                      request:
+                        headers:
+                          Cache-Control: max-age=3600
+                          Content-Type: text/html; charset=utf-8
+                          Connection: keep-alive
+                        payload:
+                          order_note:
+                            note: Success
+                      created_at: '2023-03-01T02:02:00+01:00'
+                      exception_type: requests.exceptions.SSLError
+                      exception: An SSL error occurred
+                      protected: false
+                      additional_data: ''
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                ExtraFieldsNotPermitted:
+                  summary: Extra fields are not permitted
+                  value:
+                    errors:
+                      - status: 400
+                        code: extra_forbidden
+                        title: Extra Forbidden
+                        detail: Extra inputs are not permitted
+                        source:
+                          pointer: body/unknown_field
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                IntegrationDoesNotExist:
+                  summary: Integration does not exist
+                  value:
+                    errors:
+                      - status: 404
+                        code: not_found
+                        title: Not Found
+                        detail: >-
+                          The Integration could not be found with the search
+                          criteria given
+  /shop-order-statuses:
+    get:
+      summary: Retrieve shop order statuses for an integration
+      description: >-
+        Fetch all available shop order statuses for the Prestashop v2
+        integration, in the default or selected language.
+      x-mint:
+        href: /api/v3/integrations/retrieve-shop-order-statuses-for-an-integration
+        content: >-
+          <Warning>
+            Only the Prestashop V2 integration is supported.
+          </Warning>
+
+
+          Note that:
+
+
+          - If the user hasn't picked a language, they will receive the status
+          in the default language, `en-gb`.
+
+          - If `en-gb` is not present, the user receives the status in the first
+          language of the alphabetically ordered list.
+      parameters:
+        - $ref: '#/components/parameters/required_integration_id'
+        - $ref: '#/components/parameters/language'
+        - $ref: '#/components/parameters/show_deleted'
+      responses:
+        '200':
+          description: >-
+            All available shop order statuses for a given integration, in
+            default or selected language.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get-shop-order-statuses'
+              examples:
+                Response:
+                  value:
+                    data:
+                      - external_id: 17-B
+                        status: Delivered
+                        deleted_at: null
+                        translations:
+                          - status: Delivered
+                            language: en-gb
+                          - status: Verzonden
+                            language: nl-nl
+                          - status: Geliefert
+                            language: de-de
+                      - external_id: 14-A
+                        status: Cancelled
+                        deleted_at: '2023-11-04T14:15:22Z'
+                        translations:
+                          - status: Cancelled
+                            language: en-gb
+                          - status: Geannuleerd
+                            language: nl-nl
+                          - status: Abgesagt
+                            language: de-de
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                InvalidRequest:
+                  value:
+                    errors:
+                      - status: '400'
+                        code: non_field_errors
+                        title: integration ID
+                        detail: Integration ID is a required GET parameter
+      operationId: sc-public-v3-integrations-get-shop_order_statuses
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Integrations
+    post:
+      summary: Create or overwrite shop order statuses
+      description: Insert shop-specific custom statuses into the Sendcloud system.
+      x-mint:
+        href: /api/v3/integrations/create-or-overwrite-shop-order-statuses
+        content: >-
+          <Warning>
+            Only the Prestashop V2 integration is supported.
+          </Warning>
+
+
+          Note that:
+
+
+          - Integrations can have their own custom shop statuses.
+
+          - To get your order updates in time, Sendcloud needs to know what
+          statuses are available.
+
+          - This endpoint updates all existing statuses. That includes creating
+          new statuses, changing existing ones, and deleting ones that no longer
+          exist.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post-shop-order-statuses'
+            examples:
+              PostOrderShopStatuses:
+                summary: Upserting available shop order statuses
+                description: >-
+                  Setting all available shop order statuses with their available
+                  translations.
+                value:
+                  integration_id: 23452345
+                  statuses:
+                    - external_id: Send-4
+                      translations:
+                        - status: Sent
+                          language: en-gb
+                        - status: Verzonden
+                          language: nl-nl
+                    - external_id: '15'
+                      translations:
+                        - status: Delivered
+                          language: en-gb
+                        - status: Bezorgt
+                          language: nl-nl
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: 'null'
+              examples:
+                Response:
+                  value: null
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                WrongPayloadFormatRequested:
+                  value:
+                    errors:
+                      - status: '400'
+                        code: non_field_errors
+                        title: Wrong format
+                        detail: Wrong request format, expected object
+      operationId: sc-public-v3-integrations-post-shop_order_statuses
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Integrations
+  /shop-order-statuses/mapping:
+    get:
+      summary: Retrieve custom status mapping for an integration
+      description: >
+        Fetch a map of available shop order statuses and Sendcloud's internal
+        status category for the integration.
+      x-mint:
+        href: /api/v3/integrations/retrieve-custom-status-mapping-for-an-integration
+        content: |-
+          <Warning>
+            Only the Prestashop V2 integration is supported.
+          </Warning>
+      parameters:
+        - $ref: '#/components/parameters/required_integration_id'
+      responses:
+        '200':
+          description: Custom status mapping for an integration.
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/get-custom-status-mapping'
+              examples:
+                Response:
+                  value:
+                    data:
+                      integration_id: 23452345
+                      mapping:
+                        - status_category: READY_TO_SEND
+                          external_id: '11'
+                          is_valid: true
+                        - status_category: IN_TRANSIT
+                          external_id: '11'
+                          is_valid: true
+                        - status_category: DELIVERED
+                          external_id: null
+                          is_valid: true
+                        - status_category: CANCEL
+                          external_id: '1'
+                          is_valid: false
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                InvalidRequest:
+                  value:
+                    errors:
+                      - status: '400'
+                        code: non_field_errors
+                        title: integration ID
+                        detail: Integration ID is a required GET parameter
+      operationId: sc-public-v3-integrations-get-shop_order_statuses_mapping
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Integrations
+    post:
+      summary: Create or update custom status mapping for an integration
+      description: >-
+        Upsert a map of available shop order statuses and Sendcloud's internal
+        status category for an integration
+      x-mint:
+        href: >-
+          /api/v3/integrations/create-or-update-custom-status-mapping-for-an-integration
+        content: |-
+          <Warning>
+            Only the Prestashop V2 integration is supported.
+          </Warning>
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/create-custom-status-mapping'
+            examples:
+              PostOrderStatusesMapping:
+                summary: >-
+                  Insert or update custom status mapping of `external_ids` to
+                  Sendcloud's internal status category.
+                value:
+                  integration_id: 23452345
+                  mapping:
+                    - status_category: READY_TO_SEND
+                      external_id: '11'
+                    - status_category: IN_TRANSIT
+                      external_id: '11'
+                    - status_category: DELIVERED
+                      external_id: '12'
+                    - status_category: CANCEL
+                      external_id: null
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: 'null'
+              examples:
+                Response:
+                  value: null
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                WrongPayloadFormatRequested:
+                  value:
+                    errors:
+                      - status: '400'
+                        code: non_field_errors
+                        title: Wrong format
+                        detail: Wrong request format, expected object
+      operationId: sc-public-v3-integrations-post-shop_order_statuses_mapping
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Integrations
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  parameters:
+    required_integration_id:
+      in: query
+      required: true
+      name: integration_id
+      schema:
+        type: integer
+        example: 251
+      description: Filter response on `integration_id`.
+    language:
+      in: query
+      name: language
+      schema:
+        type: string
+        enum:
+          - en-us
+          - en-gb
+          - fr-fr
+          - de-de
+          - nl-nl
+          - es-es
+          - it-it
+      description: Get a response for the specified language.
+      example: en-gb
+    show_deleted:
+      in: query
+      name: show_deleted
+      schema:
+        type: boolean
+      description: Get all currently available and historical statuses.
+      example: true
+  responses:
+    Unauthorized:
+      description: Unauthorized request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+          examples:
+            InvalidCredentials:
+              summary: Invalid Credentials
+              value:
+                errors:
+                  - status: '401'
+                    code: authentication_failed
+                    title: Invalid username/password.
+                    detail: >-
+                      The username or password provided is incorrect. Please
+                      make a request with the valid credentials.
+            AuthenticationRequired:
+              value:
+                errors:
+                  - status: '401'
+                    code: authentication_failed
+                    title: No credentials
+                    detail: Authentication credentials were not provided.
+  schemas:
+    integration-model:
+      title: Integration Object
+      type: object
+      description: Integration object.
+      properties:
+        shop_name:
+          type: string
+          title: Shop Name
+          maxLength: 250
+          minLength: 1
+          description: Name of the shop.
+          example: My Shop Integration
+        shop_url:
+          type: string
+          title: Shop url
+          description: URL of the shop the integration connects to.
+          format: uri
+          minLength: 1
+          example: https://www.my-shop-integration.com/
+        service_point_enabled:
+          type: boolean
+          title: Service point enabled
+          description: Flag indicating if delivery to service points is enabled.
+          example: false
+        service_point_carriers:
+          type: array
+          title: Service point carriers
+          description: >-
+            List of carriers available for the service point picker. If service
+            point delivery is enabled, make sure to provide at least one
+            carrier.
+          items:
+            type: string
+            example: ups
+          example:
+            - ups
+            - dhl
+        webhook_active:
+          type: boolean
+          title: Webhook active
+          description: Flag indicating if parcel updates should be sent via the webhook.
+          example: false
+        webhook_url:
+          type:
+            - string
+            - 'null'
+          title: Webhook url
+          format: uri
+          description: >-
+            URL for sending updates on a parcel. A value for `webhook_url` is
+            required if `webhook_active` is set to `true`.
+          minLength: 1
+          example: https://my-shop-integration.integrator/api/webhooks/sendcloud
+        feedback_type:
+          type: string
+          title: Feedback Type
+          enum:
+            - eager
+            - delayed
+            - none
+          description: >-
+            Define how your shop status feedback should be sent into your
+            system. 
+
+            Note that this will not apply to Prestashop V2 as the custom status
+            mapping will define this.  
+
+            Use the following states:
+               - eager: Change the parcels’ status to “sent” once the label is created.
+               - delayed: Change the parcels’ status to “sent” once the carrier scans the label.
+               - none: Don’t send any feedback.
+          minLength: 1
+    integration-response-model:
+      title: Integration Response Object
+      type: object
+      description: Integration object.
+      allOf:
+        - $ref: '#/components/schemas/integration-model'
+        - type: object
+          properties:
+            id:
+              type: integer
+              description: ID of an integration.
+              example: 23452345
+            type:
+              type: string
+              description: >-
+                Type of shop/system the integration connects to. In Integrations
+                API V2, this attribute was referred to as `system`.
+              example: api
+            started_failing_at:
+              type:
+                - string
+                - 'null'
+              format: date-time
+              description: >-
+                Timestamp from when the integration is failing to fetch orders
+                or to send feedback. This value will be in the [ISO8601
+                format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+                In the Integrations API V2, this attribute was referred to as
+                `failing_since`.
+              example: '2023-11-10T16:16:42Z'
+            last_fetched_at:
+              type:
+                - string
+                - 'null'
+              format: date-time
+              description: >-
+                The last time we managed to fetch data from this integration,
+                used for rate limiting purposes. This value will be in the
+                [ISO8601
+                format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+                In the Integrations API V2, this attribute was referred to as
+                `last_fetch`.
+              example: '2023-11-10T16:15:09Z'
+            created_at:
+              type: string
+              format: date-time
+              description: >-
+                Timestamp when the integration was created. This value will be
+                in the [ISO8601
+                format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+              example: '2023-11-04T14:15:22Z'
+            updated_at:
+              type: string
+              format: date-time
+              description: >-
+                Timestamp when the integration was last updated. This value will
+                be in the [ISO8601
+                format](https://datatracker.ietf.org/doc/html/rfc3339#section-5.6).
+              example: '2023-11-08T12:23:56Z'
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail
+    integration-log:
+      type: object
+      title: Integration Log Object
+      description: >-
+        An integration exception log record containing information about a
+        failed API request to a shop system.
+      properties:
+        id:
+          type: integer
+          title: ID
+          description: ID of the log record
+          minimum: 1
+          example: 123
+          readOnly: true
+        integration_id:
+          type:
+            - integer
+            - 'null'
+          description: ID of the integration to which this log belongs
+          minimum: 1
+          example: 123
+        base_url:
+          description: Base shop URL
+          type: string
+          example: https://example.com
+          minLength: 1
+        full_url:
+          description: Full path to resource where error happened
+          type:
+            - string
+            - 'null'
+          example: https://example.com/order-note.json
+        method:
+          type: string
+          description: HTTP method that caused an error
+          example: POST
+        response_code:
+          type:
+            - integer
+            - 'null'
+          description: Standard HTTP error code
+          example: 495
+          minimum: 0
+        response:
+          type:
+            - object
+            - 'null'
+          title: Response object
+          description: Response JSON containing response body and headers
+          properties:
+            headers:
+              title: HTTP headers
+              description: HTTP headers which were sent within a response
+              type:
+                - object
+                - 'null'
+            body:
+              title: HTTP response body
+              description: HTTP response body
+              type:
+                - string
+                - object
+                - 'null'
+        request:
+          type:
+            - object
+            - 'null'
+          title: Request object
+          description: Request JSON containing request body and headers
+          properties:
+            headers:
+              title: HTTP headers
+              description: HTTP headers which were sent within a request
+              type:
+                - object
+                - string
+                - 'null'
+            payload:
+              title: HTTP request body
+              description: HTTP request body
+              type:
+                - object
+                - string
+                - 'null'
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating when an exception occurred
+          example: '2023-03-01T02:02:00+01:00'
+        exception_type:
+          type:
+            - string
+            - 'null'
+          description: >-
+            Internal field to store Python exception type. We use this field to
+            suggest our users the ways how they can fix issues.
+          example: requests.exceptions.SSLError
+        exception:
+          type:
+            - string
+            - 'null'
+          title: Exception text
+          description: Human readable description of exception
+          example: An SSL error occurred
+        protected:
+          type: boolean
+          description: An indication whether or not request/response is obfuscated
+          example: false
+          readOnly: true
+        additional_data:
+          type:
+            - object
+            - string
+          description: Additional data associated with the log entry
+          default: ''
+      required:
+        - base_url
+    integration-log-create:
+      type: object
+      title: Integration Log Create Object
+      description: Request body for creating an integration exception log.
+      properties:
+        base_url:
+          description: Base shop URL
+          type: string
+          example: https://example.com
+          minLength: 1
+        full_url:
+          description: Full path to resource where error happened
+          type:
+            - string
+            - 'null'
+          example: https://example.com/order-note.json
+        method:
+          type:
+            - string
+            - 'null'
+          description: HTTP method that caused an error
+          example: POST
+          default: ''
+        response_code:
+          type:
+            - integer
+            - 'null'
+          description: Standard HTTP error code
+          example: 495
+          minimum: 0
+        response:
+          type:
+            - object
+            - 'null'
+          title: Response object
+          description: Response JSON containing response body and headers
+          properties:
+            headers:
+              title: HTTP headers
+              description: HTTP headers which were sent within a response
+              type:
+                - object
+                - 'null'
+            body:
+              title: HTTP response body
+              description: HTTP response body
+              type:
+                - string
+                - object
+                - 'null'
+        request:
+          type:
+            - object
+            - 'null'
+          title: Request object
+          description: Request JSON containing request body and headers
+          properties:
+            headers:
+              title: HTTP headers
+              description: HTTP headers which were sent within a request
+              type:
+                - object
+                - string
+                - 'null'
+            payload:
+              title: HTTP request body
+              description: HTTP request body
+              type:
+                - object
+                - string
+                - 'null'
+        created_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: >-
+            Timestamp indicating when an exception occurred. If not provided,
+            the current date will be used.
+          example: '2023-03-01T02:02:00+01:00'
+        exception_type:
+          type:
+            - string
+            - 'null'
+          description: >-
+            Internal field to store Python exception type. We use this field to
+            suggest our users the ways how they can fix issues.
+          example: requests.exceptions.SSLError
+        exception:
+          type:
+            - string
+            - 'null'
+          title: Exception text
+          description: Human readable description of exception
+          example: An SSL error occurred
+      required:
+        - base_url
+      additionalProperties: false
+    get-shop-order-statuses:
+      title: Shop Order Statuses
+      type: object
+      description: Available shop order statuses with translations.
+      properties:
+        data:
+          type: array
+          description: Array holding all available shop order statuses for an integration
+          items:
+            type: object
+            properties:
+              external_id:
+                type: string
+                description: ID linked to the order status inside the integrated webshop.
+                example: 17-B
+              status:
+                type: string
+                description: Translated status name.
+                example: Delivered
+              deleted_at:
+                type:
+                  - string
+                  - 'null'
+                format: date-time
+                description: Timestamp when the status got removed from available statuses.
+                example: '2023-11-04T14:15:22Z'
+              translations:
+                type: array
+                minItems: 1
+                items:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      description: Order status.
+                      example: Delivered
+                    language:
+                      type: string
+                      description: Language of the status.
+                      example: en-gb
+                      enum:
+                        - en-us
+                        - en-gb
+                        - fr-fr
+                        - de-de
+                        - nl-nl
+                        - es-es
+                        - it-it
+    post-shop-order-statuses:
+      title: POST Shop Order Statuses
+      description: POST request with shop order statuses with translations.
+      type: object
+      required:
+        - integration_id
+        - statuses
+      properties:
+        integration_id:
+          type: integer
+          description: ID of the integration to which these statuses belong.
+          example: 252345
+        statuses:
+          type: array
+          description: Available shop statuses.
+          uniqueItems: true
+          minItems: 0
+          items:
+            type: object
+            required:
+              - external_id
+              - translations
+            properties:
+              external_id:
+                type: string
+                description: ID linked to the order status inside the integrated webshop.
+                example: 17-B
+              translations:
+                type: array
+                minItems: 1
+                maxItems: 7
+                uniqueItems: true
+                items:
+                  type: object
+                  required:
+                    - status
+                    - language
+                  properties:
+                    status:
+                      type: string
+                      description: Order status
+                      example: Delivered
+                    language:
+                      type: string
+                      description: Language of the status.
+                      example: en-gb
+                      enum:
+                        - en-us
+                        - en-gb
+                        - fr-fr
+                        - de-de
+                        - nl-nl
+                        - es-es
+                        - it-it
+    get-custom-status-mapping:
+      title: Get Custom Status Mapping
+      type: object
+      description: >-
+        Retrieve available shop order statuses mapped onto Sendcloud's internal
+        status category for the given integration.
+      properties:
+        data:
+          type: object
+          properties:
+            integration_id:
+              type: integer
+              description: Sendcloud Integration ID.
+              example: 23452345
+            mapping:
+              type: array
+              description: >-
+                Array containing available shop order statuses mapped onto
+                Sendcloud's internal status category.
+                  - The array contains an object of each of Sendcloud's internal status categories.
+                  - Each of sendcloud's internal status categories will be mapped onto either `AvailableStatus.external_id` or `null`
+                  - Not all `external_ids` in AvailableStatus may be mapped onto Sendcloud's internal status category.
+                  - Two `external_ids` may map onto the same internal status category.
+                  - An invalid mapping is a mapping that points to `external_id` that has been deleted.
+              items:
+                type: object
+                description: Status category to `external_id` association map.
+                properties:
+                  status_category:
+                    type: string
+                    enum:
+                      - READY_TO_SEND
+                      - IN_TRANSIT
+                      - DELIVERED
+                      - CANCEL
+                    description: Sendcloud internal status category.
+                    example: READY_TO_SEND
+                  external_id:
+                    type:
+                      - string
+                      - 'null'
+                    description: >-
+                      Field containing the ID linked to the order status inside
+                      the integrated webshop. It may be `None` or `null`.
+                    example: '11'
+                  is_valid:
+                    type: boolean
+                    description: >-
+                      A flag showing if the mapping points to an existing
+                      `external_id`.
+                    example: true
+    create-custom-status-mapping:
+      title: Create Custom Status Mapping
+      type: object
+      required:
+        - integration_id
+        - mapping
+      description: >-
+        Create or update the mapping of available shop order statuses onto
+        Sendcloud's internal status category.
+      properties:
+        integration_id:
+          type: integer
+          description: Sendcloud Integration ID.
+          example: 23452345
+        mapping:
+          type: array
+          minItems: 4
+          maxItems: 4
+          uniqueItems: true
+          description: >-
+            Array containing available shop order statuses mapped onto
+            Sendcloud's internal status category.
+              - Create or update an existing map of available shop order statuses onto Sendcloud's internal status category for the given integration.
+              - Make sure the mapping array contains objects of each Sendcloud's internal status categories.
+              - Map each of Sendcloud's internal status categories onto either `AvailableStatus.external_id` or `None`.
+              - Note that two `external_ids` may map to the same internal status category.
+          items:
+            type: object
+            required:
+              - status_category
+              - external_id
+            description: status category to external_id association map
+            properties:
+              status_category:
+                type: string
+                enum:
+                  - READY_TO_SEND
+                  - IN_TRANSIT
+                  - DELIVERED
+                  - CANCEL
+                description: sendcloud internal status category.
+                example: READY_TO_SEND
+              external_id:
+                type:
+                  - string
+                  - 'null'
+                description: >-
+                  Field containing the ID linked to the order status inside the
+                  integrated webshop. It may be `None`.
+                example: '11'

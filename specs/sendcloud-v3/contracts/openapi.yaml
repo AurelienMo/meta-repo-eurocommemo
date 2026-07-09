@@ -1,0 +1,886 @@
+openapi: 3.1.0
+info:
+  title: Contracts API
+  version: 3.0.0
+  description: >-
+    The Contracts API allows you to manage and retrieve information about your
+    direct shipping contracts connected to your Sendcloud account.
+  contact:
+    name: Sendcloud API Support
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Contracts
+paths:
+  /contracts:
+    get:
+      summary: Retrieve a list of contracts
+      tags:
+        - Contracts
+      x-sendcloud-paginated: true
+      x-sendcloud-paginated-discriminator: data
+      x-mint:
+        href: /api/v3/contracts/retrieve-a-list-of-contracts
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve contracts
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/contract'
+                required:
+                  - data
+              examples:
+                RetrieveContracts:
+                  summary: Retrieve a list of contracts
+                  value:
+                    data:
+                      - id: 60
+                        carrier:
+                          code: lettresuivie
+                          name: Lettre Suivie
+                        client_id: sendcloud-1
+                        country: FR
+                        is_default_per_carrier: true
+                        state: active
+                        type: direct
+                      - id: 61
+                        carrier:
+                          code: poste_italiane
+                          name: Poste Italiane
+                        client_id: sendcloud-1
+                        country: IT
+                        is_default_per_carrier: true
+                        state: active
+                        type: direct
+          headers:
+            Link:
+              description: >-
+                The pagination links, according to the web linking specification
+                (RFC8288).
+              schema:
+                type: string
+                example: >-
+                  <https://panel.sendcloud.sc/api/v3/contracts/?cursor=cj0xJnA9MjUzNTQyMzM3>;
+                  rel="prev",
+                  <https://panel.sendcloud.sc/api/v3/contracts/?cursor=cD0yNTM1NDIyODI%3D>;
+                  rel="next"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                BadRequest:
+                  summary: Bad Request
+                  value:
+                    errors:
+                      - detail: Value error, Carrier x does not exist.
+                        status: '400'
+                        code: validation_error
+                        source:
+                          parameter: query carrier
+        '429':
+          description: Throttled
+      operationId: sc-public-v3-scp-get-all_contracts
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      description: >-
+        Retrieve the list of contracts you have in your Sendcloud account. It
+        will also return the `id` of each contract, which you can use to
+        retrieve information about a specific contract.
+
+
+        This endpoint uses cursor-based pagination via `Link` headers. See
+        [Pagination](/api/v3/pagination) for details.
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: carrier_code
+          description: >-
+            The carrier you want to filter for, for instance: postnl. You can
+            find available carriers in your Sendcloud account settings.
+          required: false
+        - schema:
+            type: boolean
+          in: query
+          name: is_active
+          description: Filter contracts based on the status.
+        - schema:
+            type: string
+          in: query
+          name: client_id
+          description: Filter direct contracts based on the client id.
+        - schema:
+            type: string
+          in: query
+          name: name
+          description: >-
+            Filter direct contracts based on the contract's name. Will search
+            for a case-sensitive exact match.
+        - schema:
+            type: string
+          in: query
+          name: country_code
+          description: >-
+            Filter contracts based on the country of the contract, it should be
+            in the ISO 3166-1 alpha-2 format.
+          example: NL
+        - $ref: '#/components/parameters/Cursor'
+        - schema:
+            type: integer
+          in: query
+          name: page_size
+          description: The size of the page to fetch
+          example: 100
+    post:
+      summary: Create a contract for a carrier
+      description: Create a contract for a supported carrier.
+      tags:
+        - Contracts
+      operationId: sc-public-v3-scp-post-create_contract
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/contracts/create-a-contract-for-a-carrier
+        content: >-
+          This endpoint **creates** a contract for a carrier.
+
+
+          <Warning>
+            Creating a carrier contract via the API is **not supported for 2FA carriers**, including UPS, Hermes, Amazon, Bol, and FedEx. To create a carrier contract for these carriers, please use the Sendcloud platform.
+          </Warning>
+
+
+          After creating a contract, its initial state will be `"validating"`.
+          This means the system is verifying the contract data with carriers,
+          which typically takes only a few seconds, depending on the carriers.
+
+
+          Once validation is complete, the contract's state will change to one
+          of the following:
+
+
+          - `"active"` or `"inactive"`: The contract has been successfully
+          processed.
+
+          - `"validation_failed"`: An error occurred during validation.
+          Additional information about the failure will be provided.
+
+
+          You can check the current state of the contract using the [Retrieve a
+          contract](/api/v3/contracts/retrieve-a-contract) endpoint.
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Create a contract
+                type: object
+                title: Contract created response
+                properties:
+                  data:
+                    $ref: '#/components/schemas/contract'
+              examples:
+                CreateContract:
+                  summary: Contract created
+                  value:
+                    data:
+                      id: 60
+                      carrier:
+                        code: lettresuivie
+                        name: Lettre Suivie
+                      client_id: sendcloud-1
+                      is_active: false
+                      country: FR
+                      is_default: false
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Failed:
+                  summary: Failed to create contract
+                  value:
+                    errors:
+                      - detail: This field is required.
+                        status: '400'
+                        source:
+                          pointer: /data/client_id
+                        code: required
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/create-contract-request'
+  /contracts/{id}:
+    parameters:
+      - schema:
+          type: integer
+        in: path
+        name: id
+        description: The id of the contract.
+        required: true
+    get:
+      summary: Retrieve a contract
+      tags:
+        - Contracts
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve contract
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/contract'
+              examples:
+                RetrieveContract:
+                  summary: Retrieve a contract
+                  value:
+                    data:
+                      id: 60
+                      carrier:
+                        code: lettresuivie
+                        name: Lettre Suivie
+                      client_id: sendcloud-1
+                      is_default_per_carrier: true
+                      state: active
+                      type: direct
+        '404':
+          description: Contract not found
+      operationId: sc-public-v3-scp-get-specific_contract
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/contracts/retrieve-a-contract
+      description: >-
+        Retrieve information about a specific contract by including the `id` of
+        the contract as a path parameter.
+    patch:
+      summary: Update a contract
+      operationId: sc-public-v3-scp-patch-contract
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/contracts/update-a-contract
+        content: >-
+          This endpoint will either **update** or **replace** a contract.
+          Changes to unused contracts or the contract's state
+
+          and description will be done in place and not cause a new contract to
+          be created (`name`, `is_active`, `is_default`,
+          `is_per_carrier_default`).
+
+
+          **However, used contracts are immutable, if you change the
+          contract_data of a contract that has already been used for shipments,
+
+          it will cause a new contract ID to be created. In this case, the old
+          one will no longer be active for use.**
+
+
+          After updating a contract with `contract_data`, we need to validate it
+          again and its state will be `"validating"`.
+
+          During the validation the contract is not active and cannot be used
+          for creating shipments. The validation
+
+          process is asynchronous and will happen in the background.
+
+
+          Once validation is complete, the contract's state will change to one
+          of the following:
+
+          - `"active"` or `"inactive"`: The contract has been successfully
+          processed.
+
+          - `"validation_failed"`: An error occurred during validation.
+          Additional information about the failure will be provided.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Update contract
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/contract'
+              examples:
+                UpdatedContract:
+                  summary: Updated contract
+                  value:
+                    data:
+                      id: 60
+                      carrier:
+                        code: lettresuivie
+                        name: Lettre Suivie
+                      client_id: sendcloud-1
+                      is_default_per_carrier: true
+                      state: active
+                      type: direct
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Failed:
+                  summary: Failed to update contract
+                  value:
+                    errors:
+                      - detail: This field is required.
+                        status: '400'
+                        source:
+                          pointer: /data/client_id
+                        code: required
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+      description: >-
+        Update or replace a contract by including the `id` of the contract as a
+        path parameter.
+      tags:
+        - Contracts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update-contract-request'
+    delete:
+      summary: Delete a contract
+      description: >-
+        Delete a specific contract by including the `id` of the contract as a
+        path parameter.
+      operationId: sc-public-v3-scp-delete-contract
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/contracts/delete-a-contract
+        content: >-
+          Include the `id` of the contract as a path parameter to delete
+          information for that specific contract.
+
+
+          If you have multiple active contracts for the same carrier and you
+          delete the default contract, we will automatically pick the first
+          added contract as the new default.
+
+
+          If you delete the last contract for a specific carrier, we will
+          disable this carrier and its shipping options to prevent that you will
+          accidentally use Sendcloud's transactional rates.
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+      tags:
+        - Contracts
+  /contracts/schemas:
+    get:
+      summary: Retrieve a list of contract schemas
+      tags:
+        - Contracts
+      x-sendcloud-paginated: true
+      x-sendcloud-paginated-discriminator: data
+      x-mint:
+        href: /api/v3/contracts/retrieve-a-list-of-contract-schemas
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve contract schemas.
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/contract-schema'
+                required:
+                  - data
+              examples:
+                GetUPSContractsSchema:
+                  summary: >-
+                    Retrieve UPS contract schema. Beware, it's not a full
+                    example.
+                  value:
+                    data:
+                      - carrier_code: ups
+                        fields:
+                          - name: account_number
+                            description: >-
+                              Your UPS Account Manager can provide you with the
+                              Account Number.
+                            required: true
+                            type: string
+                          - name: country
+                            description: Select a contract country.
+                            required: false
+                            type: choice
+                            choices:
+                              - code: NL
+                                description: Netherlands
+                              - code: BE
+                                description: Belgium
+                GetDhlDeContractsSchema:
+                  summary: >-
+                    Retrieve DHL DE contract schema. Beware, it's not a full
+                    example.
+                  value:
+                    data:
+                      - carrier_code: dhl_de
+                        fields:
+                          - name: name
+                            description: >-
+                              A custom name used to identify this contract
+                              throughout the platform.
+                            required: true
+                            type: string
+                          - name: returns
+                            description: >-
+                              The Receiver ID serves to identify the correct
+                              return address.
+                            required: false
+                            type: object
+                            object:
+                              key:
+                                name: country
+                                description: Select a contract country.
+                                required: false
+                                type: choice
+                                choices:
+                                  - code: NL
+                                    description: Netherlands
+                                  - code: BE
+                                    description: Belgium
+                              value:
+                                name: Receiver ID
+                                description: ''
+                                required: false
+                                type: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                BadRequest:
+                  summary: Bad Request
+                  value:
+                    errors:
+                      - detail: Value error, Carrier x does not exist.
+                        status: '400'
+                        code: validation_error
+                        source:
+                          parameter: query carrier
+        '429':
+          description: Throttled
+      operationId: sc-public-v3-scp-get-all_contracts_schemas
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      description: >-
+        Retrieve information about contract schemas (by carrier) to help with
+        creating/updating contracts.
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: carrier_code
+          description: >-
+            The carrier you want to filter for, for instance: postnl. You can
+            find available carriers in your Sendcloud account settings.
+          example: postnl
+          required: false
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      description: >-
+        The cursor query string is used as the pivot value to filter results. If
+        no value is provided, the first page of results will be returned. To get
+        this value, you must encode the offset, reverse and position into a
+        base64 string.
+
+
+        There are 3 possible parameters to encode:
+
+        - `o`: Offset
+
+        - `r`: Reverse
+
+        - `p`: Position
+          
+        For example, `r=1&p=300` encoded as a base64 string would be
+        `cj0xJnA9MzAw`. The query string would then be `cursor=cj0xJnA9MzAw`.
+      schema:
+        type: string
+        example: cj0xJnA9MzAw
+  schemas:
+    contract:
+      title: Contract
+      description: User contract
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Unique identifier of the contract.
+        client_id:
+          description: >-
+            Value of the carrier specific key for contact (e.g. the value of
+            DelisID in DPD Benelux, username for DHL Express).
+          type:
+            - string
+            - 'null'
+        carrier:
+          type: object
+          properties:
+            code:
+              type: string
+            name:
+              type: string
+              minLength: 1
+              description: Carrier name.
+        name:
+          type: string
+          description: >-
+            A custom name set by the user used to identify this contract
+            throughout the platform.
+          maxLength: 50
+        country_code:
+          type: string
+          description: The country of the contract, as an ISO 3166-1 alpha-2.
+          example: NL
+        is_default_per_carrier:
+          type: boolean
+          description: >-
+            Indicates if the contract is marked as 
+
+            default. When you have multiple active direct contracts for the same
+            carrier, default indicates that the contract will be prioritized
+            over the other direct contracts for the same carrier, when no
+            contract is explicitly 
+             mentioned while creating a parcel. You can have only one default direct contract per carrier and it will always be False for the broker and subbroker. The default can be configured in the "My contracts" page in the Sendcloud platform.
+        state:
+          type: string
+          description: State of the contract
+          enum:
+            - active
+            - inactive
+            - validating
+            - validation_failed
+          example: active
+        type:
+          type: string
+          description: Contract type
+          enum:
+            - direct
+            - broker
+            - subbroker
+          example: direct
+        error:
+          type:
+            - string
+            - 'null'
+          description: An error message when validating contract
+          example: Missing or invalid shipper number
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail
+    base-contract-request:
+      title: Base Contract request Object
+      type: object
+      properties:
+        is_active:
+          type: boolean
+          description: >-
+            New contracts are inactive by default, if you want to activate it
+            immediately set this flag.
+          example: false
+        is_default_per_carrier:
+          type: boolean
+          description: >-
+            Marks the contract as default for a carrier. You can have only one
+            default direct contract per carrier.
+          default: false
+          example: false
+        contract_data:
+          type: object
+          description: >-
+            Fields for creating a contract. It supports dynamic key-value pairs,
+            where keys represent field names and values are string-based data.
+          additionalProperties:
+            type: string
+          example:
+            country: NL
+            client_id: sendcloud-1
+    create-contract-request:
+      title: Create Contract request Object
+      description: Contract request object model
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/base-contract-request'
+        - type: object
+          required:
+            - carrier_code
+            - contract_data
+          properties:
+            is_active:
+              type: boolean
+              default: false
+            carrier_code:
+              type: string
+              description: The carrier code of the contract
+              example: postnl
+    update-contract-request:
+      title: Update Contract request Object
+      description: Update request object model
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/base-contract-request'
+        - type: object
+          properties:
+            is_default_per_carrier:
+              type: boolean
+              description: >-
+                Marks the contract as default for a carrier. You can have only
+                one default direct contract per carrier.
+
+
+                **Note: You cannot mark a contract as not default, to switch the
+                default contract of a carrier 
+
+                use is_default_per_carrier: true on the contract you like to set
+                as active, 
+
+                other contracts for this carrier will automatically be marked as
+                not default.**
+            name:
+              type: string
+              description: The name of the contract
+              maxLength: 50
+              example: main
+    base-contract-field-schema:
+      title: Base Contract Field Schema
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the field
+          example: client_id
+        description:
+          type: string
+          description: Description of what this field will be used for
+          example: Your unique customer identifier within system
+        required:
+          type: boolean
+          description: Is the field required
+          example: true
+        type:
+          type: string
+          description: Type of the field
+          enum:
+            - string
+            - boolean
+            - choice
+            - object
+          example: string
+        choices:
+          type:
+            - array
+            - 'null'
+          description: List of choices for choice type
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                description: Code of the choice
+                example: NL
+              description:
+                type: string
+                description: Description of the choice
+                example: Netherlands
+      required:
+        - name
+        - description
+        - required
+        - type
+    dhl-de-returns-object:
+      title: DHL DE Returns
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/base-contract-field-schema'
+          description: Country description.
+        value:
+          $ref: '#/components/schemas/base-contract-field-schema'
+          description: Receiver Id description
+    contract-schema:
+      title: Contract schema
+      description: Schema for creating/updating contract
+      type: object
+      properties:
+        carrier_code:
+          type: string
+          description: The carrier of the contract schema
+          example: postnl
+        fields:
+          type: array
+          description: List of fields for creating/updating contract
+          items:
+            allOf:
+              - $ref: '#/components/schemas/base-contract-field-schema'
+              - type: object
+                properties:
+                  object:
+                    type:
+                      - object
+                      - 'null'
+                    oneOf:
+                      - $ref: '#/components/schemas/dhl-de-returns-object'
+      required:
+        - carrier_code
+        - fields

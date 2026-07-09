@@ -1,0 +1,173 @@
+openapi: 3.1.0
+info:
+  title: Authentication
+  version: 2.0.0
+  description: Provides details on how to obtain authentication
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://account.sendcloud.com
+    description: Production
+tags:
+  - description: Authentication
+    name: auth
+paths:
+  /oauth2/token:
+    post:
+      x-skip-lint: true
+      x-skip-lint-reason: >-
+        This endpoint's design is provided by a third-party service (Hydra) and
+        doesn't follow our API standards.
+      x-mint:
+        href: /api/v3/oauth2/token
+        content: >-
+          <Note>
+            OAuth 2.0 authentication is currently available as a beta feature for a limited number of clients. Following this beta phase, we are planning a gradual rollout of the OAuth2 authentication feature to all users. Our aim is to ensure a smooth transition and to continue providing an optimal user experience throughout the process.
+          </Note>
+
+
+          You can find a list of open-source libraries to help with OAuth 2.0
+          authentication at https://oauth.net/code/
+        metadata:
+          tag: Beta
+      description: Use this endpoint to get a new OAuth 2.0 access token.
+      operationId: OAuth2TokenExchange
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                client_id:
+                  type: string
+                  x-formData-name: client_id
+                code:
+                  type: string
+                  x-formData-name: code
+                grant_type:
+                  type: string
+                  x-formData-name: grant_type
+                redirect_uri:
+                  type: string
+                  x-formData-name: redirect_uri
+                refresh_token:
+                  type: string
+                  x-formData-name: refresh_token
+              required:
+                - grant_type
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuth2TokenExchange'
+          description: OAuth2TokenExchange
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOAuth2'
+          description: ErrorOAuth2
+      security:
+        - basic: []
+        - oauth2: []
+      summary: OAuth 2.0 token
+      tags:
+        - oAuth2
+components:
+  schemas:
+    ErrorOAuth2:
+      description: Error
+      properties:
+        error:
+          description: Error
+          type: string
+        error_debug:
+          description: |-
+            Error Debug Information
+
+            Only available in dev mode.
+          type: string
+        error_description:
+          description: Error Description
+          type: string
+        error_hint:
+          description: |-
+            Error Hint
+
+            Helps the user identify the error cause.
+          example: The redirect URL is not allowed.
+          type: string
+        status_code:
+          description: HTTP Status Code
+          example: 401
+          format: int64
+          type: integer
+      type: object
+    OAuth2TokenExchange:
+      description: OAuth2 Token Exchange Result
+      properties:
+        access_token:
+          description: The access token issued by the authorization server.
+          type: string
+        expires_in:
+          description: |-
+            The lifetime in seconds of the access token. For
+            example, the value "3600" denotes that the access token will
+            expire in one hour from the time the response was generated.
+          format: int64
+          type: integer
+        id_token:
+          description: To retrieve a refresh token request the id_token scope.
+          type: string
+        refresh_token:
+          description: >-
+            The refresh token, which can be used to obtain new
+
+            access tokens. To retrieve it add the scope "offline" to your access
+            token request.
+          type: string
+        scope:
+          description: The scope of the access token
+          type: string
+        token_type:
+          description: The type of the token issued
+          type: string
+      type: object
+  securitySchemes:
+    basic:
+      scheme: basic
+      type: http
+    bearer:
+      scheme: bearer
+      type: http
+    oauth2:
+      flows:
+        authorizationCode:
+          authorizationUrl: https://account.sendcloud.com/oauth2/auth
+          scopes:
+            offline: >-
+              A scope required when requesting refresh tokens (alias for
+              `offline_access`)
+            offline_access: A scope required when requesting refresh tokens
+            openid: Request an OpenID Connect ID Token
+          tokenUrl: https://account.sendcloud.com/oauth2/token
+      type: oauth2
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.

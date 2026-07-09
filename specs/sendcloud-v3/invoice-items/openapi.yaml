@@ -1,0 +1,634 @@
+openapi: 3.1.0
+info:
+  title: Invoice Items API
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  description: >-
+    The Invoice Items API lets you retrieve the billable line items charged to
+    your Sendcloud account, including pending items that have not yet been
+    consolidated onto an invoice.
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Invoice Items
+    description: >-
+      A single billable line — for example a parcel fee, a pickup fee, or a
+      subscription charge.
+paths:
+  /invoice-items:
+    get:
+      summary: Retrieve a list of invoice items
+      tags:
+        - Invoice Items
+      operationId: sc-public-v3-scp-get-invoice_items
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-sendcloud-paginated: true
+      x-sendcloud-paginated-discriminator: data
+      x-mint:
+        href: /api/v3/invoice-items/retrieve-a-list-of-invoice-items
+      description: >-
+        Retrieve a paginated list of invoice items for your organization.
+
+
+        The response includes both **invoiced** items (where `invoice_id` is
+        set) and **pending** items that have been billed but not yet
+        consolidated onto an invoice (where `invoice_id` is `null` and `tax` /
+        `tax_rate` are `null`). Use the date filters to scope the result set;
+        the cursor in the `Link` response header to page through results.
+
+
+        This endpoint uses cursor-based pagination via `Link` headers. See
+        [Pagination](/api/v3/pagination) for details.
+
+
+        <Warning>
+          Pending invoice items (where `invoice_id` is `null`) are **not final**. Amounts and types can still change, and Sendcloud may remove items, up until they are consolidated onto an invoice. Treat pending items as a preview, not a guarantee.
+        </Warning>
+
+
+        <Warning>
+          This endpoint is currently in **beta**. Its shape may change in backwards-incompatible ways while we collect feedback.
+        </Warning>
+      parameters:
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: created_after
+          description: >-
+            Return invoice items dated on or after this timestamp (inclusive).
+            ISO 8601 with timezone.
+          example: '2026-01-01T00:00:00Z'
+        - schema:
+            type: string
+            format: date-time
+          in: query
+          name: created_before
+          description: >-
+            Return invoice items dated on or before this timestamp (inclusive).
+            ISO 8601 with timezone.
+          example: '2026-01-31T23:59:59Z'
+        - schema:
+            type: integer
+          in: query
+          name: parcel_id
+          description: Return only invoice items linked to this parcel id.
+        - schema:
+            type: integer
+          in: query
+          name: invoice_id
+          description: Return only invoice items belonging to this invoice id.
+        - schema:
+            type: string
+            enum:
+              - addon
+              - addon_refund
+              - carrier_impl_fee
+              - carrier_parcel_fee
+              - claim
+              - coulance
+              - customer_impl_fee
+              - earned_credit
+              - fuel_refund
+              - fuel_surcharge
+              - import_adm_fee
+              - import_duties
+              - import_vat
+              - insurance
+              - insurance_refund
+              - invoice_check_fee
+              - invoice_check_fee_refund
+              - notification
+              - overcharge_fee
+              - parcel_cancelled
+              - parcel_fee
+              - parcel_fee_refund
+              - pickup
+              - pickup_cancelled
+              - pickup_subscription
+              - refund
+              - shipment
+              - subscription
+              - subscription_refund
+              - surcharge
+              - surcharge_refund
+              - unblock
+              - validation
+          in: query
+          name: type
+          description: >-
+            Return only invoice items of this type. Returns 400 if the value is
+            not a recognized public type.
+          example: shipment
+        - $ref: '#/components/parameters/Cursor'
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+          in: query
+          name: page_size
+          description: The size of the page to fetch. Defaults to 100, max 500.
+          example: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve invoice items
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/invoice-item'
+                required:
+                  - data
+              examples:
+                RetrieveInvoiceItems:
+                  summary: Retrieve a list of invoice items
+                  value:
+                    data:
+                      - id: 1042
+                        type: shipment
+                        description: Parcel 99887766 — NL → DE
+                        created_at: '2026-05-14T08:21:00Z'
+                        updated_at: '2026-05-14T08:21:00Z'
+                        price:
+                          value: '5.4200'
+                          currency: EUR
+                        tax:
+                          value: '1.1382'
+                          currency: EUR
+                        tax_rate: '0.21'
+                        vat_code: NL_STANDARD
+                        reference: '99887766'
+                        parcel_id: 99887766
+                        pickup_id: null
+                        carrier_id: 17
+                        from_country: NL
+                        invoice_id: 5501
+                      - id: 1043
+                        type: parcel_fee
+                        description: Parcel 99887767 — NL → BE (pending invoice)
+                        created_at: '2026-06-02T14:05:00Z'
+                        updated_at: null
+                        price:
+                          value: '4.1000'
+                          currency: EUR
+                        tax: null
+                        tax_rate: null
+                        vat_code: null
+                        reference: '99887767'
+                        parcel_id: 99887767
+                        pickup_id: null
+                        carrier_id: 17
+                        from_country: NL
+                        invoice_id: null
+          headers:
+            Link:
+              description: >-
+                The pagination links, according to the web linking specification
+                (RFC8288).
+              schema:
+                type: string
+                example: >-
+                  <https://panel.sendcloud.sc/api/v3/invoice-items?cursor=cj0xJnA9MjUzNTQyMzM3>;
+                  rel="prev",
+                  <https://panel.sendcloud.sc/api/v3/invoice-items?cursor=cD0yNTM1NDIyODI%3D>;
+                  rel="next"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                BadRequest:
+                  summary: Unknown invoice item type
+                  value:
+                    errors:
+                      - detail: Unknown invoice item type `foo`.
+                        status: '400'
+                        code: invalid
+                        source:
+                          parameter: type
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Unauthorized:
+                  summary: Missing or invalid credentials
+                  value:
+                    errors:
+                      - detail: Authentication credentials were not provided.
+                        status: '401'
+                        code: not_authenticated
+        '429':
+          description: Throttled
+  /invoice-items/{invoice_item_id}:
+    parameters:
+      - schema:
+          type: integer
+        in: path
+        name: invoice_item_id
+        description: The id of the invoice item.
+        required: true
+    get:
+      summary: Retrieve an invoice item
+      tags:
+        - Invoice Items
+      operationId: sc-public-v3-scp-get-invoice_item
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/invoice-items/retrieve-an-invoice-item
+      description: >-
+        Retrieve a single invoice item by id.
+
+
+        The item may be **invoiced** (`invoice_id` set, `tax` and `tax_rate`
+        populated) or **pending** (`invoice_id`, `tax`, and `tax_rate` are
+        `null`).
+
+
+        <Warning>
+          Pending invoice items (where `invoice_id` is `null`) are **not final**. Amounts and types can still change, and Sendcloud may remove items, up until they are consolidated onto an invoice. Treat pending items as a preview, not a guarantee.
+        </Warning>
+
+
+        <Warning>
+          This endpoint is currently in **beta**. Its shape may change in backwards-incompatible ways while we collect feedback.
+        </Warning>
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve invoice item
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/invoice-item'
+                required:
+                  - data
+              examples:
+                RetrieveInvoiceItem:
+                  summary: Retrieve an invoice item
+                  value:
+                    data:
+                      id: 1042
+                      type: shipment
+                      description: Parcel 99887766 — NL → DE
+                      created_at: '2026-05-14T08:21:00Z'
+                      updated_at: '2026-05-14T08:21:00Z'
+                      price:
+                        value: '5.4200'
+                        currency: EUR
+                      tax:
+                        value: '1.1382'
+                        currency: EUR
+                      tax_rate: '0.21'
+                      vat_code: NL_STANDARD
+                      reference: '99887766'
+                      parcel_id: 99887766
+                      pickup_id: null
+                      carrier_id: 17
+                      from_country: NL
+                      invoice_id: 5501
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Unauthorized:
+                  summary: Missing or invalid credentials
+                  value:
+                    errors:
+                      - detail: Authentication credentials were not provided.
+                        status: '401'
+                        code: not_authenticated
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                NotFound:
+                  summary: Invoice item not found
+                  value:
+                    errors:
+                      - detail: Not found.
+                        status: '404'
+                        code: not_found
+        '429':
+          description: Throttled
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      description: >-
+        The cursor query string is used as the pivot value to filter results. If
+        no value is provided, the first page of results will be returned. To get
+        this value, you must encode the offset, reverse and position into a
+        base64 string.
+
+
+        There are 3 possible parameters to encode:
+
+        - `o`: Offset
+
+        - `r`: Reverse
+
+        - `p`: Position
+          
+        For example, `r=1&p=300` encoded as a base64 string would be
+        `cj0xJnA9MzAw`. The query string would then be `cursor=cj0xJnA9MzAw`.
+      schema:
+        type: string
+        example: cj0xJnA9MzAw
+  schemas:
+    price:
+      title: Price
+      description: >-
+        A money amount exposed at full database precision (up to 4 decimal
+        places).
+
+
+        Note: this representation uses 4-decimal precision (unlike the canonical
+
+        2-decimal Price model used elsewhere in the v3 API) because invoice
+        items
+
+        store amounts at the precision used by Sendcloud's billing engine.
+      type: object
+      properties:
+        value:
+          type: string
+          description: Monetary amount as a decimal string, with up to 4 decimal places.
+          example: '12.3456'
+        currency:
+          type: string
+          description: ISO 4217 currency code.
+          example: EUR
+      required:
+        - value
+        - currency
+    invoice-item:
+      title: InvoiceItem
+      description: >-
+        A single billable line on an invoice (or a pending, not-yet-invoiced
+        item).
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Unique identifier of the invoice item.
+        type:
+          type: string
+          description: The category of the invoice item.
+          enum:
+            - addon
+            - addon_refund
+            - carrier_impl_fee
+            - carrier_parcel_fee
+            - claim
+            - coulance
+            - customer_impl_fee
+            - earned_credit
+            - fuel_refund
+            - fuel_surcharge
+            - import_adm_fee
+            - import_duties
+            - import_vat
+            - insurance
+            - insurance_refund
+            - invoice_check_fee
+            - invoice_check_fee_refund
+            - notification
+            - overcharge_fee
+            - parcel_cancelled
+            - parcel_fee
+            - parcel_fee_refund
+            - pickup
+            - pickup_cancelled
+            - pickup_subscription
+            - refund
+            - shipment
+            - subscription
+            - subscription_refund
+            - surcharge
+            - surcharge_refund
+            - unblock
+            - validation
+          example: shipment
+        description:
+          type: string
+          description: Human-readable description of the invoice item.
+        created_at:
+          type: string
+          format: date-time
+          description: Date the invoice item was created (the billing date of the item).
+        updated_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: >-
+            Date the invoice item was last updated. Null if it has never been
+            updated.
+        price:
+          $ref: '#/components/schemas/price'
+        tax:
+          oneOf:
+            - $ref: '#/components/schemas/price'
+            - type: 'null'
+          description: >-
+            Tax amount for this item. Null for pending items: the tax rate is
+            only
+
+            populated when the item is invoiced.
+        tax_rate:
+          type:
+            - string
+            - 'null'
+          description: >-
+            Tax rate applied to the price (e.g. '0.21' for 21%). Null until the
+            item is invoiced.
+          example: '0.21'
+        vat_code:
+          type:
+            - string
+            - 'null'
+          description: VAT code applied to this item. Null if no VAT code applies.
+        reference:
+          type: string
+          description: External reference for this invoice item.
+        parcel_id:
+          type:
+            - integer
+            - 'null'
+          description: Identifier of the parcel this item relates to, when applicable.
+        pickup_id:
+          type:
+            - integer
+            - 'null'
+          description: Identifier of the pickup this item relates to, when applicable.
+        carrier_id:
+          type:
+            - integer
+            - 'null'
+          description: Identifier of the carrier this item relates to, when applicable.
+        from_country:
+          type: string
+          description: Origin country of the item, as an ISO 3166-1 alpha-2 code.
+          example: NL
+        invoice_id:
+          type:
+            - integer
+            - 'null'
+          description: >-
+            Identifier of the invoice this item belongs to. Null for pending
+            items that have not yet been invoiced.
+      required:
+        - id
+        - type
+        - description
+        - created_at
+        - updated_at
+        - price
+        - tax
+        - tax_rate
+        - vat_code
+        - reference
+        - parcel_id
+        - pickup_id
+        - carrier_id
+        - from_country
+        - invoice_id
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail

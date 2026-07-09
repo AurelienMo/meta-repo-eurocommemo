@@ -1,0 +1,624 @@
+openapi: 3.1.0
+info:
+  title: Webhooks
+  version: 3.0.0
+  description: >-
+    Sendcloud is able to actively communicate updates in a parcel (such as
+    updates in the delivery status) to your application using webhooks.
+
+
+    You should specify an API endpoint in which Sendcloud will make requests to,
+    whenever a change occurs. You can set this using the webhook_url field in
+    your integration settings in Sendcloud.
+
+
+    > **Important:** Webhooks are scoped to the integration they are configured
+    on. You will only receive webhook events for parcels and actions that belong
+    to that specific integration. If you have multiple integrations, each one
+    needs its own webhook configuration to receive events for its parcels.
+
+
+    To verify a request is coming from Sendcloud, Sendcloud is signing each
+    request that we send to your endpoint using a HMAC signature (Hash-based
+    Message Authentication Code) with SHA256 algorithm and the `Secret Key` or
+    the `Webhook Signature Key` as secret, depending on your integration type.
+
+
+    For your store to validate that the webhook is coming from us, you should
+    hash the message received from us using your secret and compare against the
+    Sendcloud-Signature header received from us.
+
+
+    ```php
+
+    <?php
+
+    // From example:
+
+    // $data = "{\"key\": \"value\"}";
+
+    // $secret_key = "secretkey";
+
+    // hashed data from example:
+    1eed4b3d41f4653ac64fd56f1bf1cbfd349e4482cbc11dff7134bd93e5da4b0a
+
+    $secret_key = "secretkey";
+
+    $data = $_POST;
+
+    $Sendcloud_Signature = apache_request_headers()['Sendcloud-Signature'];
+
+    $hashed_signature = hash_hmac ( "sha256" , $data , $secret_key );
+
+    // You can compare the hashed signature from example with the one you can
+    hash yourself using the example $data variable.
+
+    assert("1eed4b3d41f4653ac64fd56f1bf1cbfd349e4482cbc11dff7134bd93e5da4b0a" ==
+    $hashed_signature);
+
+    ```
+
+
+    ```python
+
+    import hmac
+
+    import json
+
+
+    data = {'key': 'value'}
+
+    message = json.dumps(data)
+
+    signature = hmac.new(key='secretkey'.encode('utf-8'),
+    msg=message.encode('utf-8'), digestmod='sha256')
+
+    signature.hexdigest()
+
+
+    > '1eed4b3d41f4653ac64fd56f1bf1cbfd349e4482cbc11dff7134bd93e5da4b0a'
+
+    ```
+
+
+    **To receive the parcel data for every update that happens in a parcel, you
+    need to:**
+
+    - Visit your Integration settings within the Sendcloud platform.
+
+    - Enable the webhook feedback checkbox.
+
+    - Set the webhook url to your application that will process the data
+    received. * You can also test if the webhook works by sending a test webhook
+    to your application by clicking on “Test API Webhook” button.
+
+    - Save the shop settings.
+
+
+    **Additional notes:**
+
+    - Please note that the data your application will receive is the same as the
+    payload you would get when retrieving information about a specific parcel.
+
+    - If for any reason the call to your webhook fails, Sendcloud will retry
+    sending the update 10 times with an exponential delay. Starting with a 5
+    minute delay, and a maximum delay of 1 hour between retries. If after 10
+    tries, the call is still failing, Sendcloud will stop trying, and report the
+    issue to your Failed Request logs.
+
+    - Because your shop might be unreachable for some time, the webhook arrival
+    order might be scattered (unordered) which is why each webhook includes a
+    timestamp which can be used to identify which webhook is the later one.
+
+    - For return parcels, you will receive webhook updates only if the outgoing
+    shipment was created through the API Shop.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://www.shop_url.com/webhook
+    description: User API endpoint
+security:
+  - Sendcloud-Signature: []
+tags:
+  - name: Webhooks
+paths: {}
+webhooks:
+  IntegrationConnected:
+    post:
+      operationId: sc-public-v3-webhooks-integration_connected
+      summary: Integration connected
+      description: >-
+        A request is sent to the defined webhook whenever the integration is
+        created within our system.
+      x-mint:
+        href: /api/v3/webhooks/integration-connected
+      tags:
+        - Webhooks
+      requestBody:
+        description: Webhook data you will receive
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationConnectedWebhook'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+  IntegrationDeleted:
+    post:
+      operationId: sc-public-v3-webhooks-integration_deleted
+      summary: Integration deleted
+      description: >-
+        A request is sent to the defined webhook whenever the integration is
+        deleted from our system.
+      x-mint:
+        href: /api/v3/webhooks/integration-deleted
+      tags:
+        - Webhooks
+      requestBody:
+        description: Webhook data you will receive
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationDeletedWebhook'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+  IntegrationModified:
+    post:
+      operationId: sc-public-v3-webhooks-integration_modified
+      summary: Integration modified
+      description: >-
+        A request is sent to the defined webhook whenever the integration is
+        updated.
+      x-mint:
+        href: /api/v3/webhooks/integration-modified
+      tags:
+        - Webhooks
+      requestBody:
+        description: Webhook data you will receive
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationUpdatedWebhook'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+  ParcelStatusChanged:
+    post:
+      operationId: sc-public-v3-webhooks-parcel_status_changed
+      summary: Parcel status changed
+      description: >-
+        Happens whenever a parcel belonging to this integration shifts to a
+        different status. Only parcels created through this specific integration
+        will trigger this webhook.
+      x-mint:
+        href: /api/v3/webhooks/parcel-status-changed
+      tags:
+        - Webhooks
+      requestBody:
+        description: Webhook data you will receive
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParcelStatusChangedWebhook'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+  ReturnCreated:
+    post:
+      operationId: sc-public-v3-webhooks-return_created
+      summary: Return created
+      description: >-
+        Happens whenever a return is created from a parcel matching the
+        integration.
+      x-mint:
+        href: /api/v3/webhooks/return-created
+      tags:
+        - Webhooks
+      requestBody:
+        description: Webhook data you will receive
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnCreatedWebhook'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+components:
+  securitySchemes:
+    Sendcloud-Signature:
+      name: Sendcloud-Signature
+      type: apiKey
+      in: header
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    IntegrationWebhookBase:
+      description: Base schema for integration webhook payloads
+      type: object
+      properties:
+        action:
+          type: string
+          description: Describes the webhook action
+        timestamp:
+          type: integer
+          example: 1525271885993
+        integration:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 1
+              minimum: 1
+              description: A unique identifier for an integration within Sendcloud
+            shop_name:
+              type: string
+              example: API Integration
+              description: >-
+                The integration name as configured under the [integration
+                settings in
+                Sendcloud](https://app.sendcloud.com/v2/settings/integrations/manage)
+            shop_url:
+              type: string
+              format: uri
+              example: https://www.sendcloud.com
+              description: The integration url
+            system:
+              type: string
+              example: api
+              description: The integration type
+            failing_since:
+              type:
+                - 'null'
+                - string
+              format: date-time
+              example: '2019-02-03T06:48:07Z'
+              description: >-
+                A date time indicating when in time Sendcloud lost connection to
+                the integration.
+            last_fetch:
+              type:
+                - 'null'
+                - string
+              example: '2019-02-03T06:48:07Z'
+              format: date-time
+              description: >-
+                A date time indicating when was the last successful order
+                fetching.
+            last_updated_at:
+              type:
+                - 'null'
+                - string
+              format: date-time
+              example: '2019-02-03T06:48:07Z'
+              description: >-
+                A date time indicating when the integration settings were
+                updated.
+            service_point_enabled:
+              type: boolean
+              description: >-
+                True if you have configured [service
+                point](https://support.sendcloud.com/hc/en-us/articles/360026097951-FAQ-Service-Points)
+                support for your integration.
+            service_point_carriers:
+              type: array
+              uniqueItems: true
+              description: The service point carriers configured for your integration
+              items:
+                type: string
+            webhook_active:
+              type: boolean
+              description: True if you have enabled webhooks, False otherwise
+            webhook_url:
+              type: string
+              description: >-
+                Your integration URL to be used by Sendcloud to communicate
+                with.
+              format: uri
+              example: https://www.sendcloud.com/sendcloud-webhooks
+      required:
+        - action
+        - timestamp
+    IntegrationConnectedWebhook:
+      description: The webhook payload when an integration is added to Sendcloud
+      type: object
+      title: Webhook Integration Connected Object
+      allOf:
+        - $ref: '#/components/schemas/IntegrationWebhookBase'
+        - type: object
+          properties:
+            action:
+              type: string
+              example: integration_connected
+              enum:
+                - integration_connected
+    IntegrationDeletedWebhook:
+      description: The webhook payload when an integration is deleted from Sendcloud
+      type: object
+      title: Webhook Integration Deleted Object
+      allOf:
+        - $ref: '#/components/schemas/IntegrationWebhookBase'
+        - type: object
+          properties:
+            action:
+              type: string
+              example: integration_deleted
+              enum:
+                - integration_deleted
+    IntegrationUpdatedWebhook:
+      description: The webhook payload when an integration is updated in Sendcloud
+      type: object
+      title: Webhook Integration Updated Object
+      allOf:
+        - $ref: '#/components/schemas/IntegrationWebhookBase'
+        - type: object
+          properties:
+            action:
+              type: string
+              example: integration_updated
+              enum:
+                - integration_updated
+    ParcelStatusChangedWebhook:
+      type: object
+      description: >-
+        The webhook payload when a parcel (either an outgoing or an incoming
+        one) changes status.
+      title: Webhook Parcel Status Changed Object
+      properties:
+        action:
+          type: string
+          description: Describes the webhook action
+          example: parcel_status_changed
+          enum:
+            - parcel_status_changed
+        timestamp:
+          type: number
+          description: A unix timestamp indicating the time that the status changed
+        carrier_status_change_timestamp:
+          type:
+            - number
+            - 'null'
+          description: >-
+            A unix timestamp indicating the time that the status changed in the
+            carrier's system
+        parcel:
+          type: object
+          description: Parcel object
+          properties:
+            id:
+              type: integer
+              description: Sendcloud unique identifier or the parcel
+              example: 1
+            name:
+              type: string
+              description: Sender name
+              example: Mr Bob
+            company_name:
+              type: string
+              description: Company name of the sender
+              example: Sendcloud
+            address:
+              type: string
+              description: Address of the sender
+              example: Stadhuisplein 10
+            address_divided:
+              type: object
+              description: Divided object of address
+              properties:
+                street:
+                  type: string
+                  description: Street name
+                  example: Stadhuisplein
+                house_number:
+                  type: integer
+                  description: House number
+                  example: 10
+            city:
+              type: string
+              description: City name
+              example: Eindhoven
+            postal_code:
+              type: string
+              description: Postal code
+              example: 5611 EM
+            telephone:
+              type: string
+              description: Telephone number of the contact person
+              example: '612345678'
+            email:
+              type: string
+              format: email
+              description: >-
+                An email address of the person this parcel is supposed to be
+                delivered to
+              example: contact@sendcloud.com
+            date_created:
+              type: string
+              description: Date and time of when parcel created
+              example: '2019-02-03T06:48:07'
+            tracking_number:
+              type: string
+              description: Tracking number of the shipment
+              example: 3SYZXG132912330
+            weight:
+              type: string
+              description: Weight of the parcel
+              example: '2.000'
+            label:
+              type: object
+              description: |-
+                Labels array. More information in <a
+                    href="https://www.sendcloud.com/shipping-label/" target="_blank">Labels</a>
+              properties:
+                normal_printer:
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+                    example: >-
+                      https://panel.sendcloud.sc/api/v2/label/normal_printer/3172?start_from=0&hash=bbfd669ee9ebb19408b85b33d181a50040fd9bc4
+                label_printer:
+                  type: string
+                  format: uri
+                  example: >-
+                    https://panel.sendcloud.sc/api/v2/label/label_printer/3172?hash=bbfd669ee9ebb19408b85b33d181a50040fd9bc4
+            customs_declaration:
+              type: object
+              description: >-
+                An object with available printers that lists available links to
+                the created customs declaration form. (deprecated in favour of
+                documents)
+            status:
+              type: object
+              description: An object containing an id and the name of the status.
+              properties:
+                id:
+                  type: integer
+                  example: 1
+                  description: The Sendcloud unique identifier of the status
+                message:
+                  type: string
+                  example: Ready to send
+                  description: The description of the status
+            data:
+              type: object
+              description: >-
+                A pakjegemak key is still supported within this object, but it
+                is not recommended to use. Please use `to_service_point`
+                property to use service points.
+            country:
+              type: object
+              description: Country of the recipient
+              properties:
+                iso_3:
+                  type: string
+                  example: NLD
+                iso_2:
+                  type: string
+                  example: NL
+                name:
+                  type: string
+                  example: Netherlands
+            shipment:
+              type: object
+              description: Shipping method object for a parcel
+              properties:
+                id:
+                  type: integer
+                  example: 1
+                  description: The unique identifier of the shipping method
+                name:
+                  type: string
+                  example: PostNL Standard
+                  description: The Sendcloud shipping method name
+            order_number:
+              type: string
+              description: Order number of your order
+              example: ORD12334
+            shipment_uuid:
+              type: string
+              description: >-
+                Unique identifier that we assign to your shipment within the
+                Sendcloud system.
+              example: 87e18823-016b-479b-b9e0-c5c0c4065452
+            external_order_id:
+              type: string
+              description: >-
+                Our system will ensure uniqueness of shipments with the
+                combination of `external_order_id` and `external_shipment_id`
+              example: AMZ23311
+            external_shipment_id:
+              type: string
+              description: >-
+                Our system will ensure uniqueness of shipments with the
+                combination of `external_order_id` and `external_shipment_id`
+              example: AMZ231231
+    ReturnCreatedWebhook:
+      title: Webhook Return Created Object
+      type: object
+      description: >-
+        The webhook payload when a return is created. This is emitted when a
+        return is created either via the API or the Return Portal.
+
+
+        Creating a return manually via Return Form does NOT trigger the webhook.
+      properties:
+        action:
+          type: string
+          description: Describes webhook action
+          example: return_created
+          enum:
+            - return_created
+        timestamp:
+          type: number
+          description: Unix timestamp
+        data:
+          type: object
+          description: Information about the return
+          required:
+            - id
+          properties:
+            id:
+              type: number
+              description: The id of the return
+              example: 42
+            brand_id:
+              type: integer
+            order_number:
+              type: string
+            return_reason_id:
+              type: integer
+            return_address_id:
+              type: integer
+            paid_return:
+              type: boolean
+            delivery_choice:
+              type: string
+            refund_type:
+              type: string
+            items:
+              type: array
+              description: List of items for this return
+              items:
+                type: object
+                properties:
+                  item_id:
+                    type: string
+                  description:
+                    type: string
+                  quantity:
+                    type: integer
+                  sku:
+                    type: string
+                  hs_code:
+                    type: string
+                  return_reason_id:
+                    type: integer
+                required:
+                  - quantity
+      required:
+        - action
+        - timestamp
+        - data
+  responses:
+    '200':
+      description: >-
+        Return a 200 status to indicate that the data was processed
+        successfully. The response body may contain the extended line item.

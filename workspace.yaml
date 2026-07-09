@@ -1,0 +1,56 @@
+client: Eurocommemo
+meta_repo_version: "1.0"
+
+# Les chemins utilisent ${REPOS_ROOT} : portable et versionnable.
+# Chaque dev définit REPOS_ROOT (et d'éventuels overrides) dans workspace.local.yaml
+# (copié depuis workspace.local.example.yaml). Voir scripts/resolve_paths.py.
+# 'origin:' (URL git) par repo active le clone automatique via 'init-meta-repo.sh --clone'.
+#
+# 'dod:' (optionnel) surcharge PAR REPO les critères mesurables de la Definition of Done
+# définis globalement dans context.yaml → definition_of_done. Fusion repo-wins : seules les
+# clés présentes ici remplacent la baseline, les autres en héritent. Le contrat client narratif
+# (specs/dod.md) reste global et n'est pas concerné.
+#
+# 'exec:' (optionnel) définit OÙ exécuter les commandes du repo (build/test/lint, checks de
+# version). Sans bloc 'exec', tout tourne en natif sur l'hôte (comportement par défaut).
+# Avec 'mode: compose', les commandes sont enveloppées dans `docker compose exec` et exécutées
+# dans un service docker-compose DÉJÀ lancé. Voir scripts/repo_exec.py et README § « Exécution
+# conteneurisée ». Un dev peut surcharger ce bloc dans workspace.local.yaml (ex. forcer 'native').
+
+repos:
+  # Exemple 1 — backend
+   src-eurocommemo:
+     path: "${REPOS_ROOT}/src-eurocommemo"
+     origin: "git@github.com:CM-Development-687/eurocommemorative.git"
+     description: "Projet Eurocommemorative"
+     branch_default: main
+     exposes: []           # Interfaces/contrats exposés aux autres repos
+     exec:                 # OÙ exécuter les commandes (défaut : natif sur l'hôte si absent)
+       mode: compose       # compose | native
+       compose_file: "$HOME/IdeaProjects/stack-orb/docker-compose.yml"  # relatif au repo (défaut), OU chemin externe si la
+                                           # stack vit ailleurs : absolu, ~, $HOME, $VAR (expansés).
+                                           # Un chemin machine se déclare plutôt dans workspace.local.yaml.
+       service: "php-fpm-per83"      # service compose dans lequel exécuter (requis si mode=compose)
+       workdir: "/var/www/eurocommemo"     # chemin du projet DANS le conteneur (optionnel) — à renseigner
+                           # si le conteneur héberge plusieurs projets (ex. /workspace/<projet>)
+       shell: "sh -lc"     # invocation shell (optionnel, défaut : sh -lc)
+
+  # Exemple 2 — frontend qui consomme le backend
+  # projet-beta:
+  #   path: "${REPOS_ROOT}/projet-beta"
+  #   origin: "git@github.com:AurelienMo/projet-beta.git"
+  #   description: "Front — décrire le rôle ici"
+  #   branch_default: main
+  #   ci: github-actions
+  #   depends_on:
+  #     - projet-alpha
+  #   dod:
+  #     min_coverage: 60                          # seuil assoupli (front)
+  #     migration_required_if_schema_change: false  # repo sans base de données
+
+# Ordre de traitement : les repos exposant des interfaces en premier
+processing_order: []
+#  - projet-alpha
+#  - projet-beta
+
+branch_convention: "{scope}/{feature}"

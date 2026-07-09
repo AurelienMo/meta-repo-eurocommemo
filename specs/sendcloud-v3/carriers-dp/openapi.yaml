@@ -1,0 +1,200 @@
+openapi: 3.1.0
+info:
+  title: Deutsche Post Carrier API
+  version: 3.0.0
+  description: Manage Deutsche Post carrier-specific operations.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Deutsche Post Carrier
+    description: Operations for Deutsche Post carrier
+paths:
+  /carriers/dp/finalize-order:
+    post:
+      summary: Finalize a Deutsche Post order
+      description: >
+        Closes the current open order/box and generates AWB (Air Waybill)
+        documents for all parcels in that box.
+
+
+        **How it works:**
+
+        1. As you create Deutsche Post International parcels, they are
+        automatically added to the current box (identified by the current
+        box_number).
+
+        2. When the box is full or you're ready to ship, call this endpoint to
+        finalize the box.
+
+        3. The finalization process:
+           - Generates a single AWB label that is shared by all parcels in the finalized box
+           - Attaches the AWB label to all parcels in the box
+           - Increments the box_number, automatically starting a new box for subsequent parcels
+        4. You can create and finalize multiple boxes throughout the day as
+        needed.
+
+
+        **Important notes:**
+
+        - Each box has its own unique AWB label
+
+        - All parcels within a single box share the same AWB label
+
+        - The AWB document can be retrieved from any parcel that was in the
+        finalized box
+
+        - New parcels created after finalization will be added to the new box
+      x-mint:
+        href: /api/v3/carriers-dp/finalize-a-deutsche-post-order
+      tags:
+        - Deutsche Post Carrier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalizeOrderRequestSchema'
+            examples:
+              default_copy_count:
+                summary: Default copy count
+                value:
+                  copy_count: 1
+              multiple_copies:
+                summary: Multiple copies
+                value:
+                  copy_count: 5
+      responses:
+        '200':
+          description: Order finalized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizeOrderResponseSchema'
+              examples:
+                success_with_awb:
+                  summary: Successful finalization with AWB
+                  value:
+                    data:
+                      copy_count: 1
+                      awb_document_url: /api/v3/parcels/12345/documents/air-waybill
+                      next_order_id: '2'
+                success_without_awb:
+                  summary: No eligible parcels found
+                  value:
+                    data:
+                      copy_count: 1
+                      awb_document_url: null
+                      next_order_id: '1'
+        '400':
+          description: >-
+            Bad Request - Invalid copy_count parameter (must be between 1 and
+            99)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestErrors'
+        '401':
+          description: Unauthorized - Missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestErrors'
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+      operationId: sc-public-v3-scp-post-dp_carrier-finalize_order
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    FinalizeOrderRequestSchema:
+      description: Request schema for finalizing a Deutsche Post order.
+      properties:
+        copy_count:
+          title: Copy Count
+          description: Number of AWB label copies to generate (1-99)
+          type: integer
+          minimum: 1
+          maximum: 99
+          default: 1
+      title: FinalizeOrderRequestSchema
+      type: object
+    FinalizeOrderDataSchema:
+      description: Data schema for finalize order response.
+      properties:
+        copy_count:
+          title: Copy Count
+          description: The number of AWB label copies generated
+          type: integer
+        awb_document_url:
+          title: AWB Document URL
+          description: >-
+            URL to download the AWB document for this box. Returns null if no
+            eligible parcels were found in the box. The AWB document contains
+            the same label that is attached to all parcels in the finalized box.
+          type: string
+          nullable: true
+        next_order_id:
+          title: Next Order ID
+          description: >-
+            The box number for new parcels. If parcels were successfully
+            finalized, this is the incremented box number. If no eligible
+            parcels were found, this is the current box number (unchanged).
+          type: string
+      required:
+        - copy_count
+        - awb_document_url
+        - next_order_id
+      title: FinalizeOrderDataSchema
+      type: object
+    FinalizeOrderResponseSchema:
+      description: Response schema for finalize order endpoint.
+      properties:
+        data:
+          $ref: '#/components/schemas/FinalizeOrderDataSchema'
+      required:
+        - data
+      title: FinalizeOrderResponseSchema
+      type: object
+    RestErrors:
+      description: Standard error response schema.
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+      title: RestErrors
+      type: object

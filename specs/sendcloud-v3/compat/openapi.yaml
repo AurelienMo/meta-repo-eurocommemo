@@ -1,0 +1,115 @@
+openapi: 3.1.0
+info:
+  title: Compat API
+  version: 3.0.0
+  description: Compatibility API for Sendcloud, providing easy access to Shipping Options.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Compat
+paths:
+  /compat/shipping-options:
+    post:
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      summary: Retrieve a list of shipping options
+      tags:
+        - Compat Shipping Options
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                shipping_method_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: List of shipping methods to translate to shipping options.
+                  example:
+                    - 1
+                    - 2
+                    - 3
+                  maxItems: 100
+              required:
+                - shipping_method_ids
+      responses:
+        '200':
+          description: List of shipping options.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatShippingOptionsResponse'
+              examples:
+                PostCompatShippingOptions:
+                  summary: Translate shipping methods to shipping options
+                  value:
+                    data:
+                      '1': shipping_option:1
+                      '2': shipping_option:2
+                      '3': 'null'
+      operationId: sc-public-v3-scp-post-compat_shipping_options
+      description: >-
+        Retrieve a list of shipping options based on the provided shipping
+        method ids.
+      x-mint:
+        href: /api/v3/compat/retrieve-a-list-of-shipping-options
+        content: >-
+          This endpoint is intended to smooth the transition from shipping
+          methods to shipping options. It accepts a list of shipping method IDs
+          and returns their corresponding shipping option identifiers.
+
+
+          Ordering of the shipping options is not guaranteed, and the response
+          may contain null values for shipping methods that do not have a
+          corresponding shipping option. Shipping methods that do not exist will
+          not be returned in the response.
+
+
+          <Warning>
+            This API is deprecated and intended for compatibility purposes only. It may be removed in the future, so it is recommended to transition to use the [Shipping options API](/api/v3/shipping-options) as soon as possible.
+          </Warning>
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    CompatShippingOptionsResponse:
+      description: The Compat Shipping Options response schema
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties:
+            type:
+              - string
+              - 'null'
+          example:
+            '1': postnl:standard
+            '2': null

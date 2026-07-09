@@ -1,0 +1,500 @@
+openapi: 3.1.0
+info:
+  title: Invoices API
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  description: >-
+    The Invoices API lets you retrieve the invoices issued to your Sendcloud
+    account, including subscription and transactional invoices.
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Invoices
+    description: An invoice issued to your Sendcloud account.
+paths:
+  /invoices:
+    get:
+      summary: Retrieve a list of invoices
+      tags:
+        - Invoices
+      operationId: sc-public-v3-scp-get-invoices
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-sendcloud-paginated: true
+      x-sendcloud-paginated-discriminator: data
+      x-mint:
+        href: /api/v3/invoices/retrieve-a-list-of-invoices
+      description: >-
+        Retrieve a paginated list of invoices for your organization.
+
+
+        This endpoint uses cursor-based pagination via `Link` headers. See
+        [Pagination](/api/v3/pagination) for details.
+
+
+        <Warning>
+          This endpoint is currently in **beta**. Its shape may change in backwards-incompatible ways while we collect feedback.
+        </Warning>
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+          in: query
+          name: page_size
+          description: The size of the page to fetch. Defaults to 100, max 500.
+          example: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve invoices
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/invoice'
+                required:
+                  - data
+              examples:
+                RetrieveInvoices:
+                  summary: Retrieve a list of invoices
+                  value:
+                    data:
+                      - id: 5501
+                        reference: INV-2026-000123
+                        created_at: '2026-05-31T00:00:00Z'
+                        due_date: '2026-06-30T00:00:00Z'
+                        price_taxable:
+                          value: '1240.5000'
+                          currency: EUR
+                        price_non_taxable:
+                          value: '0.0000'
+                          currency: EUR
+                        tax:
+                          value: '260.5050'
+                          currency: EUR
+                        description: Shipping charges — May 2026
+                        category: transactional
+                        issuer:
+                          business_name: Sendcloud B.V.
+                          address: Stationsplein 32
+                          postal_code: 5611 AC
+                          city: Eindhoven
+                          country_name: Netherlands
+                          vat_id: NL852587582B01
+                          coc_id: '57500015'
+                      - id: 5480
+                        reference: INV-2026-000099
+                        created_at: '2026-05-01T00:00:00Z'
+                        due_date: null
+                        price_taxable:
+                          value: '49.0000'
+                          currency: EUR
+                        price_non_taxable: null
+                        tax:
+                          value: '10.2900'
+                          currency: EUR
+                        description: Subscription — May 2026
+                        category: subscription
+                        issuer:
+                          business_name: Sendcloud B.V.
+                          address: Stationsplein 32
+                          postal_code: 5611 AC
+                          city: Eindhoven
+                          country_name: Netherlands
+                          vat_id: NL852587582B01
+                          coc_id: '57500015'
+          headers:
+            Link:
+              description: >-
+                The pagination links, according to the web linking specification
+                (RFC8288).
+              schema:
+                type: string
+                example: >-
+                  <https://panel.sendcloud.sc/api/v3/invoices?cursor=cj0xJnA9MjUzNTQyMzM3>;
+                  rel="prev",
+                  <https://panel.sendcloud.sc/api/v3/invoices?cursor=cD0yNTM1NDIyODI%3D>;
+                  rel="next"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Unauthorized:
+                  summary: Missing or invalid credentials
+                  value:
+                    errors:
+                      - detail: Authentication credentials were not provided.
+                        status: '401'
+                        code: not_authenticated
+        '429':
+          description: Throttled
+  /invoices/{invoice_id}:
+    parameters:
+      - schema:
+          type: integer
+        in: path
+        name: invoice_id
+        description: The id of the invoice.
+        required: true
+    get:
+      summary: Retrieve an invoice
+      tags:
+        - Invoices
+      operationId: sc-public-v3-scp-get-invoice
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      x-mint:
+        href: /api/v3/invoices/retrieve-an-invoice
+      description: |-
+        Retrieve a single invoice by id.
+
+        <Warning>
+          This endpoint is currently in **beta**. Its shape may change in backwards-incompatible ways while we collect feedback.
+        </Warning>
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Retrieve invoice
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/invoice'
+                required:
+                  - data
+              examples:
+                RetrieveInvoice:
+                  summary: Retrieve an invoice
+                  value:
+                    data:
+                      id: 5501
+                      reference: INV-2026-000123
+                      created_at: '2026-05-31T00:00:00Z'
+                      due_date: '2026-06-30T00:00:00Z'
+                      price_taxable:
+                        value: '1240.5000'
+                        currency: EUR
+                      price_non_taxable:
+                        value: '0.0000'
+                        currency: EUR
+                      tax:
+                        value: '260.5050'
+                        currency: EUR
+                      description: Shipping charges — May 2026
+                      category: transactional
+                      issuer:
+                        business_name: Sendcloud B.V.
+                        address: Stationsplein 32
+                        postal_code: 5611 AC
+                        city: Eindhoven
+                        country_name: Netherlands
+                        vat_id: NL852587582B01
+                        coc_id: '57500015'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Unauthorized:
+                  summary: Missing or invalid credentials
+                  value:
+                    errors:
+                      - detail: Authentication credentials were not provided.
+                        status: '401'
+                        code: not_authenticated
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                NotFound:
+                  summary: Invoice not found
+                  value:
+                    errors:
+                      - detail: Not found.
+                        status: '404'
+                        code: not_found
+        '429':
+          description: Throttled
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      description: >-
+        The cursor query string is used as the pivot value to filter results. If
+        no value is provided, the first page of results will be returned. To get
+        this value, you must encode the offset, reverse and position into a
+        base64 string.
+
+
+        There are 3 possible parameters to encode:
+
+        - `o`: Offset
+
+        - `r`: Reverse
+
+        - `p`: Position
+          
+        For example, `r=1&p=300` encoded as a base64 string would be
+        `cj0xJnA9MzAw`. The query string would then be `cursor=cj0xJnA9MzAw`.
+      schema:
+        type: string
+        example: cj0xJnA9MzAw
+  schemas:
+    price:
+      title: Price
+      description: >-
+        A money amount exposed at full database precision (up to 4 decimal
+        places).
+
+
+        Note: this representation uses 4-decimal precision (unlike the canonical
+
+        2-decimal Price model used elsewhere in the v3 API) because invoice
+        amounts
+
+        are stored at the precision used by Sendcloud's billing engine.
+      type: object
+      properties:
+        value:
+          type: string
+          description: Monetary amount as a decimal string, with up to 4 decimal places.
+          example: '12.3456'
+        currency:
+          type: string
+          description: ISO 4217 currency code.
+          example: EUR
+      required:
+        - value
+        - currency
+    issuer:
+      title: Issuer
+      description: The Sendcloud subsidiary that issued the invoice.
+      type: object
+      properties:
+        business_name:
+          type: string
+          description: Legal business name of the issuing Sendcloud entity.
+        address:
+          type: string
+          description: Street address of the issuing entity.
+        postal_code:
+          type: string
+          description: Postal code of the issuing entity.
+        city:
+          type: string
+          description: City of the issuing entity.
+        country_name:
+          type: string
+          description: Country of the issuing entity.
+        vat_id:
+          type: string
+          description: VAT identification number of the issuing entity.
+        coc_id:
+          type: string
+          description: Chamber of commerce identifier of the issuing entity.
+      required:
+        - business_name
+        - address
+        - postal_code
+        - city
+        - country_name
+        - vat_id
+        - coc_id
+    invoice:
+      title: Invoice
+      description: An invoice issued to your Sendcloud account.
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Unique identifier of the invoice.
+        reference:
+          type: string
+          description: Human-readable reference for the invoice.
+        created_at:
+          type: string
+          format: date-time
+          description: Date the invoice was created.
+        due_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: Date by which the invoice is due. Null if no due date applies.
+        price_taxable:
+          oneOf:
+            - $ref: '#/components/schemas/price'
+            - type: 'null'
+          description: >-
+            Total taxable amount on the invoice. Null if there is no taxable
+            amount.
+        price_non_taxable:
+          oneOf:
+            - $ref: '#/components/schemas/price'
+            - type: 'null'
+          description: >-
+            Total non-taxable amount on the invoice. Null if there is no
+            non-taxable amount.
+        tax:
+          $ref: '#/components/schemas/price'
+        description:
+          type: string
+          description: Human-readable description of the invoice.
+        category:
+          type: string
+          description: Category of the invoice.
+          enum:
+            - subscription
+            - transactional
+        issuer:
+          oneOf:
+            - $ref: '#/components/schemas/issuer'
+            - type: 'null'
+          description: >-
+            The Sendcloud subsidiary that issued the invoice. Null if the issuer
+            is unknown.
+      required:
+        - id
+        - reference
+        - created_at
+        - due_date
+        - price_taxable
+        - price_non_taxable
+        - tax
+        - description
+        - category
+        - issuer
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail

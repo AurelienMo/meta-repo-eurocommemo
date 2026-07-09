@@ -1,0 +1,834 @@
+openapi: 3.1.0
+info:
+  title: Duties and Taxes API [BETA]
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: |
+    The Sendcloud Duties and Taxes API
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Duties and Taxes
+    description: Duties and Taxes API
+paths:
+  /shipping/duties-and-taxes:
+    post:
+      summary: Create a duties and taxes calculation
+      description: >-
+        Calculate import duties and taxes for an international shipment based on
+        its origin, destination, items, and shipping cost.
+      x-mint:
+        href: /api/v3/duties-and-taxes/create-a-duties-and-taxes-calculation
+        metadata:
+          tag: Beta
+        content: >-
+          <Note>
+            This endpoint is currently in beta and available to **enterprise customers** in a pilot program. Contact your Customer Success Manager to enable it for your account. While the core functionality is stable, some details or behavior may change as the API is finalized.
+          </Note>
+
+
+          ## What this endpoint does
+
+
+          For a given shipment (from/to country, items with HS codes), this
+          endpoint returns:
+
+
+          - The customs **duty** payable on each item (a tariff charged on goods
+          crossing a border)
+
+          - The import **tax** (VAT/GST) payable on each item
+
+          - The destination country's **de minimis** thresholds (below which
+          duty/tax is waived)
+
+          - A shipment-level **total** including items, duty, tax, and shipping
+          cost
+
+
+          ## Improving accuracy
+
+
+          The more information you provide, the more accurate the calculation:
+
+
+          - **`hs_code`** — the 6-digit Harmonized System code is the most
+          important input. Without it, classification falls back to the
+          description and accuracy drops.
+
+          - **`description`** — should be a plain product description (e.g.
+          "leather oxford shoes"), not a marketing title (e.g. "Premium Italian
+          Handcrafted Genuine Leather Dress Shoe — Free Shipping"). Vague terms
+          like "gift", "sample", or "parts" reduce accuracy.
+
+          - **`origin_country`** — affects duty rates. Goods from countries with
+          trade agreements may have lower rates.
+
+          - **`shipping_cost`** — some destinations (e.g. US) include shipping
+          in the dutiable value.
+
+          - **`weight`** — required for some destinations (e.g. Switzerland) and
+          improves accuracy on heavy shipments.
+
+
+          ## Authentication
+
+
+          Use [Sendcloud Basic Auth](/docs/getting-started/authentication) —
+          your Public Key as username, Secret Key as password.
+      tags:
+        - Duties and Taxes
+      requestBody:
+        required: true
+        description: Shipment details for the duty/tax calculation.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/duties-and-taxes-input'
+            examples:
+              SingleItemNLToUS:
+                summary: 'Single item: NL → US, leather shoes from China'
+                value:
+                  from_address:
+                    country_code: NL
+                    postal_code: '5611'
+                  to_address:
+                    country_code: US
+                    postal_code: '90210'
+                  items:
+                    - description: leather oxford shoes
+                      hs_code: '640359'
+                      quantity: 2
+                      price:
+                        value: '49.99'
+                        currency: EUR
+                      weight:
+                        value: '0.8'
+                        unit: kg
+                      origin_country: CN
+                      sku: SHOE-001
+                  shipping_cost:
+                    value: '14.99'
+                    currency: EUR
+                  weight:
+                    value: '2.1'
+                    unit: kg
+                  currency: EUR
+              MultipleItems:
+                summary: Multiple items with different HS codes
+                value:
+                  from_address:
+                    country_code: NL
+                  to_address:
+                    country_code: GB
+                  items:
+                    - description: leather shoes
+                      hs_code: '640359'
+                      quantity: 1
+                      price:
+                        value: '100.00'
+                        currency: EUR
+                      sku: SHOES
+                    - description: cotton shirt
+                      hs_code: '620520'
+                      quantity: 2
+                      price:
+                        value: '50.00'
+                        currency: EUR
+                      sku: SHIRT
+                  currency: EUR
+              GiftWithIOSS:
+                summary: Gift shipment with IOSS-registered sender
+                value:
+                  from_address:
+                    country_code: GB
+                  to_address:
+                    country_code: NL
+                  items:
+                    - description: silver bracelet
+                      hs_code: '711319'
+                      quantity: 1
+                      price:
+                        value: '120.00'
+                        currency: GBP
+                  currency: GBP
+                  options:
+                    is_gift: true
+                    is_tax_registered: true
+                    tax_registration_id: IM4420001234
+      responses:
+        '200':
+          description: Duty and tax calculation result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/duties-and-taxes-response'
+              examples:
+                SingleItemResult:
+                  summary: Result for the single-item NL → US example
+                  value:
+                    data:
+                      items:
+                        - sku: SHOE-001
+                          description: leather oxford shoes
+                          hs_code: '640359'
+                          hs_code_description: Oxford shoes leather
+                          quantity: 2
+                          item_value:
+                            value: '99.98'
+                            currency: EUR
+                          duty_rate: '27.50'
+                          tax_rate: '10.50'
+                          duty:
+                            value: '27.49'
+                            currency: EUR
+                          tax:
+                            value: '13.38'
+                            currency: EUR
+                          item_total:
+                            value: '140.85'
+                            currency: EUR
+                          warnings: []
+                      totals:
+                        items_value:
+                          value: '99.98'
+                          currency: EUR
+                        shipping_cost:
+                          value: '14.99'
+                          currency: EUR
+                        total_duty:
+                          value: '27.49'
+                          currency: EUR
+                        total_tax:
+                          value: '13.38'
+                          currency: EUR
+                        total:
+                          value: '155.84'
+                          currency: EUR
+                      de_minimis:
+                        duty_threshold:
+                          value: '0'
+                          currency: EUR
+                        tax_threshold:
+                          value: '0'
+                          currency: EUR
+                      calculated_at: '2026-04-29T14:39:12.687Z'
+        '400':
+          description: >-
+            Bad Request. Returned when the request payload is invalid. The
+            `source.pointer` field identifies which input caused the error.
+            Common causes include missing required fields, invalid country
+            codes, malformed HS codes, and exceeding the per-request items
+            limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                MissingRequiredField:
+                  summary: Required field missing
+                  value:
+                    errors:
+                      - status: '400'
+                        code: required
+                        detail: Field required
+                        source:
+                          pointer: /from_address
+                InvalidCountryCode:
+                  summary: Country code is not a recognized ISO 3166-1 alpha-2 code
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Country QQ does not exist.
+                        source:
+                          pointer: /to_address/country_code
+                TooManyItems:
+                  summary: More than 10 items in a single request
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: List should have at most 10 items
+                        source:
+                          pointer: /items
+                EmptyItems:
+                  summary: Items list is empty (at least one item required)
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: >-
+                          List should have at least 1 item after validation, not
+                          0
+                        source:
+                          pointer: /items
+                EmptyDescription:
+                  summary: Item description is missing or empty
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: String should have at least 1 character
+                        source:
+                          pointer: /items/0/description
+                HsCodeTooLong:
+                  summary: HS code exceeds 12 characters
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: String should have at most 12 characters
+                        source:
+                          pointer: /items/0/hs_code
+                InvalidCurrency:
+                  summary: Currency is not a recognized ISO 4217 code
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: '''ZZZ'' is not a valid currency code.'
+                        source:
+                          pointer: /currency
+                ProviderRejectedInput:
+                  summary: >-
+                    Our third-party duties and taxes provider rejected the
+                    request (e.g. invalid postal code for the destination
+                    country)
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Postal Code 99999 is invalid
+        '401':
+          description: >-
+            Unauthorized. Returned when authentication credentials are missing
+            or invalid. Make sure you're using your **Public Key** as the
+            username and **Secret Key** as the password (HTTP Basic Auth).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                MissingCredentials:
+                  summary: No `Authorization` header on the request
+                  value:
+                    errors:
+                      - status: '401'
+                        code: not_authenticated
+                        detail: Authentication credentials were not provided.
+                InvalidCredentials:
+                  summary: Provided keys don't match a Sendcloud account
+                  value:
+                    errors:
+                      - status: '401'
+                        code: authentication_failed
+                        detail: Invalid username/password.
+        '403':
+          description: >-
+            Forbidden. Returned when your account doesn't have access to this
+            endpoint. Currently only enterprise customers in the pilot program
+            can call this endpoint — contact your CSM to be enabled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                NotEnabled:
+                  summary: Account is not enrolled in the duties and taxes pilot
+                  value:
+                    errors:
+                      - status: '403'
+                        code: forbidden
+                        detail: >-
+                          Duties and taxes calculation is not enabled for this
+                          organization.
+        '500':
+          description: >-
+            Internal Server Error. Returned when the third-party duties and
+            taxes provider is unreachable, times out, or returns an unexpected
+            error. Safe to retry, but if it persists, contact support and
+            include the request ID from the `X-Request-Id` response header.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                ProviderUnavailable:
+                  summary: Duties and taxes third-party provider unavailable
+                  value:
+                    errors:
+                      - status: '500'
+                        code: unknown_error
+                        detail: >-
+                          Duties and taxes calculation is temporarily
+                          unavailable. Please try again later.
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    simplified-address:
+      title: Duties and Taxes Simplified Address
+      type: object
+      description: >-
+        A simplified address object for duty and tax calculations. Only the
+        country and postal code are used.
+      required:
+        - country_code
+      properties:
+        country_code:
+          type: string
+          description: Country code in ISO 3166-1 alpha-2 format.
+          example: NL
+        postal_code:
+          type: string
+          default: ''
+          description: >-
+            The postal code of the address. Required for destination shipments
+            to the US, Canada, Spain, and Brazil. Required for source shipments
+            from Great Britain.
+          example: '5611'
+    price:
+      title: Price Object
+      type: object
+      properties:
+        value:
+          type: number
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          enum:
+            - EUR
+            - GBP
+            - USD
+      description: Price in the specified currency
+    weight-units:
+      type: string
+      title: Mass Units Object
+      enum:
+        - kg
+        - g
+        - lbs
+        - oz
+      example: g
+    str-weight:
+      title: Weight
+      type: object
+      description: Weight in the specified unit
+      properties:
+        value:
+          type: string
+          description: Weight value
+          example: '14.5'
+        unit:
+          $ref: '#/components/schemas/weight-units'
+      required:
+        - value
+        - unit
+    duties-and-taxes-item:
+      title: Duties and Taxes Item
+      type: object
+      required:
+        - description
+        - price
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: >-
+            Plain product description — what the item actually is (e.g. "leather
+            oxford shoes"). Avoid SEO-optimized marketing titles like "Premium
+            Italian Handcrafted Genuine Leather Dress Shoe — Free Shipping".
+            Vague descriptions like "gift", "sample", or "parts" reduce
+            classification accuracy and may lead to inaccurate duty/tax
+            calculations.
+          example: leather oxford shoes
+        hs_code:
+          type: string
+          maxLength: 12
+          default: ''
+          description: >-
+            [Harmonized System (HS)
+            code](https://en.wikipedia.org/wiki/Harmonized_System) for the item.
+            The first 6 digits are universal across all countries; longer codes
+            are country-specific. We use the first 6 digits for classification —
+            providing more digits is supported but not required. Strongly
+            recommended for accuracy.
+          example: '640359'
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Number of units of this item in the shipment.
+          example: 2
+        price:
+          $ref: '#/components/schemas/price'
+          description: Unit price of the item (price per single unit, not total).
+        weight:
+          $ref: '#/components/schemas/str-weight'
+          description: Per-unit weight of the item. Optional.
+        origin_country:
+          type:
+            - string
+            - 'null'
+          description: >-
+            ISO 3166-1 alpha-2 code for the country where the item was
+            manufactured. Affects duty rates — e.g., goods from a country with a
+            trade agreement may have lower rates.
+          example: CN
+        sku:
+          type: string
+          default: ''
+          description: >-
+            Stock keeping unit. Echoed back in the response — useful for
+            matching results to your records.
+          example: SHOE-001
+    duties-and-taxes-options:
+      title: Duties and Taxes Options
+      type: object
+      description: Optional flags that affect the calculation.
+      properties:
+        is_gift:
+          type: boolean
+          default: false
+          description: >-
+            Whether this shipment is a gift. Some destinations apply higher
+            duty-free thresholds to gift shipments.
+        is_tax_registered:
+          type: boolean
+          default: false
+          description: >-
+            Set to `true` if the sender is registered for tax in the destination
+            country (e.g., IOSS for the EU, VAT for the UK). When `true` and a
+            valid `tax_registration_id` is provided, import tax may not be
+            charged because the sender is expected to collect it at checkout.
+        tax_registration_id:
+          type:
+            - string
+            - 'null'
+          description: >-
+            The sender's tax registration ID in the destination country (e.g.,
+            an IOSS number for shipping to the EU). Required when
+            `is_tax_registered` is `true`.
+          example: IM4420001234
+    duties-and-taxes-input:
+      title: Duties and Taxes Input
+      type: object
+      required:
+        - from_address
+        - to_address
+        - items
+      properties:
+        from_address:
+          description: Sender address.
+          oneOf:
+            - $ref: '#/components/schemas/simplified-address'
+        to_address:
+          description: Destination address.
+          oneOf:
+            - $ref: '#/components/schemas/simplified-address'
+        items:
+          type: array
+          description: >-
+            Items in the shipment. Each item is calculated individually based on
+            its HS code, value, and origin country.
+          minItems: 1
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/duties-and-taxes-item'
+        shipping_cost:
+          $ref: '#/components/schemas/price'
+          description: >-
+            Cost of shipping the consignment. Some destinations (e.g. US)
+            include shipping in the dutiable value, so providing this improves
+            accuracy of results.
+        weight:
+          $ref: '#/components/schemas/str-weight'
+          description: >-
+            Gross weight of the shipment (all items + packaging). Improves
+            accuracy for weight-based duty calculations and is required for some
+            destinations like Switzerland.
+        currency:
+          type: string
+          default: EUR
+          description: >-
+            3-letter ISO 4217 currency code. All response values will be
+            returned in this currency.
+          example: EUR
+        options:
+          $ref: '#/components/schemas/duties-and-taxes-options'
+    duties-and-taxes-warning:
+      title: Duties and Taxes Warning
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: >-
+            Stable warning code for programmatic handling (e.g.
+            `kona_return_20`).
+          example: kona_return_20
+        message:
+          type: string
+          description: Human-readable warning message explaining the issue.
+          example: >-
+            HS6 may not match description — duty/tax calculation may be
+            inaccurate.
+    duties-and-taxes-item-result:
+      title: Duties and Taxes Item Result
+      type: object
+      required:
+        - sku
+        - description
+        - hs_code
+        - hs_code_description
+        - quantity
+        - item_value
+        - duty_rate
+        - tax_rate
+        - duty
+        - tax
+        - item_total
+      properties:
+        sku:
+          type: string
+          description: SKU echoed from the request.
+        description:
+          type: string
+          description: Description echoed from the request.
+        hs_code:
+          type: string
+          description: >-
+            6-digit HS code resolved by our classification engine. May differ
+            from the code you provided if it didn't match the description.
+        hs_code_description:
+          type: string
+          description: Plain-English description of the resolved HS code.
+        quantity:
+          type: integer
+          description: Quantity echoed from the request.
+        item_value:
+          $ref: '#/components/schemas/price'
+          description: Total value of this line item (`price × quantity`).
+        duty_rate:
+          type: string
+          description: >-
+            Customs duty rate as a percentage. A tariff charged on goods
+            crossing a border, based on HS code and origin country.
+          example: '8.50'
+        tax_rate:
+          type: string
+          description: >-
+            Import tax rate (VAT/GST) as a percentage. Charged by the
+            destination country on the value of imported goods.
+          example: '21.00'
+        duty:
+          $ref: '#/components/schemas/price'
+          description: Customs duty amount payable for this item.
+        tax:
+          $ref: '#/components/schemas/price'
+          description: Import tax amount payable for this item.
+        item_total:
+          $ref: '#/components/schemas/price'
+          description: Total payable for this item (`item_value + duty + tax`).
+        warnings:
+          type: array
+          default: []
+          description: >-
+            Quality warnings from the classification engine. For example, if the
+            HS code didn't match the description, a warning indicates the
+            calculation may be inaccurate.
+          items:
+            $ref: '#/components/schemas/duties-and-taxes-warning'
+    duties-and-taxes-totals:
+      title: Duties and Taxes Totals
+      type: object
+      required:
+        - items_value
+        - shipping_cost
+        - total_duty
+        - total_tax
+        - total
+      properties:
+        items_value:
+          $ref: '#/components/schemas/price'
+          description: Sum of all item values, before duty and tax.
+        shipping_cost:
+          oneOf:
+            - $ref: '#/components/schemas/price'
+            - type: 'null'
+          description: Shipping cost echoed from the request. `null` if not provided.
+        total_duty:
+          $ref: '#/components/schemas/price'
+          description: Total customs duty payable across all items.
+        total_tax:
+          $ref: '#/components/schemas/price'
+          description: Total import tax (VAT/GST) payable across all items.
+        total:
+          $ref: '#/components/schemas/price'
+          description: Total payable, including items, duty, tax, and shipping.
+    de-minimis:
+      title: De Minimis Thresholds
+      type: object
+      required:
+        - duty_threshold
+        - tax_threshold
+      description: >-
+        De minimis thresholds for the destination country. Below these
+        thresholds, no duty or tax is charged.
+      properties:
+        duty_threshold:
+          $ref: '#/components/schemas/price'
+          description: >-
+            Shipments valued below this threshold enter the destination country
+            duty-free. E.g. the US duty de minimis was historically $800.
+        tax_threshold:
+          $ref: '#/components/schemas/price'
+          description: >-
+            Shipments valued below this threshold are exempt from import tax
+            (VAT/GST) in the destination country.
+    duties-and-taxes-result:
+      title: Duties and Taxes Result
+      type: object
+      required:
+        - items
+        - totals
+        - de_minimis
+        - calculated_at
+      properties:
+        items:
+          type: array
+          description: Per-item duty and tax breakdown.
+          items:
+            $ref: '#/components/schemas/duties-and-taxes-item-result'
+        totals:
+          $ref: '#/components/schemas/duties-and-taxes-totals'
+        de_minimis:
+          $ref: '#/components/schemas/de-minimis'
+        calculated_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the calculation was performed.
+    duties-and-taxes-response:
+      title: Duties and Taxes Response
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/duties-and-taxes-result'
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail

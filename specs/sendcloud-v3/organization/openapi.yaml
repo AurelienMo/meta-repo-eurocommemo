@@ -1,0 +1,110 @@
+openapi: 3.1.0
+info:
+  title: Organization API
+  version: 3.0.0
+  description: View the organization information.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Organization
+paths:
+  /organization:
+    get:
+      summary: Retrieve organization information
+      description: >
+        Retrieves detailed information about your organization account,
+        including the organization ID, name, and registration date.
+
+
+        This endpoint is useful for:
+
+        - Verifying your organization's account details and settings
+
+        - Obtaining your organization ID for use in other API calls or
+        integrations
+
+        - Confirming registration date and account metadata
+      x-mint:
+        href: /api/v3/organization/retrieve-information-about-the-organization
+      tags:
+        - Organization
+      parameters: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponseSchema'
+              examples:
+                organization_example:
+                  summary: Example organization
+                  value:
+                    data:
+                      id: 12345
+                      name: Acme Corporation
+                      registered: '2020-03-15T10:30:00Z'
+        '429':
+          description: Throttled
+      operationId: sc-public-v3-scp-get-user_auth_metadata
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    OrganizationResponseSchema:
+      description: Response schema for organization endpoint.
+      properties:
+        data:
+          $ref: '#/components/schemas/OrganizationSchema'
+      required:
+        - data
+      title: OrganizationResponseSchema
+      type: object
+    OrganizationSchema:
+      description: Schema representing an organization.
+      properties:
+        id:
+          title: Organization ID
+          type: integer
+        name:
+          title: Name
+          type: string
+        registered:
+          format: date-time
+          title: Registration Date
+          type: string
+      required:
+        - id
+        - name
+        - registered
+      title: OrganizationSchema
+      type: object

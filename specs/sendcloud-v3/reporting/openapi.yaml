@@ -1,0 +1,580 @@
+openapi: 3.1.0
+info:
+  title: Reporting
+  version: 3.0.0
+  description: >-
+    The Reporting API lets you generate and download CSV reports containing data
+    related to your Sendcloud account for tracking and analysis purposes.
+  contact:
+    name: Sendcloud API Support
+    url: https://www.sendcloud.dev
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Reporting
+    description: Generate data exports and reports.
+paths:
+  /reporting/parcels:
+    post:
+      tags:
+        - Reporting
+      summary: Create a parcels report
+      description: >-
+        Generate a CSV report containing information about outgoing or incoming
+        parcels.
+      x-mint:
+        href: /api/v3/reporting/create-a-parcels-report
+        content: >-
+          The parcels included in the report are determined by the `filters` you
+          send, and the columns are determined by the `fields` you select.
+
+
+          Use this endpoint to create the report and obtain the report `id`,
+          which you then poll with [Retrieve a parcels
+          report](/api/v3/reporting/retrieve-a-parcels-report) until the CSV is
+          ready for download.
+      operationId: sc-public-v3-reporting-post-create_parcels_report
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParcelsReportRequest'
+            examples:
+              CreateParcelsReport:
+                summary: Create a parcels report
+                value:
+                  fields:
+                    - parcel_id
+                    - tracking_number
+                    - shipping_option_code
+                    - status
+                    - announced_at
+                    - delivered_at
+                  filters:
+                    announced_after: '2025-04-01T00:00:00Z'
+                    announced_before: '2025-04-30T23:59:59Z'
+                    direction: outgoing
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParcelsReport'
+              examples:
+                ParcelsReportQueued:
+                  summary: Report queued
+                  value:
+                    id: 419f3be0-2f49-434b-bee4-d8cff9cf7d01
+                    organization_id: 12345
+                    status: queued
+                    status_message: The report is queued
+                    fields:
+                      - parcel_id
+                      - tracking_number
+                      - shipping_option_code
+                      - status
+                      - announced_at
+                      - delivered_at
+                    filters:
+                      announced_after: '2025-04-01T00:00:00Z'
+                      announced_before: '2025-04-30T23:59:59Z'
+                      direction: outgoing
+                    url: null
+                    expires_at: null
+                    updated_at: '2025-05-01T08:23:10.226265Z'
+                    created_at: '2025-05-01T08:23:10.226265Z'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                RowLimitExceeded:
+                  summary: Row limit exceeded
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        title: Bad Request
+                        detail: >-
+                          CSV export exceeds row limit of 100000, narrow the
+                          date range or apply additional filters.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Unauthorized:
+                  summary: Missing or invalid credentials
+                  value:
+                    errors:
+                      - status: '401'
+                        code: authentication_failed
+                        title: Authentication Failed
+                        detail: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Forbidden:
+                  summary: Missing required feature access
+                  value:
+                    errors:
+                      - status: '403'
+                        code: forbidden
+                        title: Forbidden
+                        detail: Forbidden
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                InvalidField:
+                  summary: Invalid field value
+                  value:
+                    errors:
+                      - status: '422'
+                        code: validation_error
+                        title: Validation Error
+                        detail: Input should be a valid datetime
+                        source:
+                          pointer: /data/attributes/filters/announced_after
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                UnknownError:
+                  summary: Unexpected server error
+                  value:
+                    errors:
+                      - status: '500'
+                        code: unknown_error
+                        title: Internal Server Error
+                        detail: Something went wrong
+  /reporting/parcels/{report_id}:
+    get:
+      tags:
+        - Reporting
+      summary: Retrieve a parcels report
+      description: >-
+        Retrieve a parcels report by id, including its current status and
+        download URL when ready.
+      x-mint:
+        href: /api/v3/reporting/retrieve-a-parcels-report
+        content: >-
+          Use the `id` returned by [Create a parcels
+          report](/api/v3/reporting/create-a-parcels-report). The report is
+          generated asynchronously, so poll this endpoint until `status` is
+          `ready`; the CSV is then available at the `url` field.
+
+
+          Reports expire after a fixed period (see `expires_at`). Once expired,
+          the download URL is no longer valid and the report must be
+          regenerated.
+      operationId: sc-public-v3-reporting-get-retrieve_parcels_report
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          description: Unique identifier of the report.
+          schema:
+            type: string
+            format: uuid
+            example: 419f3be0-2f49-434b-bee4-d8cff9cf7d01
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParcelsReport'
+              examples:
+                ParcelsReportReady:
+                  summary: Report ready
+                  value:
+                    id: 419f3be0-2f49-434b-bee4-d8cff9cf7d01
+                    organization_id: 12345
+                    status: ready
+                    status_message: The report is ready
+                    fields:
+                      - parcel_id
+                      - tracking_number
+                      - shipping_option_code
+                      - status
+                      - announced_at
+                      - delivered_at
+                    filters:
+                      announced_after: '2025-04-01T00:00:00Z'
+                      announced_before: '2025-04-30T23:59:59Z'
+                      direction: outgoing
+                    url: >-
+                      https://reporting-service.s3.eu-central-1.amazonaws.com/reports/parcels_v3/2025-05-01/419f3be0-2f49-434b-bee4-d8cff9cf7d01.csv
+                    expires_at: '2025-05-01T08:38:10.226217Z'
+                    updated_at: '2025-05-01T08:24:10.226265Z'
+                    created_at: '2025-05-01T08:23:10.226265Z'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Unauthorized:
+                  summary: Missing or invalid credentials
+                  value:
+                    errors:
+                      - status: '401'
+                        code: authentication_failed
+                        title: Authentication Failed
+                        detail: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                Forbidden:
+                  summary: Missing required feature access
+                  value:
+                    errors:
+                      - status: '403'
+                        code: forbidden
+                        title: Forbidden
+                        detail: Forbidden
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                NotFound:
+                  summary: Report not found
+                  value:
+                    errors:
+                      - status: '404'
+                        code: not_found
+                        title: Not Found
+                        detail: Not found
+components:
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  schemas:
+    ParcelDirection:
+      type: string
+      title: ParcelDirection
+      description: The direction of the parcel.
+      enum:
+        - incoming
+        - outgoing
+      example: outgoing
+    ReportStatus:
+      type: string
+      title: ReportStatus
+      description: Current processing status of the report.
+      enum:
+        - queued
+        - generating
+        - ready
+        - failed
+        - expired
+      example: ready
+    ParcelsReportFields:
+      type: string
+      title: ParcelsReportFields
+      description: A column that can be included in a parcels report.
+      enum:
+        - parcel_id
+        - direction
+        - carrier_code
+        - carrier_name
+        - from_address_company_name
+        - contract_id
+        - contract_type
+        - from_address_city
+        - from_address_postal_code
+        - from_address_country_code
+        - from_address_country_name
+        - to_address_city
+        - to_address_postal_code
+        - to_address_country_code
+        - to_address_country_name
+        - order_number
+        - tracking_number
+        - announced_at
+        - shipped_at
+        - first_offer_at
+        - delivered_at
+        - shipping_option_code
+        - total_cost
+        - status
+        - sub_status
+        - integration_id
+        - integration_type
+        - weight
+        - brand_id
+        - brand_name
+    ParcelsReportFilter:
+      type: object
+      title: ParcelsReportFilter
+      description: Filters that determine which parcels are included in the report.
+      properties:
+        announced_after:
+          type: string
+          format: date-time
+          description: >-
+            Include only parcels announced on or after this time (ISO 8601, UTC
+            default).
+          example: '2025-04-01T00:00:00Z'
+        announced_before:
+          type: string
+          format: date-time
+          description: >-
+            Include only parcels announced on or before this time (ISO 8601, UTC
+            default).
+          example: '2025-04-30T23:59:59Z'
+        direction:
+          $ref: '#/components/schemas/ParcelDirection'
+        integration_id:
+          type: integer
+          minimum: 1
+          description: Filter to parcels created by a specific shop integration id.
+          example: 1
+        brand_id:
+          type: integer
+          minimum: 1
+          description: Filter to parcels created by a specific brand id.
+          example: 1
+        shipping_option_code:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Filter to parcels shipped with the given shipping option code.
+          example: postnl_standard
+        updated_after:
+          type: string
+          format: date-time
+          description: >-
+            Include only parcels updated on or after this time (ISO 8601, UTC
+            default).
+          example: '2025-04-01T00:00:00Z'
+        updated_before:
+          type: string
+          format: date-time
+          description: >-
+            Include only parcels updated on or before this time (ISO 8601, UTC
+            default).
+          example: '2025-04-30T23:59:59Z'
+      required:
+        - announced_after
+        - announced_before
+    ParcelsReportRequest:
+      type: object
+      title: ParcelsReportRequest
+      description: Request body for creating a parcels report.
+      properties:
+        fields:
+          type: array
+          minItems: 1
+          description: >-
+            Columns to include in the CSV report, in the order they should
+            appear.
+          items:
+            $ref: '#/components/schemas/ParcelsReportFields'
+        filters:
+          $ref: '#/components/schemas/ParcelsReportFilter'
+      required:
+        - fields
+        - filters
+    ParcelsReport:
+      type: object
+      title: ParcelsReport
+      description: Represents a parcels report and its processing state.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the report.
+          example: 419f3be0-2f49-434b-bee4-d8cff9cf7d01
+        organization_id:
+          type: integer
+          minimum: 1
+          description: Identifier of the organization the report belongs to.
+          example: 12345
+        status:
+          $ref: '#/components/schemas/ReportStatus'
+        status_message:
+          type: string
+          description: Human-readable description of the current status.
+          example: The report is ready
+        fields:
+          type: array
+          description: Columns included in the report.
+          items:
+            $ref: '#/components/schemas/ParcelsReportFields'
+        filters:
+          $ref: '#/components/schemas/ParcelsReportFilter'
+        url:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: >-
+            URL to download the CSV. `null` until the report status is `ready`,
+            and again after expiry.
+          example: >-
+            https://reporting-service.s3.eu-central-1.amazonaws.com/reports/parcels_v3/2025-05-01/419f3be0-2f49-434b-bee4-d8cff9cf7d01.csv
+        expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: >-
+            When the report (and its download URL) will expire. `null` until the
+            report is `ready`.
+          example: '2025-05-01T08:38:10.226217Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: When the report was last updated.
+          example: '2025-05-01T08:24:10.226265Z'
+        created_at:
+          type: string
+          format: date-time
+          description: When the report was created.
+          example: '2025-05-01T08:23:10.226265Z'
+      required:
+        - id
+        - organization_id
+        - status
+        - status_message
+        - fields
+        - filters
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail

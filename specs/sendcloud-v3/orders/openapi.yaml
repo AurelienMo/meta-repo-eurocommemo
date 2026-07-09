@@ -1,0 +1,3176 @@
+openapi: 3.1.0
+info:
+  title: Orders
+  version: 3.0.0
+  contact:
+    name: Sendcloud API Support
+    email: contact@sendcloud.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  description: >-
+    The Orders API lets you manage your orders within Sendcloud. You can create
+    and update orders in batch, retrieve a list of orders per integration,
+    retrieve an order, partially update an order, and delete an order.
+servers:
+  - url: https://panel.sendcloud.sc/api/v3
+    description: Sendcloud Production
+tags:
+  - name: Orders
+    description: OrderAPI
+paths:
+  /orders:
+    post:
+      summary: Create/Update orders in batch
+      description: Use this endpoint to insert orders into a Sendcloud API integration.
+      x-mint:
+        href: /api/v3/orders/create-update-orders-in-batch
+        content: >-
+          Each order can have a different integration id, so you can
+          create/update orders for multiple integrations in one request.
+
+
+          ## Upsert behavior
+
+
+          This is an **upsert** endpoint, which means:
+
+            - If an order with the same `order_id` and `integration.id` combination **already exists**, it will be **updated**
+            - If no matching order exists, a **new order will be created**
+            - **Optional**: You can include the Sendcloud `id` field to explicitly update a specific order
+              - **Important**: When returned in responses, `id` is an **integer**, but when sending it in requests, it must be a **string**
+              - Example: Response returns `"id": 669`, but request must send `"id": "669"`
+
+          ## Batch processing
+
+
+          - Process multiple orders in a single request (up to **100 orders
+          maximum**)
+
+          - Orders from different integrations can be included in the same batch
+
+          - **All-or-nothing transaction**: If any order in the batch fails
+          validation, the entire batch is rejected and zero orders are created
+          or updated. There is no partial success — either all orders are
+          processed or none are
+
+          - On failure (HTTP 400), the response includes error details with
+          `source.pointer` indicating which order in the array caused the issue
+          (e.g., `[1]` for the second order, 0-indexed)
+
+          - If you send multiple orders and one fails, you need to fix the
+          failing order and resubmit the entire batch
+
+
+          ## Limitations and constraints
+
+
+          - **Maximum batch size**: 100 orders per request
+
+          - **Upsert matching**: Orders are matched by the combination of
+          `order_id` + `integration.id`
+
+          - **Immutable fields**: When updating existing orders, certain fields
+          like `order_id` cannot be changed
+
+          - **Concurrent processing**: If the same `order_id` is being processed
+          by another request, you'll receive a conflict error. Wait a moment and
+          retry
+
+          - **Integration access**: You can only create/update orders for
+          integrations that belong to your account
+
+
+          ## Asynchronous processing
+
+
+          Order saving happens **asynchronously**. A successful `201` response
+          means the request was accepted, but the order may not be immediately
+          available for other operations (e.g., creating a label via the [Ship
+          an Order API](/api/v3/ship-an-order)).
+
+
+          - After creating an order, **verify it exists** by retrieving it with
+          the [Retrieve an order](/api/v3/orders/retrieve-an-order) endpoint
+          before attempting to ship it
+
+          - If you plan to create an order and immediately ship it, allow a
+          short delay and confirm the order is available before calling the Ship
+          an Order API
+
+
+          ## Best practices
+
+
+          - Ensure all required fields are present before sending the request
+
+          - Handle errors gracefully and implement retry logic for transient
+          failures
+      parameters:
+        - $ref: '#/components/parameters/SendcloudPartnerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/order'
+                  - type: object
+                    properties:
+                      id:
+                        description: >-
+                          Sendcloud's internal ID for the order.
+
+
+                          - In **responses**: Returned as an integer (e.g.,
+                          `669`)
+
+                          - In **requests**: Optional field for explicitly
+                          updating a specific order. Must be provided as a
+                          string (e.g., `"669"`)
+
+                          - If omitted in requests, the upsert logic uses the
+                          combination of `order_id` + `integration.id` to match
+                          existing orders
+                        type: string
+                        example: '669'
+            examples:
+              CreateBasicOrder:
+                summary: Create a basic order with all required fields filled
+                description: If you need create an order with only necessary info
+                value:
+                  - order_id: '555413'
+                    order_number: OXSDFGHTD-12
+                    order_details:
+                      integration:
+                        id: 7
+                      status:
+                        code: fulfilled
+                        message: Fulfilled
+                      order_created_at: '2018-02-27T10:00:00.556Z'
+                      order_items:
+                        - name: Cylinder candle
+                          quantity: 1
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                    payment_details:
+                      total_price:
+                        value: 3.5
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Paid
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Lansdown Glade
+                      house_number: '15'
+                      postal_code: 5341XT
+                      city: Oss
+                      country_code: NL
+                    shipping_details:
+                      is_local_pickup: false
+                      delivery_indicator: DHL home delivery
+                      measurement:
+                        weight:
+                          value: 3
+                          unit: kg
+              CreateInternationalOrder:
+                summary: Create an international order with customs information
+                description: >-
+                  If an order going outside/inside EU it should contain
+                  information needed for customs -- type of shipment and number
+                  of commercial invoice
+                value:
+                  - order_id: '555413'
+                    order_number: OXSDFGHTD-11
+                    order_details:
+                      integration:
+                        id: 739283
+                      status:
+                        code: fulfilled
+                        message: Order has been fulfilled
+                      order_created_at: '2018-02-27T10:00:00.555Z'
+                      order_updated_at: '2018-02-27T10:00:00.555Z'
+                      order_items:
+                        - name: Cylinder candle
+                          description: Pebble green - 12x8 cm
+                          hs_code: '010130'
+                          country_of_origin: NL
+                          measurement:
+                            weight:
+                              value: 1
+                              unit: kg
+                          quantity: 2
+                          unit_price:
+                            value: 3.5
+                            currency: EUR
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                          mid_code: US1234567
+                          material_content: 100% Cotton
+                          intended_use: Personal use
+                          manufacturer_product_id: ABC-12345
+                          manufacturer_product_id_std: '01234567890128'
+                    payment_details:
+                      total_price:
+                        value: 7
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Order has been paid
+                      discount_granted:
+                        value: '3.99'
+                        currency: EUR
+                      insurance_costs:
+                        value: '9.99'
+                        currency: EUR
+                      freight_costs:
+                        value: '5.99'
+                        currency: EUR
+                      other_costs:
+                        value: '2.99'
+                        currency: EUR
+                    customs_details:
+                      commercial_invoice_number: 0124-03102022
+                      shipment_type: commercial_goods
+                      export_type: commercial_b2c
+                      tax_numbers:
+                        sender:
+                          - name: VAT
+                            country_code: NL
+                            value: NL987654321B02
+                        receiver:
+                          - name: VAT
+                            country_code: DE
+                            value: DE123456789B03
+                        importer_of_record:
+                          - name: VAT
+                            country_code: NL
+                            value: NL975318642B01
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Wilmington Drive
+                      house_number: '15'
+                      postal_code: '19804'
+                      city: Dawnbrook
+                      country_code: US
+                      state_province_code: DE
+                      phone_number: '+18882804331'
+              CreateOrderProductImage:
+                summary: Create an order that contains a product image URL
+                description: >-
+                  Allows you to send an order to Sendcloud containing a product
+                  image URL which can then be used with returns, packing lists
+                  and tracking
+                value:
+                  - order_id: '555413'
+                    order_number: OXSDFGHTD-11
+                    order_details:
+                      integration:
+                        id: 739283
+                      status:
+                        code: fulfilled
+                        message: Order has been fulfilled
+                      order_created_at: '2018-02-27T10:00:00.555Z'
+                      order_updated_at: '2018-02-27T10:00:00.555Z'
+                      order_items:
+                        - name: Orange card
+                          description: Orange gift card with face
+                          hs_code: '010130'
+                          country_of_origin: NL
+                          measurement:
+                            weight:
+                              value: 1
+                              unit: kg
+                          quantity: 1
+                          unit_price:
+                            value: 3.5
+                            currency: EUR
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                          image_url: https://i.ibb.co/6tLZ2Jz/orange.jpeg
+                          product_id: '01544029'
+                          variant_id: '458934950'
+                    payment_details:
+                      total_price:
+                        value: 3.5
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Order has been paid
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Vierlinghweg
+                      house_number: '15'
+                      postal_code: 2661TW
+                      city: Breda
+                      country_code: NL
+                      state_province_code: NB
+                      phone_number: '+31638426194'
+                    shipping_details:
+                      delivery_indicator: DHL home delivery
+                      measurement:
+                        weight:
+                          value: 3
+                          unit: kg
+              CreateSpecifiedMeasurementsOrder:
+                summary: Create an order with specified measurements
+                description: >-
+                  If you already know dimension or weight of orders, it could be
+                  specified in `shipping_details` part
+                value:
+                  - order_id: '555413'
+                    order_number: OXSDFGHTD-11
+                    order_details:
+                      integration:
+                        id: 739283
+                      status:
+                        code: fulfilled
+                        message: Order has been fulfilled
+                      order_created_at: '2018-02-27T10:00:00.555Z'
+                      order_updated_at: '2018-02-27T10:00:00.555Z'
+                      order_items:
+                        - name: Cylinder candle
+                          description: Pebble green - 12x8 cm
+                          measurement:
+                            weight:
+                              value: 1
+                              unit: kg
+                          quantity: 3
+                          unit_price:
+                            value: 3.5
+                            currency: EUR
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                    payment_details:
+                      total_price:
+                        value: 10.5
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Order has been paid
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Vierlinghweg
+                      house_number: '15'
+                      postal_code: 2661TW
+                      city: Dordrecht
+                      country_code: NL
+                      state_province_code: NB
+                      phone_number: '+31638426194'
+                    shipping_details:
+                      delivery_indicator: DHL home delivery
+                      measurement:
+                        dimension:
+                          length: 0.15
+                          width: 0.3
+                          height: 0.3
+                          unit: m
+                        weight:
+                          value: 3
+                          unit: kg
+                        volume:
+                          value: 4
+                          unit: l
+              CreateSpecifiedBillingOrder:
+                summary: Create an order with specified billing and customer info
+                description: >-
+                  If payer and recipient are different persons, you can specify
+                  both in the `billing_address` and `customer_details` fields
+                value:
+                  - order_id: '555413'
+                    order_number: OXSDFGHTD-12
+                    order_details:
+                      integration:
+                        id: 739283
+                      status:
+                        code: fulfilled
+                        message: Fulfilled
+                      order_created_at: '2018-02-27T10:00:00.555Z'
+                      order_updated_at: '2018-02-27T10:00:00.555Z'
+                      order_items:
+                        - name: Cylinder candle
+                          description: Pebble green - 12x8 cm
+                          measurement:
+                            weight:
+                              value: 1
+                              unit: kg
+                          quantity: 1
+                          unit_price:
+                            value: 3.5
+                            currency: EUR
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                    payment_details:
+                      total_price:
+                        value: 3.5
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Paid
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Tuindersweg
+                      house_number: '15'
+                      postal_code: 5341AW
+                      city: Oss
+                      country_code: NL
+                    billing_address:
+                      name: Jane Doe
+                      address_line_1: Vioolstraat
+                      house_number: '118'
+                      postal_code: 5391TW
+                      city: Breda
+                      country_code: NL
+                    customer_details:
+                      name: Jane Doe
+              CreateServicePointOrder:
+                summary: >-
+                  Create an order that will be delivered to a specific service
+                  point
+                description: >-
+                  Instead of sending an order to the customers address you can
+                  send the order to a service point for the customer to pick it
+                  up from
+                value:
+                  - order_id: '555413'
+                    order_number: OXSDFGHTD-12
+                    order_details:
+                      integration:
+                        id: 739283
+                      status:
+                        code: fulfilled
+                        message: Fulfilled
+                      order_created_at: '2018-02-27T10:00:00.555Z'
+                      order_updated_at: '2018-02-27T10:00:00.555Z'
+                      order_items:
+                        - name: Cylinder candle
+                          description: Pebble green - 12x8 cm
+                          measurement:
+                            weight:
+                              value: 1
+                              unit: kg
+                          quantity: 1
+                          unit_price:
+                            value: 3.5
+                            currency: EUR
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                    payment_details:
+                      total_price:
+                        value: 3.5
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Paid
+                    service_point_details:
+                      id: '10875349'
+                      extra_data:
+                        partner_name: PostNL
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Lansdown Glade
+                      house_number: '15'
+                      postal_code: 5341AB
+                      city: Oss
+                      country_code: NL
+                      phone_number: '0612345678'
+              CreateServicePointOrderByCarrierId:
+                summary: Create an order using the carrier's native service point ID
+                description: >-
+                  You can use the carrier's native service point ID instead of
+                  the Sendcloud service point ID to identify the service point
+                value:
+                  - order_id: '555414'
+                    order_number: OXSDFGHTD-13
+                    order_details:
+                      integration:
+                        id: 739283
+                      status:
+                        code: fulfilled
+                        message: Fulfilled
+                      order_created_at: '2018-02-27T10:00:00.555Z'
+                      order_updated_at: '2018-02-27T10:00:00.555Z'
+                      order_items:
+                        - name: Cylinder candle
+                          description: Pebble green - 12x8 cm
+                          measurement:
+                            weight:
+                              value: 1
+                              unit: kg
+                          quantity: 1
+                          unit_price:
+                            value: 3.5
+                            currency: EUR
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                    payment_details:
+                      total_price:
+                        value: 3.5
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Paid
+                    service_point_details:
+                      carrier_service_point_id: '91233'
+                      extra_data:
+                        partner_name: PostNL
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Lansdown Glade
+                      house_number: '15'
+                      postal_code: 5341AB
+                      city: Oss
+                      country_code: NL
+                      phone_number: '0612345678'
+              UpdateBatchOrders:
+                summary: Update orders in batch
+                description: >-
+                  If you want to update orders in batch, you can use this method
+                  by specifying `id` in the request data
+                value:
+                  - id: '669'
+                    order_id: '555413'
+                    order_number: OXSDFGHTD-12
+                    order_details:
+                      integration:
+                        id: 739283
+                      status:
+                        code: fulfilled
+                        message: Fulfilled
+                      order_created_at: '2018-02-27T10:00:00.555Z'
+                      order_updated_at: '2018-02-28T11:05:15.634Z'
+                      order_items:
+                        - name: Cylinder candle
+                          measurement:
+                            weight:
+                              value: 1.3
+                              unit: kg
+                          quantity: 1
+                          unit_price:
+                            value: 3.5
+                            currency: EUR
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                    payment_details:
+                      total_price:
+                        value: 3.5
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Paid
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Lansdown Glade
+                      house_number: '15'
+                      postal_code: 5341AB
+                      city: Oss
+                      country_code: NL
+                      phone_number: '0612345678'
+                  - id: '1337'
+                    order_id: '555414'
+                    order_number: OXSDFGHTD-13
+                    order_details:
+                      integration:
+                        id: 739283
+                      status:
+                        code: fulfilled
+                        message: Fulfilled
+                      order_created_at: '2018-02-27T10:00:00.555Z'
+                      order_updated_at: '2018-02-28T11:05:15.634Z'
+                      order_items:
+                        - name: Squared Candle
+                          measurement:
+                            weight:
+                              value: 0.8
+                              unit: kg
+                          quantity: 3
+                          unit_price:
+                            value: 2
+                            currency: EUR
+                          total_price:
+                            value: 6
+                            currency: EUR
+                        - name: Scented Candle
+                          quantity: 2
+                          unit_price:
+                            value: 5.5
+                            currency: EUR
+                          total_price:
+                            value: 11
+                            currency: EUR
+                    payment_details:
+                      total_price:
+                        value: 17
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Paid
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Lansdown Glade
+                      house_number: '15'
+                      postal_code: 5341AB
+                      city: Oss
+                      country_code: NL
+                      phone_number: '0612345678'
+              CreateOrderShipWith:
+                summary: Create a basic order with all required fields filled
+                description: If you need create an order with only necessary info
+                value:
+                  - order_id: '555413'
+                    order_number: OXSDFGHTD-12
+                    order_details:
+                      integration:
+                        id: 7
+                      status:
+                        code: fulfilled
+                        message: Fulfilled
+                      order_created_at: '2018-02-27T10:00:00.556Z'
+                      order_items:
+                        - name: Cylinder candle
+                          quantity: 1
+                          total_price:
+                            value: 3.5
+                            currency: EUR
+                    payment_details:
+                      total_price:
+                        value: 3.5
+                        currency: EUR
+                      status:
+                        code: paid
+                        message: Paid
+                    shipping_address:
+                      name: John Doe
+                      address_line_1: Lansdown Glade
+                      house_number: '15'
+                      postal_code: 5341XT
+                      city: Oss
+                      country_code: NL
+                    shipping_details:
+                      is_local_pickup: false
+                      delivery_indicator: DHL home delivery
+                      measurement:
+                        weight:
+                          value: 3
+                          unit: kg
+                      ship_with:
+                        type: shipping_option_code
+                        properties:
+                          shipping_option_code: postnl:standard
+                          contract_id: 517
+      responses:
+        '201':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      description: Create/Update orders in batch response object.
+                      properties:
+                        id:
+                          description: Autogenerated Sendcloud's internal ID
+                          type: integer
+                          example: 234543
+                        order_id:
+                          type: string
+                          description: External order ID assigned by shop system
+                          example: 7bdd5bfd-76bc-4654-9d40-5d5d49f1cd6c
+                        order_number:
+                          type: string
+                          description: >-
+                            Unique order number generated manually or by shop
+                            system
+                          example: '101170081'
+              examples:
+                SingleOrderCreation:
+                  description: >-
+                    Response contains the identifiable information for the
+                    customer to link the order in Sendcloud with the order in
+                    the shop system
+                  value:
+                    data:
+                      - id: 664
+                        order_id: '555413'
+                        order_number: OXSDFGHTD-12
+                BatchOrderCreation:
+                  description: >-
+                    Response contains the identifiable information for the
+                    customer to link the order in Sendcloud with the order in
+                    the shop system
+                  value:
+                    data:
+                      - id: 669
+                        order_id: '555413'
+                        order_number: OXSDFGHTD-12
+                      - id: 1337
+                        order_id: '555414'
+                        order_number: OXSDFGHTD-13
+        '400':
+          description: >-
+            Bad Request - Validation errors or business rule violations.
+
+
+            **Error Response Structure**
+
+
+            All errors use JSON Pointer notation in the `source.pointer` field
+            to indicate the exact location of the problem:
+
+
+            - `[N]` indicates which order in the batch array (0-indexed)
+
+            - The path after shows the field hierarchy within that order
+
+            - **Example**: `/data/attributes/[1]/order_details/integration`
+            means the error is in the second order's integration field.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                WrongPayloadFormatRequested:
+                  summary: Wrong payload format
+                  description: The request body is not in the expected array format
+                  value:
+                    errors:
+                      - status: '400'
+                        code: non_field_errors
+                        title: Wrong format
+                        detail: Wrong request format, expected list of objects
+                MissingRequiredField:
+                  summary: Missing required field
+                  description: >-
+                    An order in the batch is missing a required field. The array
+                    index [1] indicates the second order in the batch
+                    (0-indexed) has the error.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Field required
+                        source:
+                          pointer: /data/attributes/[1]/order_details/integration
+                MissingOrderId:
+                  summary: Missing order ID
+                  description: >-
+                    An order in the batch is missing the required `order_id`
+                    field.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Field required
+                        source:
+                          pointer: /data/attributes/[0]/order_id
+                InvalidFieldValue:
+                  summary: Invalid field value
+                  description: >-
+                    An order has an invalid field value, such as a negative
+                    quantity or invalid enum value.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Input should be greater than 0
+                        source:
+                          pointer: >-
+                            /data/attributes/[0]/order_details/order_items/0/quantity
+                DuplicateOrderProcessing:
+                  summary: Duplicate order being processed
+                  description: >-
+                    The batch contains an `order_id` that is currently being
+                    processed by another request. This triggers a transaction
+                    rollback - the entire batch is rejected and zero orders are
+                    created. Wait a moment and retry the entire batch.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: >-
+                          We are still processing a previous request. Please try
+                          again in a moment.
+                        source:
+                          pointer: /data
+                BatchSizeLimitExceeded:
+                  summary: Batch size limit exceeded
+                  description: >-
+                    The request contains more than 100 orders. The maximum batch
+                    size is 100 orders per request.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Orders list should have at most 100 items, not 101
+                        source:
+                          pointer: /data/attributes/
+                MultipleValidationErrors:
+                  summary: Multiple validation errors
+                  description: >-
+                    Multiple fields have validation errors. All errors are
+                    returned together to help fix all issues at once.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Field required
+                        source:
+                          pointer: >-
+                            /data/attributes/[0]/shipping_details/ship_with/properties
+                      - status: '400'
+                        code: invalid
+                        detail: Field required
+                        source:
+                          pointer: /data/attributes/[0]/shipping_details/ship_with/type
+                IntegrationNotFound:
+                  summary: Integration not found
+                  description: >-
+                    The specified integration ID does not exist or does not
+                    belong to your account.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Integration with id 99999 does not exist
+                        source:
+                          pointer: /data/attributes/[0]/order_details/integration/id
+                ImmutableFieldChange:
+                  summary: Immutable field change attempted
+                  description: >-
+                    When updating an existing order (upsert), certain fields
+                    like `order_id` cannot be changed. This error occurs when
+                    trying to modify an immutable field.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Order id abc-123 cannot be changed
+                        source:
+                          pointer: /data/attributes/[0]/order_id
+                InvalidIdType:
+                  summary: Invalid id field type
+                  description: >-
+                    The Sendcloud `id` field has a type mismatch between
+                    requests and responses.
+
+
+                    - In **responses**, `id` is returned as an **integer**
+                    (e.g., `"id": 669`)
+
+                    - In **requests**, `id` must be sent as a **string** (e.g.,
+                    `"id": "669"`)
+
+
+                    This error occurs when you send the `id` as an integer
+                    instead of a string.
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        detail: Input should be a valid string
+                        source:
+                          pointer: /data/attributes/[0]/id
+      operationId: sc-public-v3-orders-post-create_orders
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Orders
+    get:
+      summary: Retrieve a list of orders
+      description: >-
+        Get a list of orders filtered by integration, order number, order ID,
+        order status, creation date, and update date. You can also optionally
+        sort the results and pass a `cursor` value.
+      x-mint:
+        href: /api/v3/orders/retrieve-a-list-of-orders
+        content: >-
+          This endpoint lets you get a list of orders from the API in the same
+          way you can find it on the Incoming Orders overview in the Sendcloud
+          platform.
+
+
+          The endpoint is paginated. You can navigate through the results by
+          using the URLs of the `next` and `prev` fields in the `Link` response
+          header.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Link:
+              description: >-
+                Links to related resources in the [RFC
+                5988](https://tools.ietf.org/html/rfc5988#section-5) format.
+                This includes the links with the `next` and `prev` types for the
+                next and the previous pages.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/order'
+              examples:
+                Response:
+                  value:
+                    data:
+                      - id: '669'
+                        order_id: '555413'
+                        order_number: OXSDFGHTD-12
+                        created_at: '2018-02-27T10:00:00.555Z'
+                        modified_at: '2018-02-27T10:00:00.555Z'
+                        order_details:
+                          integration:
+                            id: 739283
+                          status:
+                            code: fulfilled
+                            message: Fulfilled
+                          order_created_at: '2018-02-27T10:00:00.555Z'
+                          order_updated_at: '2018-02-27T10:00:00.555Z'
+                          order_items:
+                            - name: Cylinder candle
+                              measurement:
+                                weight:
+                                  value: 1
+                                  unit: kg
+                              quantity: 1
+                              unit_price:
+                                value: 3.5
+                                currency: EUR
+                              total_price:
+                                value: 3.5
+                                currency: EUR
+                              delivery_dates:
+                                handover_at: '2022-02-27T10:00:00.555309+00:00'
+                                deliver_at: '2022-03-02T11:50:00.555309+00:00'
+                              mid_code: US1234567
+                              material_content: 100% Cotton
+                              intended_use: Personal use
+                              manufacturer_product_id: ABC-12345
+                              manufacturer_product_id_std: '01234567890128'
+                        payment_details:
+                          is_cash_on_delivery: false
+                          total_price:
+                            value: 7
+                            currency: EUR
+                          status:
+                            code: paid
+                            message: Order has been paid
+                          discount_granted:
+                            value: '3.99'
+                            currency: EUR
+                          insurance_costs:
+                            value: '9.99'
+                            currency: EUR
+                          freight_costs:
+                            value: '5.99'
+                            currency: EUR
+                          other_costs:
+                            value: '2.99'
+                            currency: EUR
+                        customs_details:
+                          commercial_invoice_number: 0124-03102022
+                          shipment_type: commercial_goods
+                          export_type: commercial_b2c
+                          tax_numbers:
+                            sender:
+                              - name: VAT
+                                country_code: NL
+                                value: NL987654321B02
+                            receiver:
+                              - name: VAT
+                                country_code: DE
+                                value: DE123456789B03
+                            importer_of_record:
+                              - name: VAT
+                                country_code: NL
+                                value: NL975318642B01
+                        shipping_address:
+                          name: John Doe
+                          address_line_1: Stadhuisplein
+                          house_number: '15'
+                          postal_code: 5341TW
+                          city: Oss
+                          country_code: NL
+                        shipping_details:
+                          is_local_pickup: false
+                          ship_with:
+                            type: shipping_option_code
+                            properties:
+                              shipping_option_code: postnl:standard
+                              contract_id: 517
+                        billing_address:
+                          name: Jane Doe
+                          address_line_1: Vioolstraat
+                          house_number: '118'
+                          postal_code: 5391TW
+                          city: Breda
+                          country_code: NL
+                        customer_details:
+                          name: Jane Doe
+                      - id: '1337'
+                        order_id: '555414'
+                        created_at: '2018-03-21T10:00:00.555Z'
+                        modified_at: '2018-03-22T10:00:00.555Z'
+                        order_number: OXSDFGHTD-13
+                        order_details:
+                          integration:
+                            id: 739283
+                          status:
+                            code: fulfilled
+                            message: Fulfilled
+                          order_created_at: '2018-02-27T10:00:00.555Z'
+                          order_updated_at: '2018-02-28T11:05:15.634Z'
+                          order_items:
+                            - name: Squared Candle
+                              measurement:
+                                weight:
+                                  value: 0.8
+                                  unit: kg
+                              quantity: 3
+                              unit_price:
+                                value: 2
+                                currency: EUR
+                              total_price:
+                                value: 6
+                                currency: EUR
+                              delivery_dates: null
+                              mid_code: US1234567
+                              material_content: 100% Cotton
+                              intended_use: Personal use
+                              manufacturer_product_id: ABC-12345
+                              manufacturer_product_id_std: '01234567890128'
+                            - name: Scented Candle
+                              quantity: 2
+                              unit_price:
+                                value: 5.5
+                                currency: EUR
+                              total_price:
+                                value: 11
+                                currency: EUR
+                              delivery_dates: null
+                              mid_code: US1234567
+                              material_content: 100% Cotton
+                              intended_use: Personal use
+                              manufacturer_product_id: ABC-12345
+                              manufacturer_product_id_std: '01234567890128'
+                        payment_details:
+                          is_cash_on_delivery: false
+                          total_price:
+                            value: 7
+                            currency: EUR
+                          status:
+                            code: paid
+                            message: Order has been paid
+                          discount_granted:
+                            value: '3.99'
+                            currency: EUR
+                          insurance_costs:
+                            value: '9.99'
+                            currency: EUR
+                          freight_costs:
+                            value: '5.99'
+                            currency: EUR
+                          other_costs:
+                            value: '2.99'
+                            currency: EUR
+                        customs_details:
+                          commercial_invoice_number: 0124-03102022
+                          shipment_type: commercial_goods
+                          export_type: commercial_b2c
+                          tax_numbers:
+                            sender:
+                              - name: VAT
+                                country_code: NL
+                                value: NL987654321B02
+                            receiver:
+                              - name: VAT
+                                country_code: DE
+                                value: DE123456789B03
+                            importer_of_record:
+                              - name: VAT
+                                country_code: NL
+                                value: NL975318642B01
+                        shipping_address:
+                          name: John Doe
+                          address_line_1: Stadhuisplein
+                          house_number: '15'
+                          postal_code: 5341AB
+                          city: Oss
+                          country_code: NL
+                          phone_number: '0612345678'
+                        shipping_details:
+                          is_local_pickup: false
+                          ship_with:
+                            type: shipping_option_code
+                            properties:
+                              shipping_option_code: postnl:standard
+                              contract_id: 517
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                FilteringANonValidIntegration:
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid_choice
+                        title: Invalid Choice
+                        detail: >-
+                          Select a valid choice. 128 is not one of the available
+                          choices.
+                        source:
+                          parameter: integration
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                FilteringNonExistingCursor:
+                  value:
+                    errors:
+                      - status: '404'
+                        title: Invalid cursor
+                        code: not_found
+                        detail: Invalid cursor
+      parameters:
+        - $ref: '#/components/parameters/integration'
+        - $ref: '#/components/parameters/order_number'
+        - $ref: '#/components/parameters/order_id'
+        - $ref: '#/components/parameters/order_status'
+        - $ref: '#/components/parameters/order_created_at'
+        - $ref: '#/components/parameters/order_created_at_min'
+        - $ref: '#/components/parameters/order_created_at_max'
+        - $ref: '#/components/parameters/order_updated_at'
+        - $ref: '#/components/parameters/order_updated_at_min'
+        - $ref: '#/components/parameters/order_updated_at_max'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/page_size'
+        - $ref: '#/components/parameters/cursor'
+      operationId: sc-public-v3-orders-get-list_orders
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Orders
+  /orders/{id}:
+    parameters:
+      - schema:
+          type: integer
+          minimum: 1
+        name: id
+        in: path
+        required: true
+        description: Filtering on the Sendcloud order ID
+    get:
+      summary: Retrieve an order
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/order'
+              examples:
+                RetrievingSpecificOrder:
+                  summary: Retrieving a specific order
+                  value:
+                    data:
+                      id: '669'
+                      order_id: '555413'
+                      created_at: '2018-02-27T10:00:00.555Z'
+                      modified_at: '2018-02-27T10:00:00.555Z'
+                      order_number: OXSDFGHTD-12
+                      order_details:
+                        integration:
+                          id: 739283
+                        status:
+                          code: fulfilled
+                          message: Fulfilled
+                        order_created_at: '2018-02-27T10:00:00.555Z'
+                        order_updated_at: '2018-02-27T10:00:00.555Z'
+                        order_items:
+                          - name: Cylinder candle
+                            measurement:
+                              weight:
+                                value: 1
+                                unit: kg
+                            quantity: 1
+                            unit_price:
+                              value: 3.5
+                              currency: EUR
+                            total_price:
+                              value: 3.5
+                              currency: EUR
+                            delivery_dates:
+                              handover_at: '2022-02-27T10:00:00.555309+00:00'
+                              deliver_at: '2022-03-02T11:50:00.555309+00:00'
+                            mid_code: US1234567
+                            material_content: 100% Cotton
+                            intended_use: Personal use
+                            manufacturer_product_id: ABC-12345
+                            manufacturer_product_id_std: '01234567890128'
+                      payment_details:
+                        is_cash_on_delivery: true
+                        total_price:
+                          value: 7
+                          currency: EUR
+                        status:
+                          code: paid
+                          message: Order has been paid
+                        discount_granted:
+                          value: '3.99'
+                          currency: EUR
+                        insurance_costs:
+                          value: '9.99'
+                          currency: EUR
+                        freight_costs:
+                          value: '5.99'
+                          currency: EUR
+                        other_costs:
+                          value: '2.99'
+                          currency: EUR
+                      customs_details:
+                        commercial_invoice_number: 0124-03102022
+                        shipment_type: commercial_goods
+                        export_type: commercial_b2c
+                        tax_numbers:
+                          sender:
+                            - name: VAT
+                              country_code: NL
+                              value: NL987654321B02
+                          receiver:
+                            - name: VAT
+                              country_code: DE
+                              value: DE123456789B03
+                          importer_of_record:
+                            - name: VAT
+                              country_code: NL
+                              value: NL975318642B01
+                      shipping_address:
+                        name: John Doe
+                        address_line_1: Stadhuisplein
+                        house_number: '15'
+                        postal_code: 5341TW
+                        city: Oss
+                        country_code: NL
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                OrderDoesNotExist:
+                  value:
+                    errors:
+                      - status: '404'
+                        code: not_found
+                        title: Not found
+                        detail: >-
+                          The order could not be found with the search criteria
+                          given
+      description: Find a specific order by its order ID.
+      x-mint:
+        href: /api/v3/orders/retrieve-an-order
+      operationId: sc-public-v3-orders-get-retrieve_order
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Orders
+    delete:
+      summary: Delete an order
+      description: Delete an order by its unique id.
+      x-mint:
+        href: /api/v3/orders/delete-an-order
+      responses:
+        '204':
+          description: No content
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                OrderDoesNotExist:
+                  summary: Order does not exist
+                  value:
+                    errors:
+                      - status: '404'
+                        code: not_found
+                        title: Not found
+                        detail: >-
+                          The order could not be found with the search criteria
+                          given
+      operationId: sc-public-v3-orders-delete-delete_order
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Orders
+    patch:
+      summary: Update an order
+      description: Partially update some fields of an order.
+      x-mint:
+        href: /api/v3/orders/update-an-order
+      requestBody:
+        description: >-
+          Only include the fields you would like to update. If you need to
+          update any of the `order_items`, the `name` field is required so that
+          the correct `order_item` is updated. If you need to add items to or
+          remove items from an order, you should use the [Create/Update orders
+          in batch](/api/v3/orders/create-update-orders-in-batch) endpoint
+          instead.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/order-partial-update'
+            examples:
+              UpdateOrderStatus:
+                summary: Update the status of an Order
+                value:
+                  id: '669'
+                  order_id: '555413'
+                  order_details:
+                    status:
+                      code: fulfilled
+                      message: Fulfilled
+                    tags:
+                      - october_campaign
+              UpdateOrderItem:
+                summary: Update an order's item
+                value:
+                  id: '669'
+                  order_id: '555413'
+                  order_details:
+                    order_items:
+                      - name: Cylinder candle
+                        measurement:
+                          weight:
+                            value: 1
+                            unit: kg
+                        quantity: 2
+                        unit_price:
+                          value: 7
+                          currency: EUR
+                        total_price:
+                          value: 7
+                          currency: EUR
+                        mid_code: US1234567
+                        material_content: 100% Cotton
+                        intended_use: Personal use
+                        manufacturer_product_id: ABC-12345
+                        manufacturer_product_id_std: '01234567890128'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderUpdated'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                MissingRequiredField:
+                  summary: Missing required field
+                  value:
+                    errors:
+                      - status: '400'
+                        code: invalid
+                        title: Invalid
+                        detail: Could not find specified item.
+                        source:
+                          pointer: order/order_details/order_items
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errors'
+              examples:
+                OrderNotFound:
+                  summary: Order does not exist
+                  value:
+                    errors:
+                      - status: '404'
+                        code: not_found
+                        title: Not found
+                        detail: Could not find specified item.
+      operationId: sc-public-v3-orders-patch-partial_update_order
+      security:
+        - HTTPBasicAuth: []
+        - OAuth2ClientCreds: []
+      tags:
+        - Orders
+components:
+  schemas:
+    Order:
+      $ref: '#/components/schemas/order'
+    price:
+      title: Price Object
+      type: object
+      properties:
+        value:
+          type: number
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          enum:
+            - EUR
+            - GBP
+            - USD
+      description: Price in the specified currency
+    dimension-units:
+      type: string
+      title: Dimensional units
+      enum:
+        - cm
+        - mm
+        - m
+        - yd
+        - ft
+        - in
+      example: mm
+    dimension:
+      title: Dimension
+      type: object
+      description: Dimension in the specified unit
+      properties:
+        length:
+          type: number
+          description: length in specified unit
+          minimum: 0
+          example: 15
+        width:
+          type: number
+          description: width in specified unit
+          minimum: 0
+          example: 20.5
+        height:
+          type: number
+          description: height in specified unit
+          minimum: 0
+          example: 37
+        unit:
+          $ref: '#/components/schemas/dimension-units'
+      required:
+        - length
+        - width
+        - height
+        - unit
+    weight-units:
+      type: string
+      title: Mass Units Object
+      enum:
+        - kg
+        - g
+        - lbs
+        - oz
+      example: g
+    weight:
+      title: Weight
+      type: object
+      description: Weight in the specified unit
+      properties:
+        value:
+          type: number
+          description: Weight value
+          exclusiveMinimum: 0
+          example: 14.5
+        unit:
+          $ref: '#/components/schemas/weight-units'
+      required:
+        - value
+        - unit
+    volume-units:
+      type: string
+      title: Volume units
+      enum:
+        - m3
+        - cm3
+        - l
+        - ml
+        - gal
+      example: l
+    volume:
+      title: Volume
+      type: object
+      description: Volume in the specified unit
+      properties:
+        value:
+          type: integer
+          description: Volume value
+          minimum: 0
+          example: 5
+        unit:
+          $ref: '#/components/schemas/volume-units'
+      required:
+        - value
+        - unit
+    measurement:
+      title: Measurement Object
+      type: object
+      properties:
+        dimension:
+          $ref: '#/components/schemas/dimension'
+        weight:
+          $ref: '#/components/schemas/weight'
+        volume:
+          $ref: '#/components/schemas/volume'
+      description: >-
+        This object provides essential information for accurate packing,
+        shipping, and inventory management
+    delivery-dates:
+      title: Delivery Dates
+      description: Defined delivery dates
+      type:
+        - object
+      properties:
+        handover_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: >-
+            The date when the item will be handed over to the carrier by the
+            merchant in ISO 8601
+          example: '2025-02-27T10:00:00.555309+00:00'
+        deliver_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: The date when the order should reach the end customer in ISO 8601
+          example: '2025-03-15T10:00:00.555309+00:00'
+    dangerous-goods:
+      title: DangerousGoods
+      type: object
+      description: Hazardous materials information for items.
+      properties:
+        chemical_record_identifier:
+          type: string
+          nullable: true
+          description: Chemical record identifier for the dangerous goods
+        regulation_set:
+          type: string
+          enum:
+            - IATA
+            - ADR
+          description: Regulation set governing the dangerous goods
+        packaging_type_quantity:
+          type: string
+          nullable: true
+          description: Quantity of packaging type
+        packaging_type:
+          type: string
+          nullable: true
+          description: Type of packaging used
+        packaging_instruction_code:
+          type: string
+          nullable: true
+          description: Packaging instruction code
+        id_number:
+          type: string
+          nullable: true
+          description: UN identification number
+        class_division_number:
+          type: string
+          nullable: true
+          description: Hazard class and division number
+        quantity:
+          type: string
+          nullable: true
+          description: Quantity of dangerous goods
+        unit_of_measurement:
+          type: string
+          enum:
+            - KG
+            - G
+            - L
+            - ML
+          description: Unit of measurement for dangerous goods quantity
+        proper_shipping_name:
+          type: string
+          nullable: true
+          description: Proper shipping name as defined by regulations
+        commodity_regulated_level_code:
+          type: string
+          enum:
+            - LQ
+            - EQ
+          description: Commodity regulated level code
+        transportation_mode:
+          type: string
+          enum:
+            - Highway
+            - Ground
+            - PAX
+            - CAO
+          description: Mode of transportation
+        emergency_contact_name:
+          type: string
+          nullable: true
+          description: Name of emergency contact person
+        emergency_contact_phone:
+          type: string
+          nullable: true
+          description: Phone number of emergency contact
+        adr_packing_group_letter:
+          type: string
+          enum:
+            - I
+            - II
+            - III
+          description: ADR packing group classification
+        local_proper_shipping_name:
+          type: string
+          nullable: true
+          description: Local proper shipping name
+        transport_category:
+          type: string
+          nullable: true
+          description: Transport category for ADR regulations
+        tunnel_restriction_code:
+          type: string
+          nullable: true
+          description: Tunnel restriction code
+        weight_type:
+          type: string
+          enum:
+            - Net
+            - Gross
+          description: Type of weight measurement
+    order-items:
+      title: Order Items
+      type: array
+      description: The list of items that an order contains
+      items:
+        type: object
+        description: Order item
+        properties:
+          item_id:
+            type: string
+            description: Order Item external ID in shop system
+            example: '5552'
+            minLength: 1
+          product_id:
+            type: string
+            description: Shop system product ID
+            example: '1458734634'
+          variant_id:
+            type: string
+            description: Shop system variant ID of the product
+            example: '15346645'
+          image_url:
+            type: string
+            description: >-
+              A url to an image representing the given product (or variation of
+              the product if applicable). When providing `image_url` the
+              `product_id` is required for image to be correctly displayed.
+            format: url
+            example: https://i.ibb.co/6tLZ2Jz/orange.jpeg
+          name:
+            type: string
+            description: The name of ordered product
+            example: Cylinder candle
+          description:
+            type: string
+            description: The product description
+            example: Pebble green - 12x8 cm
+          quantity:
+            type: integer
+            description: >-
+              The quantity field on an order item represents the number of units
+              of a product a customer has ordered.
+            example: 2
+            minLength: 1
+          sku:
+            type: string
+            example: WW-DR-GR-XS-001
+            description: >-
+              Stock keeping unit - used by retailers to assign to products, in
+              order to keep track of stock levels internally.
+          hs_code:
+            type: string
+            description: >-
+              The Harmonized System (HS) code is a standardized numerical system
+              used to classify traded products in international commerce
+            example: '6205.20'
+          country_of_origin:
+            type: string
+            example: NL
+            description: Country code of origin of the item in ISO 3166-1 alpha-2
+            maxLength: 2
+            minLength: 2
+          properties:
+            type: object
+            additionalProperties: true
+            description: Any custom user-defined properties of order item or product
+            example:
+              size: red
+              color: green
+          unit_price:
+            $ref: '#/components/schemas/price'
+            description: >
+              The price of a single item in the shop’s currency before discounts
+              have been applied.
+
+              - **[Sendcloud platform mapping]** This value is shown directly in
+              the Unit value field in the Sendcloud platform.
+          total_price:
+            $ref: '#/components/schemas/price'
+            description: >
+              The total price for this item line, after any item-level
+              discounts, in the shop’s currency.
+
+              - It should reflect `unit_price × quantity`, minus discounts (if
+              applicable).
+
+              - **[Sendcloud platform mapping]** Not displayed in the Sendcloud
+              platform. Instead, the Sendcloud platform calculates its own total
+              as `unit_price × quantity`.
+          measurement:
+            $ref: '#/components/schemas/measurement'
+          ean:
+            type: string
+            description: European standardised number for an article, EAN-13
+            example: '0799439112766'
+          delivery_dates:
+            $ref: '#/components/schemas/delivery-dates'
+          mid_code:
+            title: MID Code
+            type:
+              - string
+              - 'null'
+            description: >-
+              MID code is short for Manufacturer's Identification code and must
+              be shown on the commercial invoice. It's used as an alternative to
+              the full name and address of a manufacturer, shipper or exporter
+              and is always required for U.S. formal customs entries.
+            example: NLOZR92MEL
+          material_content:
+            title: Material Content
+            type:
+              - string
+              - 'null'
+            description: A description of materials of the order content.
+            example: 100% Cotton
+          intended_use:
+            title: Intended Use
+            type:
+              - string
+              - 'null'
+            description: >-
+              Intended use of the order contents. The intended use may be
+              personal or commercial.
+            example: Personal use
+          manufacturer_product_id:
+            title: Manufacturer Product ID
+            type:
+              - string
+              - 'null'
+            description: >-
+              A manufacturer or product supplier's unique code, assigned to an
+              individual product.
+            maxLength: 70
+            example: ABC-12345
+          manufacturer_product_id_std:
+            title: Manufacturer Product ID (Standardized)
+            type:
+              - string
+              - 'null'
+            description: >-
+              A standardized manufacturer product identifier assigned by a
+              global industry standard body (e.g. GTIN). Provide only if one
+              exists for the product.
+            maxLength: 70
+            example: '01234567890128'
+          dangerous_goods:
+            $ref: '#/components/schemas/dangerous-goods'
+        required:
+          - name
+          - quantity
+          - total_price
+    costs-object:
+      title: Costs Object
+      type: object
+      properties:
+        value:
+          type:
+            - string
+            - 'null'
+          pattern: '[\d]+(\.[\d]+)?'
+          example: '3.99'
+        currency:
+          type:
+            - string
+            - 'null'
+          example: EUR
+    payment-details:
+      title: Payment Details
+      type: object
+      description: Node for everything about payments and money
+      required:
+        - total_price
+        - status
+      properties:
+        is_cash_on_delivery:
+          type:
+            - boolean
+            - 'null'
+          description: >-
+            Indicates if customers will pay the full order amount upon delivery
+            of the order
+          example: true
+        total_price:
+          oneOf:
+            - $ref: '#/components/schemas/price'
+          description: Total value in the shop currency
+          required:
+            - value
+            - currency
+        subtotal_price:
+          oneOf:
+            - $ref: '#/components/schemas/price'
+          description: Subtotal value in the shop currency
+          required:
+            - value
+            - currency
+        estimated_shipping_price:
+          oneOf:
+            - $ref: '#/components/schemas/price'
+          description: Sum of all shipping costs
+          required:
+            - value
+            - currency
+        estimated_tax_price:
+          oneOf:
+            - $ref: '#/components/schemas/price'
+          description: Sum of all estimated taxes for the order
+          required:
+            - value
+            - currency
+        status:
+          type: object
+          description: Payment status of an order
+          required:
+            - code
+          properties:
+            code:
+              type: string
+              description: Custom internal shop status, you can use it for filtering
+              example: paid
+              minLength: 1
+            message:
+              type: string
+              description: User-defined human readable status
+              example: Order has been paid
+        invoice_date:
+          type:
+            - string
+            - 'null'
+          title: Invoice Date
+          description: The date when invoice was issued.
+          example: '2018-07-14'
+        discount_granted:
+          type:
+            - object
+            - 'null'
+          title: Discount Granted
+          description: >-
+            Discount granted on the total order excluding any possible discounts
+            on shipping.
+          $ref: '#/components/schemas/costs-object'
+        insurance_costs:
+          type:
+            - object
+            - 'null'
+          title: Insurance Cost
+          description: Amount the order is insured for
+          $ref: '#/components/schemas/costs-object'
+        freight_costs:
+          type:
+            - object
+            - 'null'
+          title: Freight Cost
+          description: Shipping cost of the order after discounts have been applied.
+          $ref: '#/components/schemas/costs-object'
+        other_costs:
+          type:
+            - object
+            - 'null'
+          title: Other Costs
+          description: Any other costs (for eg, wrapping costs) associated with the order
+          $ref: '#/components/schemas/costs-object'
+    tax-number:
+      title: Tax Number
+      type: object
+      properties:
+        name:
+          type:
+            - string
+            - 'null'
+          title: Tax ID name
+          example: VAT
+        country_code:
+          type:
+            - string
+            - 'null'
+          title: The country code of the country in the address
+          example: NL
+        value:
+          type:
+            - string
+            - 'null'
+          title: The value of the Tax ID
+          example: NL987654321B02
+    customs-details:
+      title: Customs Details
+      type:
+        - object
+        - 'null'
+      description: Customs information required for international shipments.
+      properties:
+        commercial_invoice_number:
+          type: string
+          description: Your own commercial invoice number
+          example: '1002404102022'
+        shipment_type:
+          type: string
+          description: >-
+            Indicates the purpose or reason behind exporting the items. This
+            classification helps customs authorities determine the applicable
+            regulations, taxes, and duties.
+          enum:
+            - gift
+            - commercial_goods
+            - commercial_sample
+            - returned_goods
+          example: commercial_goods
+        export_type:
+          type: string
+          description: >
+            Export type documentation serves to categorize international
+            shipments into three primary classifications: 
+              - Private exports, intended for personal use
+              - Commercial B2C exports, directed towards individual consumers
+              - Commercial B2B exports, involving business-to-business transactions
+              These distinctions facilitate adherence to regulatory requirements and ensure the orderly movement of goods across international boundaries.
+          enum:
+            - private
+            - commercial_b2c
+            - commercial_b2b
+          example: private
+        tax_numbers:
+          type:
+            - object
+            - 'null'
+          title: >-
+            Identification numbers and codes related to sender, receiver and
+            importer of record provider.
+          properties:
+            sender:
+              type: array
+              title: Sender's Tax Information
+              minItems: 0
+              items:
+                $ref: '#/components/schemas/tax-number'
+            receiver:
+              type: array
+              title: Receiver's Tax Information
+              minItems: 0
+              items:
+                $ref: '#/components/schemas/tax-number'
+            importer_of_record:
+              type: array
+              title: Receiver's Tax Information
+              minItems: 0
+              items:
+                $ref: '#/components/schemas/tax-number'
+    customer-details:
+      title: Customer Details
+      type: object
+      description: Node for an information about customer
+      properties:
+        name:
+          type: string
+          description: Name of the customer
+          example: John Doe
+        phone_number:
+          type: string
+          description: Phone number of the customer
+          example: '+319881729999'
+        email:
+          type: string
+          description: Email of the customer
+          example: john@doe.com
+      required:
+        - name
+    address:
+      title: Address Object
+      type: object
+      description: Sendcloud Address object
+      properties:
+        name:
+          type: string
+          example: John Doe
+          description: Name of the person associated with the address
+          minLength: 1
+        company_name:
+          type: string
+          example: Sendcloud
+          description: Name of the company associated with the address
+        address_line_1:
+          type: string
+          example: Stadhuisplein
+          description: First line of the address
+        house_number:
+          type: string
+          example: '50'
+          description: House number of the address
+        address_line_2:
+          type: string
+          description: Additional address information, e.g. 2nd level
+          example: Apartment 17B
+        postal_code:
+          type: string
+          example: 1013 AB
+          description: Zip code of the address
+          minLength: 1
+        city:
+          type: string
+          example: Eindhoven
+          description: City of the address
+          minLength: 1
+        po_box:
+          type:
+            - string
+            - 'null'
+          description: Code required in case of PO Box or post locker delivery
+        state_province_code:
+          type: string
+          example: IT-RM
+          description: >-
+            The character state code of the customer represented as ISO 3166-2
+            code. This field is required for certain countries. See
+            [international
+            shipping](/docs/shipments/international-shipping#required-fields-for-international-shipments)
+            for details.
+        country_code:
+          type: string
+          example: NL
+          description: The country code of the customer represented as ISO 3166-1 alpha-2
+          minLength: 1
+        email:
+          type: string
+          format: email
+          example: johndoe@gmail.com
+          description: Email address of the person associated with the address
+        phone_number:
+          type: string
+          example: '+319881729999'
+          description: Phone number of the person associated with the address
+    billing-address:
+      title: Billing Address
+      oneOf:
+        - $ref: '#/components/schemas/address'
+      required:
+        - name
+        - address_line_1
+        - postal_code
+        - city
+        - country_code
+      description: Sendcloud Billing Address object
+    shipping-address:
+      title: Shipping Address
+      oneOf:
+        - $ref: '#/components/schemas/address'
+      required:
+        - name
+        - address_line_1
+        - postal_code
+        - city
+        - country_code
+      description: Sendcloud Shipping Address object
+    shipping-option-code-properties:
+      title: Shipping option properties Object
+      description: >-
+        Contains the required properties to be sent when API client informs the
+        shipping method and carrier to be used
+      type: object
+      properties:
+        shipping_option_code:
+          type:
+            - string
+            - 'null'
+          description: >-
+            The shipping option that will be or is used for shipping your
+            parcel. A shipping option `code` can be retrieved from the [Create a
+            list of shipping
+            options](/api/v3/shipping-options/create-a-list-of-shipping-options)
+            endpoint.
+          example: postnl:standard/insured=3000
+        contract_id:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          description: >-
+            Selected shipping contract. If you haven't specified a contract for
+            shipping your parcel, we will automatically select the default
+            contract for the carrier that matches your shipping option. You can
+            retrieve your contract IDs by using the [Retrieve a list of
+            contracts](/api/v3/contracts/retrieve-a-list-of-contracts)
+            operation. Otherwise, the default direct contract will be
+            automatically selected.
+      required:
+        - shipping_option_code
+    ship-with:
+      title: Ship with object
+      type: object
+      description: >
+        The ship with object can be used to define how you would like to send
+        your shipment.
+
+
+        You can use a `shipping_option_code`. This is a unique identifier that
+        displays what carrier and what set of shipping functionalities you want
+        to use.
+      examples:
+        - type: shipping_option_code
+          properties:
+            shipping_option_code: postnl:standard/insured=3000
+            contract_id: 517
+      properties:
+        type:
+          type: string
+          description: |
+            The way the shipping method and carrier will be selected.
+          enum:
+            - shipping_option_code
+          example: shipping_option_code
+        properties:
+          $ref: '#/components/schemas/shipping-option-code-properties'
+      required:
+        - type
+        - properties
+    shipping-details:
+      type: object
+      description: Shipping information
+      properties:
+        is_local_pickup:
+          type:
+            - boolean
+            - 'null'
+          description: >-
+            Indicates if customers should collect the order in person from a
+            merchant location
+          example: true
+        delivery_indicator:
+          title: Delivery Indicator
+          description: >-
+            A free text field to indicate how a specific order should be
+            shipped.
+
+
+            - The field is intended for applying the Checkout Delivery Method
+            condition in shipping rules.
+
+            - Learn more about [shipping rules](/docs/shipping/shipping-rules/).
+          type: string
+          example: DHL Home Delivery
+        measurement:
+          $ref: '#/components/schemas/measurement'
+          description: Total order measurements
+        ship_with:
+          $ref: '#/components/schemas/ship-with'
+    service-point:
+      title: Service Point
+      type: object
+      description: >-
+        Node for service point information. The service point information can be
+        retrieved from the [Service points API](/api/v2/service-points).
+
+
+        You must provide either the Sendcloud `id` or the
+        `carrier_service_point_id` to identify the service point.
+
+
+        > **Note:** `service_point_details` is intended for API usage only and
+        will not be reflected in the Incoming Order View (IOV).
+      oneOf:
+        - title: Sendcloud ID
+          type: object
+          properties:
+            id:
+              type: string
+              description: >-
+                An id of Sendcloud Service Point to which the shipment is going
+                to be shipped
+              example: '123'
+            post_number:
+              type: string
+              description: >-
+                An optional field that only applies to PackStation service point
+                types
+              example: some-post-number
+            latitude:
+              type: string
+              description: The Latitude of where the service point is located
+              example: '51.427063'
+            longitude:
+              type: string
+              description: The Longitude of where the service point is located
+              example: '5.486414'
+            type:
+              type: string
+              description: Carrier defined service point type
+              example: packstation
+            extra_data:
+              type: object
+              additionalProperties: true
+              description: Can contain carrier specific data
+          required:
+            - id
+        - title: Carrier Service Point ID
+          type: object
+          properties:
+            carrier_service_point_id:
+              type: string
+              description: The carrier's native id for the service point
+              example: '91233'
+            post_number:
+              type: string
+              description: >-
+                An optional field that only applies to PackStation service point
+                types
+              example: some-post-number
+            latitude:
+              type: string
+              description: The Latitude of where the service point is located
+              example: '51.427063'
+            longitude:
+              type: string
+              description: The Longitude of where the service point is located
+              example: '5.486414'
+            type:
+              type: string
+              description: Carrier defined service point type
+              example: packstation
+            extra_data:
+              type: object
+              additionalProperties: true
+              description: Can contain carrier specific data
+          required:
+            - carrier_service_point_id
+    order:
+      title: Order Object
+      type: object
+      description: Sendcloud Order object
+      properties:
+        id:
+          description: Autogenerated Sendcloud's internal ID
+          type: string
+          readOnly: true
+        order_id:
+          type: string
+          description: External order ID assigned by shop system
+          example: 7bdd5bfd-76bc-4654-9d40-5d5d49f1cd6c
+          minLength: 1
+        order_number:
+          type: string
+          description: Unique order number generated manually or by shop system
+          example: '101170081'
+          minLength: 1
+        created_at:
+          type: string
+          format: date-time
+          description: The date when an order was created at Sendcloud in ISO 8601
+          example: '2018-02-27T10:00:00.555309+00:00'
+          readOnly: true
+        modified_at:
+          type: string
+          format: date-time
+          description: The date when an order was last modified at Sendcloud in ISO 8601
+          example: '2018-02-27T10:00:00.555309+00:00'
+          readOnly: true
+        order_details:
+          type: object
+          description: Node for general order information
+          required:
+            - integration
+            - status
+            - order_created_at
+            - order_items
+          properties:
+            integration:
+              type: object
+              description: Sendcloud Integration object where orders come from
+              required:
+                - id
+              properties:
+                id:
+                  type: integer
+                  description: >-
+                    Sendcloud Integration ID. To obtain the integration ID, you
+                    can use the [Retrieve a list of
+                    integrations](/api/v3/integrations/retrieve-a-list-of-integrations)
+                    endpoint.
+                  example: 7
+            status:
+              type: object
+              description: Order status
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: Custom internal shop status, you can use it for filtering
+                  example: fulfilled
+                  minLength: 1
+                message:
+                  type: string
+                  description: User-defined human readable status
+                  example: Order has been fulfilled
+            order_created_at:
+              type: string
+              format: date-time
+              description: >-
+                The date and time that the order was placed in the respective
+                shop system in ISO 8601
+              example: '2018-02-27T10:00:00.555309+00:00'
+            order_updated_at:
+              type: string
+              format: date-time
+              description: >-
+                The date and time that the order was last updated in the
+                respective shop system in ISO 8601
+              example: '2018-02-27T10:00:00.555309+00:00'
+            order_items:
+              $ref: '#/components/schemas/order-items'
+            notes:
+              type: string
+              description: Internal notes or comments placed by consumer on the order
+              example: 'Call this number before delivery: 063 874 6473'
+            tags:
+              type: array
+              description: Tags assigned to the order
+              items:
+                type: string
+              example:
+                - fragile
+                - countryside warehouse
+        payment_details:
+          $ref: '#/components/schemas/payment-details'
+        customs_details:
+          $ref: '#/components/schemas/customs-details'
+        customer_details:
+          $ref: '#/components/schemas/customer-details'
+        billing_address:
+          $ref: '#/components/schemas/billing-address'
+        shipping_address:
+          $ref: '#/components/schemas/shipping-address'
+        shipping_details:
+          $ref: '#/components/schemas/shipping-details'
+        service_point_details:
+          $ref: '#/components/schemas/service-point'
+      required:
+        - order_id
+        - order_number
+        - order_details
+        - payment_details
+    ErrorObject:
+      title: Error
+      type: object
+      description: Error in a JSON:API error format
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the error.
+        links:
+          type: object
+          description: >-
+            A set of hyperlinks that provide additional information about the
+            error.
+          properties:
+            about:
+              type: string
+              description: A URL that provides additional information about the error.
+        status:
+          type: string
+          format: int32
+          description: The HTTP status code of the error.
+          minLength: 1
+        code:
+          type: string
+          description: A unique error code for the error, in snake case format.
+          minLength: 1
+          enum:
+            - unknown_field
+            - invalid
+            - forbidden
+            - invalid_choice
+            - min_value
+            - 'null'
+            - not_found
+            - required
+            - not_a_list
+            - non_field_errors
+            - authentication_failed
+            - validation_error
+            - parcel_announcement_error
+        title:
+          type: string
+          description: A short, human-readable summary of the error.
+          minLength: 1
+        detail:
+          type: string
+          description: A human-readable explanation of the error.
+          minLength: 1
+        source:
+          type: object
+          description: >-
+            An object that identifies the source of the error within the request
+            payload.
+          properties:
+            pointer:
+              type: string
+              description: >-
+                A `JSON` pointer to the location of the error within the request
+                payload.
+            parameter:
+              type: string
+              description: The name of the `query` parameter that caused the error.
+            header:
+              type: string
+              description: The name of the `header` parameter that caused the error.
+        meta:
+          type: object
+          description: Additional metadata about the error.
+    errors:
+      title: Errors
+      type: object
+      description: A standardized format for errors in JSON:API responses.
+      properties:
+        errors:
+          type:
+            - array
+            - object
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/ErrorObject'
+            required:
+              - status
+              - code
+              - detail
+    measurement-partial-update:
+      title: Measurement Object
+      type: object
+      properties:
+        dimension:
+          type: object
+          description: Dimension in the specified unit
+          properties:
+            length:
+              type: number
+              description: length in specified unit
+              minimum: 0
+              example: 15
+            width:
+              type: number
+              description: width in specified unit
+              minimum: 0
+              example: 20.5
+            height:
+              type: number
+              description: height in specified unit
+              minimum: 0
+              example: 37
+            unit:
+              $ref: '#/components/schemas/dimension-units'
+        weight:
+          type: object
+          description: Weight in the specified unit
+          properties:
+            value:
+              type: number
+              description: Weight value
+              exclusiveMinimum: 0
+              example: 14.5
+            unit:
+              $ref: '#/components/schemas/weight-units'
+        volume:
+          type: object
+          description: Volume in the specified unit
+          properties:
+            value:
+              type: integer
+              description: Volume value
+              minimum: 0
+              example: 5
+            unit:
+              $ref: '#/components/schemas/volume-units'
+      description: >-
+        This object provides essential information for accurate packing,
+        shipping, and inventory management
+    order-partial-update:
+      title: Order partial update
+      x-stoplight:
+        id: vgzuo3oqxarv1
+      type: object
+      description: >-
+        API v3 Order model without any required fields to be used in partial
+        update.
+      properties:
+        id:
+          description: Autogenerated Sendcloud's internal ID
+          type: string
+          readOnly: true
+        order_id:
+          type: string
+          description: External order ID assigned by shop system
+          example: 7bdd5bfd-76bc-4654-9d40-5d5d49f1cd6c
+        order_number:
+          type: string
+          description: Unique order number generated manualy or by shop system
+          example: '101170081'
+        created_at:
+          type: string
+          format: date-time
+          description: The date when an order was created at Sendcloud in ISO 8601
+          example: '2018-02-27T10:00:00.555309+00:00'
+          readOnly: true
+        modified_at:
+          type: string
+          format: date-time
+          description: The date when an order was last modified at Sendcloud in ISO 8601
+          example: '2018-02-27T10:00:00.555309+00:00'
+          readOnly: true
+        order_details:
+          type: object
+          description: Node for general order information
+          properties:
+            integration:
+              type: object
+              description: Sendcloud Integration object where orders come from
+              properties:
+                id:
+                  type: integer
+                  description: >-
+                    Sendcloud Integration ID. To obtain the integration ID, you
+                    can use the [Retrieve a list of
+                    integrations](/api/v3/integrations/retrieve-a-list-of-integrations)
+                    endpoint.'
+                  example: 74937
+                  minimum: 1
+            status:
+              type: object
+              description: Order status
+              properties:
+                code:
+                  type: string
+                  description: Custom internal shop status, you can use it for filtering
+                  example: fulfilled
+                message:
+                  type: string
+                  description: User-defined human readable status
+                  example: Order has been fulfilled
+            order_created_at:
+              type: string
+              format: date-time
+              description: >-
+                The date and time that the order was placed in the respective
+                shop system in ISO 8601
+              example: '2018-02-27T10:00:00.555309+00:00'
+            order_updated_at:
+              type: string
+              format: date-time
+              description: >-
+                The date and time that the order was last updated in the
+                respective shop system in ISO 8601
+              example: '2018-02-27T10:00:00.555309+00:00'
+            order_items:
+              type: array
+              description: List of items the order contains
+              items:
+                type: object
+                description: Order item
+                properties:
+                  item_id:
+                    type: string
+                    description: Order Item external ID in shop system
+                    example: '5552'
+                  product_id:
+                    type: string
+                    description: Shop system product ID
+                    example: '1458734634'
+                  name:
+                    type: string
+                    description: The name of ordered product
+                    example: Cylinder candle
+                  description:
+                    type: string
+                    description: The product description
+                    example: Pebble green - 12x8 cm
+                  quantity:
+                    type: integer
+                    example: 2
+                    minimum: 0
+                  sku:
+                    type: string
+                    example: WW-DR-GR-XS-001
+                    description: >-
+                      Stock keeping unit - used by retailers to assign to
+                      products, in order to keep track of stock levels
+                      internally.
+                  hs_code:
+                    type: string
+                    example: '6205.20'
+                  country_of_origin:
+                    type: string
+                    example: NL
+                    description: Country code of origin of the item in ISO 3166-1 alpha-2
+                    maxLength: 2
+                    minLength: 2
+                  properties:
+                    type: object
+                    additionalProperties: true
+                    description: >-
+                      Any custom user-defined properties of order item or
+                      product
+                    example:
+                      size: small
+                      color: red
+                  unit_price:
+                    $ref: '#/components/schemas/price'
+                  total_price:
+                    $ref: '#/components/schemas/price'
+                  measurement:
+                    $ref: '#/components/schemas/measurement'
+                  mid_code:
+                    title: MID Code
+                    type:
+                      - string
+                      - 'null'
+                    description: >-
+                      MID code, an abbreviation for Manufacturer's
+                      Identification code, is necessary on the commercial
+                      invoice, serving as an alternative for the complete
+                      manufacturer, shipper, or exporter details, and it's
+                      mandatory for U.S. formal customs entries.
+                    example: NLOZR92MEL
+                  material_content:
+                    title: Material Content
+                    type:
+                      - string
+                      - 'null'
+                    description: A description of materials of the order content.
+                    example: 100% Cotton
+                  intended_use:
+                    title: Intended Use
+                    type:
+                      - string
+                      - 'null'
+                    description: >-
+                      Intended use of the order contents: personal or
+                      commercial.
+                    example: Personal use
+                  manufacturer_product_id:
+                    title: Manufacturer Product ID
+                    type:
+                      - string
+                      - 'null'
+                    description: >-
+                      A manufacturer or product supplier's unique code, assigned
+                      to an individual product.
+                    maxLength: 70
+                    example: ABC-12345
+                  manufacturer_product_id_std:
+                    title: Manufacturer Product ID (Standardized)
+                    type:
+                      - string
+                      - 'null'
+                    description: >-
+                      A standardized manufacturer product identifier assigned by
+                      a global industry standard body (e.g. GTIN). Provide only
+                      if one exists for the product.
+                    maxLength: 70
+                    example: '01234567890128'
+                  delivery_dates:
+                    type:
+                      - object
+                      - 'null'
+                    description: Defined delivery dates
+                    properties:
+                      handover_at:
+                        type: string
+                        format: date-time
+                        description: >-
+                          The date when the item will be handed over to the
+                          carrier by the merchant in ISO 8601
+                        example: '2022-02-27T10:00:00.555309+00:00'
+                      deliver_at:
+                        type: string
+                        format: date-time
+                        description: >-
+                          The date when the order reaches the end customer in
+                          ISO 8601
+                        example: '2022-03-02T11:50:00.555309+00:00'
+            notes:
+              type:
+                - string
+                - 'null'
+              description: Internal notes or comments placed by consumer on the order
+              example: 'Call this number before delivery: 063 874 6473'
+            tags:
+              type:
+                - array
+                - 'null'
+              description: Tags assigned to the order
+              items:
+                type: string
+              example:
+                - fragile
+                - countryside warehouse
+        payment_details:
+          type: object
+          description: Node for everything about payments and money
+          properties:
+            total_price:
+              $ref: '#/components/schemas/price'
+            subtotal_price:
+              $ref: '#/components/schemas/price'
+            estimated_shipping_price:
+              $ref: '#/components/schemas/price'
+            estimated_tax_price:
+              $ref: '#/components/schemas/price'
+            status:
+              type: object
+              description: Payment status of an order
+              properties:
+                code:
+                  type: string
+                  description: Custom internal shop status, you can use it for filtering
+                  example: paid
+                message:
+                  type: string
+                  description: User-defined human readable status
+                  example: Order has been paid
+            invoice_date:
+              type:
+                - string
+                - 'null'
+              title: Invoice Date
+              description: The date when invoice was issued.
+              example: '2018-07-14'
+            discount_granted:
+              type:
+                - object
+                - 'null'
+              title: Discount Granted
+              description: >-
+                Discount granted on the total order excluding any possible
+                discounts on shipping.
+              $ref: '#/components/schemas/costs-object'
+            insurance_costs:
+              type:
+                - object
+                - 'null'
+              title: Insurance Cost
+              description: Amount the order is insured for
+              $ref: '#/components/schemas/costs-object'
+            freight_costs:
+              type:
+                - object
+                - 'null'
+              title: Freight Cost
+              description: Order shipping cost after applying discounts.
+              $ref: '#/components/schemas/costs-object'
+            other_costs:
+              type:
+                - object
+                - 'null'
+              title: Other Costs
+              description: >-
+                Any other costs, for example — wrapping costs, associated with
+                the order.
+              $ref: '#/components/schemas/costs-object'
+        customs_details:
+          $ref: '#/components/schemas/customs-details'
+        customer_details:
+          type: object
+          description: Node for an information about customer
+          properties:
+            name:
+              type: string
+              example: John Doe
+            phone:
+              type: string
+              example: '+31626262626'
+            email:
+              type: string
+              example: johndoe@gmail.com
+        billing_address:
+          $ref: '#/components/schemas/address'
+        shipping_address:
+          $ref: '#/components/schemas/address'
+        shipping_details:
+          allOf:
+            - $ref: '#/components/schemas/shipping-details'
+            - type: object
+              properties:
+                measurement:
+                  $ref: '#/components/schemas/measurement-partial-update'
+        service_point_details:
+          type: object
+          description: >-
+            Node for service point information. The service point information
+            can be retrieved using the [Service points
+            API](/api/v2/service-points).
+
+
+            You must provide either the Sendcloud `id` or the
+            `carrier_service_point_id` to identify the service point.
+
+
+            > **Note:** `service_point_details` is intended for API usage only
+            and will not be reflected in the Incoming Order View (IOV).
+
+
+            > **Note:** The Service Points API is currently only available in
+            API v2. This reference will be updated when a v3 version becomes
+            available.
+          oneOf:
+            - title: Sendcloud ID
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: >-
+                    An id of Sendcloud Service Point to which the shipment is
+                    going to be shipped
+                  example: '123'
+                post_number:
+                  type: string
+                  description: >-
+                    An optional field that only applies to PackStation service
+                    point types
+                  example: some-post-number
+                latitude:
+                  type: string
+                  description: The Latitude of where the service point is located
+                  example: '51.427063'
+                longitude:
+                  type: string
+                  description: The Longitude of where the service point is located
+                  example: '5.486414'
+                type:
+                  type: string
+                  description: Carrier defined service point type
+                  example: packstation
+                extra_data:
+                  type: object
+                  description: Can contain carrier specific data
+              required:
+                - id
+            - title: Carrier Service Point ID
+              type: object
+              properties:
+                carrier_service_point_id:
+                  type: string
+                  description: The carrier's native id for the service point
+                  example: '91233'
+                post_number:
+                  type: string
+                  description: >-
+                    An optional field that only applies to PackStation service
+                    point types
+                  example: some-post-number
+                latitude:
+                  type: string
+                  description: The Latitude of where the service point is located
+                  example: '51.427063'
+                longitude:
+                  type: string
+                  description: The Longitude of where the service point is located
+                  example: '5.486414'
+                type:
+                  type: string
+                  description: Carrier defined service point type
+                  example: packstation
+                extra_data:
+                  type: object
+                  description: Can contain carrier specific data
+              required:
+                - carrier_service_point_id
+  parameters:
+    integration:
+      in: query
+      name: integration
+      description: >-
+        Filter orders by one or more integration IDs. Use a comma separated
+        list, e.g. `integration=41,68,419`.
+
+
+        You can get your integration IDs from the [Retrieve a list of
+        integrations](/api/v3/integrations/retrieve-a-list-of-integrations)
+        endpoint.
+      schema:
+        type: integer
+        example: 17
+    order_number:
+      in: query
+      name: order_number
+      description: >-
+        Filter orders by a specific order number, e.g.
+        `order_number=ORDER_284565`. The filtering is case insensitive.
+      schema:
+        type: string
+        example: ORDER_284565
+    order_id:
+      in: query
+      name: order_id
+      description: >-
+        Filter orders by a specific order id, e.g.
+        `order_id=1896e94b-c01b-4e73-a9e7-57f51c8a4c77`. The filtering is case
+        insensitive.
+      schema:
+        type: string
+        example: 1896e94b-c01b-4e73-a9e7-57f51c8a4c77
+    order_status:
+      in: query
+      name: status
+      description: >-
+        Filter orders based on their status, e.g. `status=unshipped`. The
+        filtering is case insensitive.
+      schema:
+        type: string
+        example: unshipped
+    order_created_at:
+      in: query
+      name: order_created_at
+      description: >-
+        Find orders that were created on a specific date, e.g.
+        `order_created_at=2023-04-28`.
+      schema:
+        type: string
+        format: date
+        example: '2023-04-28'
+    order_created_at_min:
+      in: query
+      name: order_created_at_min
+      description: >-
+        Find orders that were created at or after a specific date, e.g.
+        `order_created_at_min=2023-04-28`.
+      schema:
+        type: string
+        format: date
+        example: '2023-04-28'
+    order_created_at_max:
+      in: query
+      name: order_created_at_max
+      description: >-
+        Find orders that were created at or before a specific date, e.g.
+        `order_created_at_max=2023-04-28`.
+      schema:
+        type: string
+        format: date
+        example: '2023-04-28'
+    order_updated_at:
+      in: query
+      name: order_updated_at
+      description: >-
+        Find orders that were updated on a specific date, e.g.
+        `order_updated_at=2023-04-28`.
+      schema:
+        type: string
+        format: date
+        example: '2023-04-28'
+    order_updated_at_min:
+      in: query
+      name: order_updated_at_min
+      description: >-
+        Find orders that were updated at or after a specific date, e.g.
+        `order_updated_at_min=2023-04-28`.
+      schema:
+        type: string
+        format: date
+        example: '2023-04-28'
+    order_updated_at_max:
+      in: query
+      name: order_updated_at_max
+      description: >-
+        Find orders that were updated at or before a specific date, e.g.
+        `order_updated_at_max=2023-04-28`.
+      schema:
+        type: string
+        format: date
+        example: '2023-04-28'
+    sort:
+      in: query
+      name: sort
+      description: >-
+        Sort the orders in the response by using one or more of the following
+        values:
+         - `integration`: Sort by the integration ID of the retrieved orders; to sort in descending order, use `-integration`
+         - `order_number`: Sort by the order number of the retrieved orders; to sort in descending order, use `-order_number`.
+         - `order_created_at`: Sort by the date of an order creation of the retrieved orders; to sort in descending order, use `-order_created_at`
+         - `order_updated_at`: Sort by the date of an order update of the retrieved orders; to sort in descending order, use `-order_updated_at`
+         - `pk`: Sort by the ID (autogenerated internal ID) of the retrieved orders; to sort in descending order, use `-pk`
+
+        Additional information about this query:
+         - Any valid combination of the above values is supported, e.g. `sort=integration,-order_created_at`. 
+         - In case of conflicting `sort` values, e.g. `/?sort=integration,-integration`, the conflicting value will be ignored.
+         - If the `sort` query parameter is not set, the sorting of the retrieved orders will default to `-pk`.
+         - If an unsupported `sort` value is provided, the results will be sorted by the default (`-pk`).
+      schema:
+        type: string
+        example: '-order_number'
+    page_size:
+      in: query
+      name: page_size
+      schema:
+        type: number
+        default: 100
+        maximum: 200
+        minimum: 1
+        example: 150
+      description: The maximum number of results to be returned per page
+    cursor:
+      in: query
+      name: cursor
+      description: >-
+        The cursor query string is used as the pivot value to filter results. If
+        no value is provided, the first page of results will be returned. To get
+        this value, you must encode the offset, reverse and position into a
+        base64 string.
+
+
+        There are 3 possible parameters to encode:
+          - `o`: Offset
+          - `r`: Reverse
+          - `p`: Position
+          
+        For example, `r=1&p=300` encoded as a base64 string would be
+        `cj0xJnA9MzAw`. The query string would then be `cursor=cj0xJnA9MzAw`.
+      schema:
+        type: string
+        example: cj0xJnA9MzAw
+    SendcloudPartnerId:
+      in: header
+      name: Sendcloud-Partner-Id
+      description: >-
+        If you are an official [Sendcloud Tech
+        Partner](https://www.sendcloud.com/ecosystem/), send your unique
+        Sendcloud Partner UUID as a request header for the system to recognize
+        you.
+
+
+        The header is not required but if it is set, the system will check it.
+        An unknown or invalid UUID will cause a 400 error.
+      schema:
+        type: string
+  securitySchemes:
+    HTTPBasicAuth:
+      type: http
+      description: >-
+        Basic Authentication using API key and secrets is currently the main
+        authentication mechanism.
+      scheme: basic
+    OAuth2ClientCreds:
+      type: oauth2
+      description: >-
+        OAuth2 is a standardized protocol for authorization that allows users to
+        share their private resources stored on one site with another site
+        without having to provide their credentials. OAuth2 Client Credentials
+        Grant workflow. This workflow is typically used for server-to-server
+        interactions that require authorization to access specific resources.
+      flows:
+        clientCredentials:
+          tokenUrl: https://account.sendcloud.com/oauth2/token/
+          scopes:
+            api: Default OAuth scope required to access Sendcloud API.
+  responses:
+    Unauthorized:
+      description: Unauthorized request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errors'
+          examples:
+            InvalidCredentials:
+              summary: Invalid Credentials
+              value:
+                errors:
+                  - status: '401'
+                    code: authentication_failed
+                    title: Invalid username/password.
+                    detail: >-
+                      The username or password provided is incorrect. Please
+                      make a request with the valid credentials.
+            AuthenticationRequired:
+              value:
+                errors:
+                  - status: '401'
+                    code: authentication_failed
+                    title: No credentials
+                    detail: Authentication credentials were not provided.
+    OrderUpdated:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                description: Create/Update orders in batch response object
+                properties:
+                  id:
+                    description: Autogenerated Sendcloud's internal ID
+                    type: integer
+                    example: 234543
+                  order_id:
+                    type: string
+                    description: External order ID assigned by shop system
+                    example: 7bdd5bfd-76bc-4654-9d40-5d5d49f1cd6c
+                  order_number:
+                    type: string
+                    description: Unique order number generated manually or by shop system
+                    example: '101170081'
+          examples:
+            UpdateOrder:
+              summary: Update an Order
+              value:
+                data:
+                  id: 669
+                  order_id: '555413'
+                  order_number: OXSDFGHTD-12
