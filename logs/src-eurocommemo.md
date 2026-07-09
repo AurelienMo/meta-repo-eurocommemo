@@ -1,5 +1,13 @@
 # Log — src-eurocommemo
 
+## [2026-07-09 18:10] src-eurocommemo — Fix: erreur `Variable "ea" does not exist` à l'enregistrement de la config Sendcloud
+
+**Target**: src-eurocommemo @ main (uncommitted)
+**Status**: SUCCESS
+**Files affected**:
+- `src/Controller/Admin/Sendcloud/SendcloudConfigurationController.php` — la redirection post-save `redirectToRoute('sendcloud_configuration')` perdait le paramètre `eaContext`, donc la requête GET suivante n'avait pas de contexte EasyAdmin et le template `@EasyAdmin/page/content.html.twig` échouait sur `ea`. Remplacé par une redirection via `AdminUrlGenerator->setRoute('sendcloud_configuration')->generateUrl()` (injecté dans `index()`), qui conserve `eaContext` et la locale.
+**Notes**: Cause racine : les routes custom montées dans un menu EasyAdmin ne disposent de la variable `ea` que si `eaContext` est présent dans l'URL (ajouté auto par le menu au 1er affichage, mais pas propagé par un `redirectToRoute` nu). Vérifié : `php -l` OK, `cache:clear` OK. Non vérifié : re-test navigateur du cycle enregistrer→redirection (pas de credentials admin).
+
 ## [2026-07-09 17:45] src-eurocommemo — Backoffice: page de configuration Sendcloud (identifiant / mot de passe / toggle webhooks)
 
 **Target**: src-eurocommemo @ main (uncommitted)
