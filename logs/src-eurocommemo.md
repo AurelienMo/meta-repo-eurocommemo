@@ -1,5 +1,20 @@
 # Log — src-eurocommemo
 
+## [2026-07-09 03:49] src-eurocommemo — Commit: feature de configuration Sendcloud backoffice
+
+**Target**: src-eurocommemo @ main (commit `e0f8256`)
+**Status**: SUCCESS
+**Files affected** (8, un seul commit atomique `feat(sendcloud): add backoffice configuration page`):
+- `migrations/Version20260709120000.php` (new)
+- `src/Entity/Sendcloud/SendcloudConfiguration.php` (new)
+- `src/Repository/Sendcloud/SendcloudConfigurationRepository.php` (new)
+- `src/Service/Sendcloud/SendcloudConfigurationService.php` (new)
+- `src/Controller/Admin/Sendcloud/SendcloudConfigurationController.php` (new + fix redirect `AdminUrlGenerator`)
+- `src/Form/Sendcloud/SendcloudConfigurationFormType.php` (new + libellés/champs)
+- `templates/admin/sendcloud/configuration/index.html.twig` (new)
+- `src/Controller/Admin/DashboardController.php` (entrée de menu Sendcloud)
+**Notes**: Regroupe le travail des sessions précédentes (page de config + fix `ea`) en un commit unique, la feature n'ayant jamais été commitée. Non poussé (rule "no autonomous commits").
+
 ## [2026-07-09 18:10] src-eurocommemo — Fix: erreur `Variable "ea" does not exist` à l'enregistrement de la config Sendcloud
 
 **Target**: src-eurocommemo @ main (uncommitted)
