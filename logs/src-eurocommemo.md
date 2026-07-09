@@ -1,5 +1,26 @@
 # Log — src-eurocommemo
 
+## [2026-07-09 17:45] src-eurocommemo — Backoffice: page de configuration Sendcloud (identifiant / mot de passe / toggle webhooks)
+
+**Target**: src-eurocommemo @ main (uncommitted)
+**Status**: SUCCESS
+**Files affected**:
+- `src/Entity/Sendcloud/SendcloudConfiguration.php` (new) — entité singleton : `publicKey`, `secretKey` (string nullable), `webhookEnable` (bool default false), `updatedAt`, + `isConfigured()`. Calquée sur `Entity/Ebay/EbayConfiguration`.
+- `src/Repository/Sendcloud/SendcloudConfigurationRepository.php` (new) — `findFirst()` (pattern EbayConfigurationRepository).
+- `src/Service/Sendcloud/SendcloudConfigurationService.php` (new) — get-or-create `getConfiguration()` + `save()` (positionne `updatedAt` avant flush).
+- `src/Form/Sendcloud/SendcloudConfigurationFormType.php` (new) — `publicKey` (TextType), `secretKey` (PasswordType, `always_empty=false`), `webhookEnable` (CheckboxType).
+- `src/Controller/Admin/Sendcloud/SendcloudConfigurationController.php` (new) — route `sendcloud_configuration` (`/admin/sendcloud-configuration`), page custom EasyAdmin (handleRequest → save + flash).
+- `templates/admin/sendcloud/configuration/index.html.twig` (new) — étend `@EasyAdmin/page/content.html.twig`, une carte de formulaire.
+- `src/Controller/Admin/DashboardController.php` — nouveau sous-menu `Sendcloud → Configuration Sendcloud` (`ROLE_ADMIN`) inséré après le sous-menu Ebay.
+- `migrations/Version20260709120000.php` (new) — `CREATE TABLE sendcloud_configuration`. Écrite à la main (pas `make:migration`) pour éviter tout DROP d'auto-diff.
+- `docs/src-eurocommemo/graphify-out/*` — graphe rafraîchi (7 fichiers re-extraits).
+
+**Notes**: Implémente `plans/2026-07-09_sendcloud-configuration-backoffice.md`. Périmètre volontairement borné — **aucune** consommation/déclenchement des webhooks ni appel API Sendcloud (chantier ultérieur) ; le toggle est un simple réglage persisté. Les vars `SENDCLOUD_*` de `.env.local` restent en place (non lues aujourd'hui), la nouvelle entité devient la source de vérité pour le futur connecteur.
+**Contradiction relevée** : les entrées de log antérieures décrivant une intégration Sendcloud étendue (contrôleurs de shipping, migrations `Version20260705*`, WebhookLog Sendcloud) NE correspondent PAS à ce working tree — git status propre, aucun code/migration Sendcloud, aucun stash, DB en sync (`Executed Unavailable = 0`, Current = Latest = `Version20260708224710`). Ce travail a manifestement été perdu/réinitialisé sur un autre checkout ; l'implémentation a donc démarré d'une base vierge côté Sendcloud.
+**Vérifié (via `scripts/repo_exec.py` → conteneur `php-fpm-per83`)** : `php -l` sur les 7 fichiers PHP (OK), migration appliquée (`doctrine:migrations:migrate`, 1 requête), colonnes confirmées (`id, public_key, secret_key, updated_at, webhook_enable`), `doctrine:schema:validate` mapping OK + aucun diff en attente sur `sendcloud_configuration` (le "not in sync" global est une dérive pré-existante sur d'autres tables), `lint:twig` OK, `debug:router sendcloud_configuration` OK (route sous `/{_locale}/admin`, protégée ROLE_ADMIN), `cache:clear` OK (autowiring service/contrôleur OK).
+**Non vérifié** : scénario navigateur manuel en session admin (saisie + persistance + case webhook + accès non-admin refusé) — non piloté cette session (pas de credentials admin fournis).
+**Note outillage** : `repo_exec.py` n'exécute correctement que si la commande est passée en tokens séparés après `--` ; une commande passée en chaîne unique est sur-échappée (`sh -lc ''"'"'…'"'"''`) et échoue en "not found". Bug de wrapper hors périmètre, non corrigé.
+
 ## [2026-07-09 16:30] src-eurocommemo — Snapshot delivery/billing address on checkout orders + relabel address step
 
 **Target**: src-eurocommemo @ branch `main` (working tree, not committed)
