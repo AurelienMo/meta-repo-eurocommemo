@@ -1065,9 +1065,9 @@
     "semantic_hash": "620841b6f640a8de58cf63530316d0e9"
   },
   "src/Entity/Order.php": {
-    "mtime": 1783551117.4020815,
-    "ast_hash": "fdbe50509e6a2ab8458824fa7f33b871",
-    "semantic_hash": "fdbe50509e6a2ab8458824fa7f33b871"
+    "mtime": 1783728638.758186,
+    "ast_hash": "592bd22b42d5bc2730db12afe59b1df0",
+    "semantic_hash": "592bd22b42d5bc2730db12afe59b1df0"
   },
   "src/Entity/OrderProducts.php": {
     "mtime": 1742430172.3684113,
@@ -1400,9 +1400,9 @@
     "semantic_hash": "f5162ff6405fb651afd81093a50217c9"
   },
   "src/Repository/OrderRepository.php": {
-    "mtime": 1771666548.1667497,
-    "ast_hash": "ebbc8eaf20a8cd317bc2a1de7353dd95",
-    "semantic_hash": "ebbc8eaf20a8cd317bc2a1de7353dd95"
+    "mtime": 1783728645.642173,
+    "ast_hash": "0ce8d248d3805e53b942bc7be73e2c1b",
+    "semantic_hash": "0ce8d248d3805e53b942bc7be73e2c1b"
   },
   "src/Repository/PageRepository.php": {
     "mtime": 1742430172.4034111,
@@ -1890,13 +1890,23 @@
     "semantic_hash": "e1132546d398fc011a3e192905fa22bc"
   },
   "src/Service/Sendcloud/SendcloudApiClient.php": {
-    "mtime": 1783725668.397583,
-    "ast_hash": "c9edaa1edf3b7ad3c90c126c399a40d5",
-    "semantic_hash": "c9edaa1edf3b7ad3c90c126c399a40d5"
+    "mtime": 1783729263.0792847,
+    "ast_hash": "43e09f7fdee17f7306c273db74167492",
+    "semantic_hash": "43e09f7fdee17f7306c273db74167492"
   },
   "tests/Service/Sendcloud/SendcloudApiClientTest.php": {
-    "mtime": 1783725693.3848546,
-    "ast_hash": "ba0f337e4cc22780bbdaae9ddfd95be4",
-    "semantic_hash": "ba0f337e4cc22780bbdaae9ddfd95be4"
+    "mtime": 1783729272.4227352,
+    "ast_hash": "83d754cbf90781d18674abf4952148e2",
+    "semantic_hash": "83d754cbf90781d18674abf4952148e2"
+  },
+  "migrations/Version20260711001138.php": {
+    "mtime": 1783728712.9557052,
+    "ast_hash": "ffa1a2949cec113571738c9d6bf8a075",
+    "semantic_hash": "ffa1a2949cec113571738c9d6bf8a075"
+  },
+  "src/Command/SyncSendcloudOrderIdsCommand.php": {
+    "mtime": 1783729279.453344,
+    "ast_hash": "007c661ad618cffe4d0b0266b99d041c",
+    "semantic_hash": "007c661ad618cffe4d0b0266b99d041c"
   }
 }
