@@ -40,9 +40,9 @@
     "semantic_hash": "cf2a4585387db7e3552d589d24dc7887"
   },
   "assets/back/js/back.js": {
-    "mtime": 1783868918.8542016,
-    "ast_hash": "6ce5ee9ccecca1682d1cc01821e11784",
-    "semantic_hash": "6ce5ee9ccecca1682d1cc01821e11784"
+    "mtime": 1783892806.5347354,
+    "ast_hash": "fde85f6a4aac71871259412ad4f800f5",
+    "semantic_hash": "fde85f6a4aac71871259412ad4f800f5"
   },
   "assets/back/js/builder/components/Builder.vue": {
     "mtime": 1742430172.1654115,
@@ -725,9 +725,9 @@
     "semantic_hash": "2d6dab3a51478f95cdf3cf392b60d27b"
   },
   "src/Controller/Admin/OrderCrudController.php": {
-    "mtime": 1783869982.7990324,
-    "ast_hash": "fb5a08d6a96a9e9860879478956d5b26",
-    "semantic_hash": "fb5a08d6a96a9e9860879478956d5b26"
+    "mtime": 1783899126.522815,
+    "ast_hash": "7854d813182c78a4619fd6082ed8d3df",
+    "semantic_hash": "7854d813182c78a4619fd6082ed8d3df"
   },
   "src/Controller/Admin/PageCrudController.php": {
     "mtime": 1742430172.3264112,
@@ -1065,9 +1065,9 @@
     "semantic_hash": "620841b6f640a8de58cf63530316d0e9"
   },
   "src/Entity/Order.php": {
-    "mtime": 1783868754.100198,
-    "ast_hash": "9843c01ff382f137c9be2b680316b07e",
-    "semantic_hash": "9843c01ff382f137c9be2b680316b07e"
+    "mtime": 1783892604.4677668,
+    "ast_hash": "38bdb90b07b9cc9351fc9818b5ccf21f",
+    "semantic_hash": "38bdb90b07b9cc9351fc9818b5ccf21f"
   },
   "src/Entity/OrderProducts.php": {
     "mtime": 1742430172.3684113,
@@ -1825,14 +1825,14 @@
     "semantic_hash": "083cbfef650a386e2b3b855ae50172c4"
   },
   "src/Entity/Sendcloud/SendcloudConfiguration.php": {
-    "mtime": 1783560764.1355774,
-    "ast_hash": "356b1ea4a96750f7ccbdb13b209b8901",
-    "semantic_hash": "356b1ea4a96750f7ccbdb13b209b8901"
+    "mtime": 1783892623.9717631,
+    "ast_hash": "3662c5a853ade51b05929aae96f58f8a",
+    "semantic_hash": "3662c5a853ade51b05929aae96f58f8a"
   },
   "src/Form/Sendcloud/SendcloudConfigurationFormType.php": {
-    "mtime": 1783561548.371427,
-    "ast_hash": "3f1c659b82543cc2c49b76129083139e",
-    "semantic_hash": "3f1c659b82543cc2c49b76129083139e"
+    "mtime": 1783892654.1587577,
+    "ast_hash": "a1b33abbc51d899ad957a827d752054f",
+    "semantic_hash": "a1b33abbc51d899ad957a827d752054f"
   },
   "src/Repository/Sendcloud/SendcloudConfigurationRepository.php": {
     "mtime": 1783560766.1248689,
@@ -1890,9 +1890,9 @@
     "semantic_hash": "e1132546d398fc011a3e192905fa22bc"
   },
   "src/Service/Sendcloud/SendcloudApiClient.php": {
-    "mtime": 1783869895.498929,
-    "ast_hash": "ae89ddea52b2ec4802f0eda64aa30e81",
-    "semantic_hash": "ae89ddea52b2ec4802f0eda64aa30e81"
+    "mtime": 1783899724.9008143,
+    "ast_hash": "15128eb05505d3aa36bb39cc76327b31",
+    "semantic_hash": "15128eb05505d3aa36bb39cc76327b31"
   },
   "tests/Service/Sendcloud/SendcloudApiClientTest.php": {
     "mtime": 1783729272.4227352,
@@ -1950,23 +1950,33 @@
     "semantic_hash": "71d4cd8c633b5a129f014dbba9063ba6"
   },
   "migrations/Version20260712000000.php": {
-    "mtime": 1783868762.8011832,
+    "mtime": 1783872224.6372683,
     "ast_hash": "9afa76378a647e6f690c923d4f6caebe",
     "semantic_hash": "9afa76378a647e6f690c923d4f6caebe"
   },
   "src/Dto/Sendcloud/SendcloudServicePointDTO.php": {
-    "mtime": 1783868782.5281487,
+    "mtime": 1783872224.6404953,
     "ast_hash": "1cafb92c82a754a8187695b728fc26d3",
     "semantic_hash": "1cafb92c82a754a8187695b728fc26d3"
   },
   "src/Dto/Sendcloud/SendcloudShippingOptionDTO.php": {
-    "mtime": 1783868772.151167,
+    "mtime": 1783872224.6418185,
     "ast_hash": "35aea512d0c0befb0c15684ab3b001cb",
     "semantic_hash": "35aea512d0c0befb0c15684ab3b001cb"
   },
   "src/Service/Sendcloud/SendcloudOrderShippingService.php": {
-    "mtime": 1783868795.6721256,
+    "mtime": 1783872224.6468172,
     "ast_hash": "1d85fdcb8842b92add17b918e8dd8661",
     "semantic_hash": "1d85fdcb8842b92add17b918e8dd8661"
+  },
+  "migrations/Version20260712120000.php": {
+    "mtime": 1783892633.6797614,
+    "ast_hash": "078ebac10e6976570282d32eb7a3253c",
+    "semantic_hash": "078ebac10e6976570282d32eb7a3253c"
+  },
+  "src/Service/Sendcloud/SendcloudLabelService.php": {
+    "mtime": 1783895260.2831345,
+    "ast_hash": "cb78ec77796e7c591c1862f1143a3ea5",
+    "semantic_hash": "cb78ec77796e7c591c1862f1143a3ea5"
   }
 }
