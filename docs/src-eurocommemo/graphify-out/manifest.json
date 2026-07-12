@@ -140,9 +140,9 @@
     "semantic_hash": "5634a46e4fafb61762215b64edeff145"
   },
   "cron.php": {
-    "mtime": 1743624629.440498,
-    "ast_hash": "b2d30f48adb01ff208c15b162f712714",
-    "semantic_hash": "b2d30f48adb01ff208c15b162f712714"
+    "mtime": 1783823355.9445946,
+    "ast_hash": "6e58899f3c4f4ceaeee249063fe97464",
+    "semantic_hash": "6e58899f3c4f4ceaeee249063fe97464"
   },
   "lib/divarea/plugin.js": {
     "mtime": 1742430172.2154114,
@@ -565,9 +565,9 @@
     "semantic_hash": "56a95b1fa08eb545cd46242c455e573d"
   },
   "src/Command/ImportEbayOrderCommand.php": {
-    "mtime": 1783553992.4290895,
-    "ast_hash": "9dd74d27f54630debbc1bf3277b7ce9b",
-    "semantic_hash": "9dd74d27f54630debbc1bf3277b7ce9b"
+    "mtime": 1783823422.6277058,
+    "ast_hash": "01dbc19daffbffb4ab6fad57d4d14ba2",
+    "semantic_hash": "01dbc19daffbffb4ab6fad57d4d14ba2"
   },
   "src/Command/SyncEbayProductCommand.php": {
     "mtime": 1743334449.041231,
@@ -1590,9 +1590,9 @@
     "semantic_hash": "58935e9728db2adc62cf886d89faca23"
   },
   "src/Service/MailService.php": {
-    "mtime": 1775430932.2372468,
-    "ast_hash": "ca81f2a713b831344b322efe422cd0c4",
-    "semantic_hash": "ca81f2a713b831344b322efe422cd0c4"
+    "mtime": 1783823365.7054377,
+    "ast_hash": "80afe8b14b35a6935e308ce9c2f8cc08",
+    "semantic_hash": "80afe8b14b35a6935e308ce9c2f8cc08"
   },
   "src/Service/OrderHelper.php": {
     "mtime": 1783296565.5725257,
@@ -1740,7 +1740,7 @@
     "semantic_hash": "3eb9c9175e265da9dd86e6df05e68dce"
   },
   "src/Command/GetEbayFulfillmentOrderCommand.php": {
-    "mtime": 1783819140.2968614,
+    "mtime": 1783821734.7088032,
     "ast_hash": "d8b23671139e4f2939a39343c30635b6",
     "semantic_hash": "d8b23671139e4f2939a39343c30635b6"
   },
@@ -1785,9 +1785,9 @@
     "semantic_hash": "3d64033ab423e45edda161398da94309"
   },
   "src/Service/Ebay/DTO/Output/Fulfillment/FulfillmentOrderDTO.php": {
-    "mtime": 1783819080.770518,
-    "ast_hash": "2359be113464fcc3690d9bea187f638f",
-    "semantic_hash": "2359be113464fcc3690d9bea187f638f"
+    "mtime": 1783822037.6044621,
+    "ast_hash": "372478252a094b92867cd5ecd5372fcb",
+    "semantic_hash": "372478252a094b92867cd5ecd5372fcb"
   },
   "src/Service/Ebay/DTO/Output/Fulfillment/FulfillmentShipToDTO.php": {
     "mtime": 1783514313.5142334,
@@ -1795,9 +1795,9 @@
     "semantic_hash": "21dc5a288bc86a66a0e68be39953089b"
   },
   "src/Service/Ebay/UseCase/ImportFulfillmentOrderUseCase.php": {
-    "mtime": 1783817477.677518,
-    "ast_hash": "2d80113441468317fb99f4d06436bf72",
-    "semantic_hash": "2d80113441468317fb99f4d06436bf72"
+    "mtime": 1783823389.0046468,
+    "ast_hash": "74fc61d9406f6a5d81840cd8b369dab6",
+    "semantic_hash": "74fc61d9406f6a5d81840cd8b369dab6"
   },
   "migrations/Version20260708224710.php": {
     "mtime": 1783550890.3223867,
@@ -1905,13 +1905,53 @@
     "semantic_hash": "ffa1a2949cec113571738c9d6bf8a075"
   },
   "src/Command/SyncSendcloudOrderIdsCommand.php": {
-    "mtime": 1783730233.6255245,
-    "ast_hash": "cd4458fa7a0c629bec6742e1dfc4569f",
-    "semantic_hash": "cd4458fa7a0c629bec6742e1dfc4569f"
+    "mtime": 1783823457.7625196,
+    "ast_hash": "0ff60dbf97bda3e82e3d05cdebe36fa6",
+    "semantic_hash": "0ff60dbf97bda3e82e3d05cdebe36fa6"
   },
   "src/Service/Ebay/UseCase/UpdateEbayOrderPricingUseCase.php": {
-    "mtime": 1783819102.3872242,
-    "ast_hash": "925fc3c7537b49c44f74c4ecaa1cb3cc",
-    "semantic_hash": "925fc3c7537b49c44f74c4ecaa1cb3cc"
+    "mtime": 1783821714.3876243,
+    "ast_hash": "3297c2de4fdcdd932042f9b83786316b",
+    "semantic_hash": "3297c2de4fdcdd932042f9b83786316b"
+  },
+  "src/Command/debug.json": {
+    "mtime": 1783821714.3306236,
+    "ast_hash": "ae704cb200aedf6da2947fa015f0edea",
+    "semantic_hash": "ae704cb200aedf6da2947fa015f0edea"
+  },
+  "src/EventSubscriber/SendcloudLinkFailureSubscriber.php": {
+    "mtime": 1783823335.4832726,
+    "ast_hash": "0bfe127b1ca1eb96a4cecf0e49568ceb",
+    "semantic_hash": "0bfe127b1ca1eb96a4cecf0e49568ceb"
+  },
+  "src/Exceptions/SendcloudOrderNotFoundException.php": {
+    "mtime": 1783823317.8832831,
+    "ast_hash": "7ed214b0592cabf25c8639544422ab0f",
+    "semantic_hash": "7ed214b0592cabf25c8639544422ab0f"
+  },
+  "src/Messenger/Handler/AssociateSendcloudOrderIdHandler.php": {
+    "mtime": 1783823329.7162762,
+    "ast_hash": "b65a73f3845304940cb3bd0ffcc62f5f",
+    "semantic_hash": "b65a73f3845304940cb3bd0ffcc62f5f"
+  },
+  "src/Messenger/Message/AssociateSendcloudOrderIdMessage.php": {
+    "mtime": 1783823316.144039,
+    "ast_hash": "806ab1849bdde7ecfe0d161c70aef75c",
+    "semantic_hash": "806ab1849bdde7ecfe0d161c70aef75c"
+  },
+  "src/Service/Sendcloud/SendcloudOrderLinker.php": {
+    "mtime": 1783823314.3552854,
+    "ast_hash": "ea6b240967512717a6fe82041f097b73",
+    "semantic_hash": "ea6b240967512717a6fe82041f097b73"
+  },
+  "tests/Messenger/Handler/AssociateSendcloudOrderIdHandlerTest.php": {
+    "mtime": 1783823531.0474737,
+    "ast_hash": "3fb67802d1daf6e9aec0ad6ec4e23d10",
+    "semantic_hash": "3fb67802d1daf6e9aec0ad6ec4e23d10"
+  },
+  "tests/Service/Sendcloud/SendcloudOrderLinkerTest.php": {
+    "mtime": 1783823518.052459,
+    "ast_hash": "71d4cd8c633b5a129f014dbba9063ba6",
+    "semantic_hash": "71d4cd8c633b5a129f014dbba9063ba6"
   }
 }
