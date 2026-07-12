@@ -1,5 +1,13 @@
 # Log — src-eurocommemo
 
+## [2026-07-13 00:00] src-eurocommemo — Colonnes « Infos livraison » et « Sendcloud » par écran de commandes
+
+**Target**: src-eurocommemo @ main (uncommitted)
+**Status**: SUCCESS
+**Files affected**:
+- `src/Controller/Admin/OrderCrudController.php` — méthode `configureFields()` : (1) retrait de « Infos livraison » de la branche `else` (partagée par *en attente de paiement* et *toutes les commandes*), ce qui l'enlève de l'écran *en attente de paiement* et supprime le doublon sur *toutes les commandes* ; (2) retrait de « Infos livraison » de la branche `delivery === 1` ; (3) ré-insertion de « Infos livraison » comme première colonne du bloc final `delivery === 1`, juste avant « Sendcloud ».
+**Notes**: Résultat : « Infos livraison » uniquement sur *prêtes à être expédiées* (juste avant « Sendcloud ») et *toutes les commandes* (juste avant « N° Commande eBay », une seule occurrence) ; « Sendcloud » reste exclusive à *prêtes à être expédiées*. Vérifié : `php -l` OK (via `scripts/repo_exec.py`). Non vérifié : re-test navigateur des 3 listings (pas de credentials admin). Plan : `plans/2026-07-13_order-columns-delivery-sendcloud.md`. Non poussé (rule "no autonomous commits").
+
 ## [2026-07-09 03:49] src-eurocommemo — Commit: feature de configuration Sendcloud backoffice
 
 **Target**: src-eurocommemo @ main (commit `e0f8256`)
