@@ -40,9 +40,9 @@
     "semantic_hash": "cf2a4585387db7e3552d589d24dc7887"
   },
   "assets/back/js/back.js": {
-    "mtime": 1783892806.5347354,
-    "ast_hash": "fde85f6a4aac71871259412ad4f800f5",
-    "semantic_hash": "fde85f6a4aac71871259412ad4f800f5"
+    "mtime": 1783901376.719798,
+    "ast_hash": "56925dfe4fab219652e0db45901d888f",
+    "semantic_hash": "56925dfe4fab219652e0db45901d888f"
   },
   "assets/back/js/builder/components/Builder.vue": {
     "mtime": 1742430172.1654115,
@@ -725,9 +725,9 @@
     "semantic_hash": "2d6dab3a51478f95cdf3cf392b60d27b"
   },
   "src/Controller/Admin/OrderCrudController.php": {
-    "mtime": 1783899126.522815,
-    "ast_hash": "7854d813182c78a4619fd6082ed8d3df",
-    "semantic_hash": "7854d813182c78a4619fd6082ed8d3df"
+    "mtime": 1783900417.5276859,
+    "ast_hash": "73075dc946492276949f19bc392ff9be",
+    "semantic_hash": "73075dc946492276949f19bc392ff9be"
   },
   "src/Controller/Admin/PageCrudController.php": {
     "mtime": 1742430172.3264112,
@@ -1975,8 +1975,8 @@
     "semantic_hash": "078ebac10e6976570282d32eb7a3253c"
   },
   "src/Service/Sendcloud/SendcloudLabelService.php": {
-    "mtime": 1783895260.2831345,
-    "ast_hash": "cb78ec77796e7c591c1862f1143a3ea5",
-    "semantic_hash": "cb78ec77796e7c591c1862f1143a3ea5"
+    "mtime": 1783899946.130334,
+    "ast_hash": "18bae7565a7fa5b5b01bedb1fb6a0197",
+    "semantic_hash": "18bae7565a7fa5b5b01bedb1fb6a0197"
   }
 }
