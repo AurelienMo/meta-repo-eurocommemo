@@ -1,5 +1,38 @@
 # Log — src-eurocommemo
 
+## [2026-07-13 12:45] src-eurocommemo — Guide opérateur Sendcloud (PDF brandé, version simplifiée)
+
+**Target**: meta-repo (livrable dérivé de la Partie A de `docs/src-eurocommemo/sendcloud.md`)
+**Status**: SUCCESS
+**Files affected**:
+- `2026-07-13_sendcloud-guide-operateur.pdf` (new, racine meta-repo) — guide **exclusivement opérateur**, à la charte morvan.tech (thème clair A4, même couverture lockup logos partenariat + titre bleu plein). 4 pages. Contenu **simplifié** : 5 étapes numérotées (vérifier config → vérifier lien Sendcloud → choisir transporteur/point relais → générer l'étiquette → confirmer l'expédition = MAJ eBay), encart « À retenir » (étiquette ≠ eBay), tableau « En cas de souci » orienté gestes.
+**Notes**: Éléments dev volontairement retirés vs Partie A (commande CLI `app:sendcloud:sync-order-ids`, variables `.env`/précédence base, `ROLE_ADMIN`, jargon « sentinelle 0 », noms de routes/API) — vérifié par grep (0 occurrence). HTML assemblé en réutilisant le bloc `<style>` et la couverture (logos base64) du PDF complet. Généré via Chrome headless. Vérifié : `%PDF`, `/Count 4`, captures couverture + corps contrôlées visuellement. Décisions utilisateur : adaptation simplifiée, PDF seul (pas de markdown source). PDF complet existant et markdown source inchangés. Non poussé (rule « no autonomous commits »).
+
+## [2026-07-13 12:30] src-eurocommemo — Révision page de garde du PDF Sendcloud (logos partenariat + lisibilité titre)
+
+**Target**: meta-repo (livrable `2026-07-13_sendcloud-guide-utilisation.pdf`)
+**Status**: SUCCESS
+**Files affected**:
+- `2026-07-13_sendcloud-guide-utilisation.pdf` (régénéré) — page de garde revue : (1) titre « Sendcloud » passé de `gradient-text` (portion cyan peu lisible sur blanc) à **bleu plein `--primary`** ; (2) ajout d'un **lockup de partenariat** = deux pastilles logos jumelées — morvan.tech (pastille noire, logo `assets/logo-C4OtuA9o.png`) + Eurocommemorative (pastille blanche, logo SVG `uploads/images/logo/66b398b96df1b316577252.svg`), côte à côte, sans texte explicitant le partenariat. Logos embarqués en base64 (HTML auto-contenu). 8 pages, 1,7 Mo.
+**Notes**: Logos récupérés depuis les sites publics (HTTP 200). Le PNG morvan est une tuile carrée 1254² à fond noir opaque (pas d'alpha) → présentée telle quelle dans une pastille sombre (halo bleu subtil) ; le SVG Eurocommemo (bleus #0D69B1/#14A8DD) dans une pastille blanche. Corps du document, sommaire, parties A/B et footer inchangés. Vérifié : `%PDF`, `/Count 8`, capture de la couverture contrôlée visuellement (titre lisible, deux logos nets et équilibrés, barre d'accent dégradée conservée). Non poussé (rule « no autonomous commits »).
+
+## [2026-07-13 12:15] src-eurocommemo — Export PDF brandé morvan.tech de la doc Sendcloud
+
+**Target**: meta-repo (livrable généré à partir de `docs/src-eurocommemo/sendcloud.md`)
+**Status**: SUCCESS
+**Files affected**:
+- `2026-07-13_sendcloud-guide-utilisation.pdf` (new, racine meta-repo) — PDF A4 portrait, thème clair, charte morvan.tech (skill `morvan-doc`). Reprend le document Sendcloud complet (Partie A guide opérateur A.1→A.6 + Partie B annexe technique B.1→B.9). Diagramme Mermaid du flux converti en schéma HTML/CSS natif (étapes numérotées, pastilles dégradé). 8 pages.
+- HTML intermédiaire dans le scratchpad de session (non versionné).
+**Notes**: Généré via Chrome headless (`--print-to-pdf`). Vérifié : `head -c 4` = `%PDF`, `/Count 8` pages, ouvert pour contrôle visuel. `theme.css` inliné verbatim, `data-theme="light"`, Google Fonts (Space Grotesk / Inter) + fallbacks. Footer `morvan.tech · Aurélien Morvan`. Décisions utilisateur : format document A4 (pas slides), thème clair, contenu complet. Aucun code applicatif ni le markdown source modifiés. Non poussé (rule « no autonomous commits »).
+
+## [2026-07-13 12:00] src-eurocommemo — Documentation d'utilisation Sendcloud (guide opérateur + annexe technique)
+
+**Target**: meta-repo (documente src-eurocommemo @ main, commit `bf71b2a`)
+**Status**: SUCCESS
+**Files affected**:
+- `docs/src-eurocommemo/sendcloud.md` (new) — documentation FR en deux parties. **Partie A (guide opérateur)** : configuration `/admin/sendcloud-configuration`, liaison commande eBay↔Sendcloud (auto/async, bouton « Sync Sendcloud », CLI `app:sendcloud:sync-order-ids`), choix transporteur/point relais, génération d'étiquette, confirmation d'expédition = mise à jour eBay, erreurs courantes. **Partie B (annexe technique)** : flux end-to-end (diagramme Mermaid), découplage étiquette↔statut eBay (pont uniquement côté `back.js`), table des endpoints v3 de `SendcloudApiClient`, résilience Messenger (`async_sendcloud`, 10 retries, backoff ~40 min, cron `messenger:consume`), modèle de données (`Order.sendcloud*` + `SendcloudConfiguration` + 4 migrations), config Guzzle/services/.env, webhooks non implémentés, tests, dépannage.
+**Notes**: Documentation pure, aucun code applicatif modifié. Faits vérifiés par lecture directe des sources (`SendcloudApiClient`, `OrderCrudController`, `order_sendcloud_action.html.twig`, `back.js`, `messenger.yaml`, `EbayTradingAPI::completeSell`, `Order`, `cron.php`, config controller/dashboard). **Dérogation langue assumée** (règle `english.md` : docs en anglais) — rédaction FR validée par l'utilisateur (doc orientée usage/métier). `docs/index.md` non édité (auto-généré par `scripts/knowledge-lint.py --fix-index`). Non poussé (rule « no autonomous commits »). Point clé documenté : générer l'étiquette Sendcloud NE met PAS eBay à jour — seule la confirmation d'expédition (`admin_delivery_validate` → `CompleteSale`) le fait.
+
 ## [2026-07-13 00:00] src-eurocommemo — Colonnes « Infos livraison » et « Sendcloud » par écran de commandes
 
 **Target**: src-eurocommemo @ main (uncommitted)
