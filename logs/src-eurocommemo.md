@@ -813,3 +813,12 @@ placement, shipment-id vs parcel-id relationship, incomplete shop `from_address`
 - `src/Command/GetEbayFulfillmentOrderCommand.php` (modified) — injected the new use case; added option `-s, --update-shipping`; added it to the `execute()` routing condition into `import()`; in `handleExistingOrder()` call the use case (applied directly, no confirmation — like `--update-pricing`) and print `Shipping service updated — <old> → <new> (matched in catalogue|no catalogue match)`.
 
 **Notes**: Implements `plans/2026-07-13_ebay-fulfillment-update-shipping-service.md`. Autowiring covers the new service (no `services.yaml` change). Verified: `php -l` clean on both files, `bin/console lint:container` OK, `app:ebay:fulfillment-order --help` lists `-s, --update-shipping`. Not verified: live run against a real eBay order (needs eBay API credentials + an existing imported order). No commit made (awaiting explicit user instruction).
+
+## [2026-07-14 00:00] src-eurocommemo — Replace "Voir sur Sendcloud" link with carrier tracking link on order list
+
+**Target**: src-eurocommemo @ main
+**Files affected**:
+- `templates/admin/order/order_ebay_shipping_service.html.twig` (modified, block l.17-26) — replaced the "Voir sur Sendcloud" back-office link (`https://app.sendcloud.com/v2/shipping/list/orders?search=<orderIdEbay>`, shown whenever `sendcloudOrderId` was set) with a "Suivre le colis" link pointing to the persisted `entity.instance.sendcloudTrackingUrl` (carrier tracking page fed from `parcel['tracking_url']` in `SendcloudLabelService::generateLabel()`). Link now renders only when `sendcloudTrackingUrl` is present (i.e. after the Sendcloud label was generated); nothing is shown otherwise. Added `rel="noopener noreferrer"` alongside the existing `target="_blank"`. The `shippingService` display block (l.1-15) is unchanged.
+
+**Status**: SUCCESS
+**Notes**: Implements `plans/2026-07-14_sendcloud-tracking-link.md`. Template-only change — no PHP, entity, migration or JS. Reuses the existing `Order::$sendcloudTrackingUrl` column (`src/Entity/Order.php:118-119`); no new carrier field or URL mapping. Applies to both the "Toutes les commandes" and "Prêtes à être expédiées" (`delivery=1`) views since both render this template (`OrderCrudController.php:266` and `:292`). The `order_sendcloud_action.html.twig` action column is untouched. Not verified: no live browser run against the admin page. No commit made (awaiting explicit user instruction).
