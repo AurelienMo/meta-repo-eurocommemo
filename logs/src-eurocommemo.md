@@ -803,3 +803,13 @@ placement, shipment-id vs parcel-id relationship, incomplete shop `from_address`
 - `public/build/*` (regenerated) — Encore production build output (62 files).
 
 **Notes**: Implements `plans/2026-07-13_loaders-sendcloud-commandes-pretes.md`. Front-end only, no backend/entity/Twig change (loaders injected dynamically via JS; endpoints and payloads unchanged — `requiresServicePoint` drives the second loader). Build run in the `encore` service (node:18-alpine, project mounted at `/eurocommemo`) via `docker compose exec`, NOT `repo_exec.py` — the declared exec target `php-fpm-per83` has no Node toolchain, so the frontend build environment is the `encore` container. `yarn build` compiled successfully; verified markers `sendcloud-loading-overlay`, `shippingOptionPromises`/`allSettled`, `sendcloud-sp-loader`, `loader-spin` present in the compiled `app-admin.*.js` / `app-admin.*.css`. **Not verified**: no live browser run against the admin page. No commit made (awaiting explicit user instruction).
+
+## [2026-07-13 15:30] src-eurocommemo — Add --update-shipping to app:ebay:fulfillment-order
+
+**Target**: src-eurocommemo @ main
+**Status**: SUCCESS
+**Files affected**:
+- `src/Service/Ebay/UseCase/UpdateEbayOrderShippingServiceUseCase.php` (new) — use case mirroring the shipping-service mapping done at import (`ImportFulfillmentOrderUseCase::execute()` l.90-93): reads `FulfillmentOrderDTO::getShippingServiceCode()`, sets `Order::setShippingServiceCode()` + resolves the relation via `ShippingServiceRepository::findOneByToken()` into `Order::setShippingService()`, then `flush()`. Returns `{previousCode, newCode}` for CLI feedback; no-op (no flush) when the payload has no shippingStep code.
+- `src/Command/GetEbayFulfillmentOrderCommand.php` (modified) — injected the new use case; added option `-s, --update-shipping`; added it to the `execute()` routing condition into `import()`; in `handleExistingOrder()` call the use case (applied directly, no confirmation — like `--update-pricing`) and print `Shipping service updated — <old> → <new> (matched in catalogue|no catalogue match)`.
+
+**Notes**: Implements `plans/2026-07-13_ebay-fulfillment-update-shipping-service.md`. Autowiring covers the new service (no `services.yaml` change). Verified: `php -l` clean on both files, `bin/console lint:container` OK, `app:ebay:fulfillment-order --help` lists `-s, --update-shipping`. Not verified: live run against a real eBay order (needs eBay API credentials + an existing imported order). No commit made (awaiting explicit user instruction).

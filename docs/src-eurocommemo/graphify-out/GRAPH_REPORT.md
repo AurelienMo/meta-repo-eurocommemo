@@ -4,12 +4,12 @@
 - cluster-only mode — file stats not available
 
 ## Summary
-- 3813 nodes · 5893 edges · 343 communities (174 shown, 169 thin omitted)
+- 3819 nodes · 5903 edges · 350 communities (178 shown, 172 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 21 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `fee14984`
+- Built from commit: `a0832787`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -292,11 +292,12 @@
 - [[_COMMUNITY_Community 275|Community 275]]
 - [[_COMMUNITY_Community 276|Community 276]]
 - [[_COMMUNITY_Community 277|Community 277]]
-- [[_COMMUNITY_Community 279|Community 279]]
+- [[_COMMUNITY_Community 278|Community 278]]
 - [[_COMMUNITY_Community 280|Community 280]]
 - [[_COMMUNITY_Community 281|Community 281]]
 - [[_COMMUNITY_Community 282|Community 282]]
 - [[_COMMUNITY_Community 283|Community 283]]
+- [[_COMMUNITY_Community 284|Community 284]]
 - [[_COMMUNITY_Community 285|Community 285]]
 - [[_COMMUNITY_Community 286|Community 286]]
 - [[_COMMUNITY_Community 287|Community 287]]
@@ -308,9 +309,10 @@
 - [[_COMMUNITY_Community 293|Community 293]]
 - [[_COMMUNITY_Community 294|Community 294]]
 - [[_COMMUNITY_Community 295|Community 295]]
+- [[_COMMUNITY_Community 296|Community 296]]
 - [[_COMMUNITY_Community 297|Community 297]]
-- [[_COMMUNITY_Community 298|Community 298]]
 - [[_COMMUNITY_Community 299|Community 299]]
+- [[_COMMUNITY_Community 300|Community 300]]
 - [[_COMMUNITY_Community 301|Community 301]]
 - [[_COMMUNITY_Community 302|Community 302]]
 - [[_COMMUNITY_Community 303|Community 303]]
@@ -339,11 +341,16 @@
 - [[_COMMUNITY_Community 326|Community 326]]
 - [[_COMMUNITY_Community 327|Community 327]]
 - [[_COMMUNITY_Community 328|Community 328]]
+- [[_COMMUNITY_Community 329|Community 329]]
 - [[_COMMUNITY_Community 330|Community 330]]
 - [[_COMMUNITY_Community 331|Community 331]]
 - [[_COMMUNITY_Community 332|Community 332]]
 - [[_COMMUNITY_Community 334|Community 334]]
+- [[_COMMUNITY_Community 335|Community 335]]
 - [[_COMMUNITY_Community 336|Community 336]]
+- [[_COMMUNITY_Community 338|Community 338]]
+- [[_COMMUNITY_Community 340|Community 340]]
+- [[_COMMUNITY_Community 349|Community 349]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `Order` - 107 edges
@@ -372,11 +379,11 @@
 ## Import Cycles
 - None detected.
 
-## Communities (343 total, 169 thin omitted)
+## Communities (350 total, 172 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.05
-Nodes (46): Actions, OrderCrudController, AdminContext, AdminUrlGenerator, BatchActionDto, BinaryFileResponse, Crud, ShippingServiceCrudController (+38 more)
+Cohesion: 0.07
+Nodes (38): Actions, OrderCrudController, AdminContext, AdminUrlGenerator, BatchActionDto, BinaryFileResponse, Crud, ShippingServiceCrudController (+30 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.03
@@ -384,67 +391,67 @@ Nodes (64): require, a2lix/translation-form-bundle, cocur/slugify, doctrine/doct
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
-Nodes (22): UserCrudController, Environment, ProductAlert, GenerateAndConcatePdfInvoiceUseCase, MailService, OrderHelper, Actions, AdminContext (+14 more)
+Nodes (10): Category, ArrayCollection, CategoryEbay, CategoryFilter, Collection, File, Page, Product (+2 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.05
-Nodes (10): Category, ArrayCollection, CategoryEbay, CategoryFilter, Collection, File, Page, Product (+2 more)
-
-### Community 5 - "Community 5"
-Cohesion: 0.05
 Nodes (4): Product, Brand, DateTime, Tva
 
-### Community 6 - "Community 6"
+### Community 5 - "Community 5"
 Cohesion: 0.09
 Nodes (19): Command, CleanWebhookLogCommand, DefineDefaultTitleEbayCommand, DefineOrderIncrementOnOrderEbayCommand, ListEbayShippingServicesCommand, SyncEbayProductCommand, UpdateCountryCommand, InputInterface (+11 more)
 
-### Community 8 - "Community 8"
+### Community 7 - "Community 7"
 Cohesion: 0.05
 Nodes (37): dependencies, bootstrap, @fortawesome/fontawesome-free, fotorama, jquery, jquery.autocomplete, jquery-ui, jquery-ui.tabs.neighbors (+29 more)
 
+### Community 8 - "Community 8"
+Cohesion: 0.13
+Nodes (14): TranslationField, CodeField, LimitPerUserField, LimitUsageField, MontantReductionField, TypeReductionField, FieldInterface, FieldTrait (+6 more)
+
 ### Community 9 - "Community 9"
-Cohesion: 0.08
-Nodes (9): CountryZoneCommune, Faq, FooterLink, Footer, TranslatableInterface, TranslatableTrait, CountryZone, static (+1 more)
+Cohesion: 0.10
+Nodes (17): LogCrudController, NewsletterSubscribeCrudController, CsvService, StreamedResponse, Actions, AdminContext, AdminUrlGenerator, Crud (+9 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.08
-Nodes (11): AbstractExtension, ServiceSubscriberInterface, AppExtension, CountryCodeToCountryEntityExtension, GetDeliveryShippingEbayExtension, GetOnlyChildCategoriesExtension, ProductSoldCountExtension, Collection (+3 more)
+Nodes (9): CountryZoneCommune, Faq, FooterLink, Footer, TranslatableInterface, TranslatableTrait, CountryZone, static (+1 more)
 
 ### Community 11 - "Community 11"
+Cohesion: 0.08
+Nodes (11): AbstractExtension, ServiceSubscriberInterface, AppExtension, CountryCodeToCountryEntityExtension, GetDeliveryShippingEbayExtension, GetOnlyChildCategoriesExtension, ProductSoldCountExtension, Collection (+3 more)
+
+### Community 12 - "Community 12"
 Cohesion: 0.09
 Nodes (9): Log, Newsletter, ProductAlert, TimestampableInterface, TimestampableTrait, self, static, Product (+1 more)
 
-### Community 13 - "Community 13"
+### Community 14 - "Community 14"
 Cohesion: 0.11
 Nodes (13): ItemClosedEvent, ItemRevisedEvent, PaymentReceiveEvent, DateTime, DateTime, Country, DateTime, ItemSoldDTO (+5 more)
 
-### Community 14 - "Community 14"
+### Community 15 - "Community 15"
 Cohesion: 0.09
 Nodes (8): OrderProducts, Collection, OperationCommerciale, Order, Product, ProductNotation, self, static
 
-### Community 16 - "Community 16"
+### Community 17 - "Community 17"
 Cohesion: 0.09
 Nodes (7): Version20260708190052, Version20260708224710, Version20260709120000, Version20260711001138, Version20260712000000, Version20260712120000, Schema
 
-### Community 17 - "Community 17"
+### Community 18 - "Community 18"
 Cohesion: 0.08
 Nodes (4): CodeReduction, Collection, Order, static
 
-### Community 18 - "Community 18"
+### Community 19 - "Community 19"
 Cohesion: 0.11
 Nodes (7): OperationCommerciale, Category, Collection, OrderProducts, Product, self, static
 
-### Community 19 - "Community 19"
+### Community 20 - "Community 20"
 Cohesion: 0.09
 Nodes (7): Page, Category, Collection, File, self, static, User
 
-### Community 20 - "Community 20"
-Cohesion: 0.13
-Nodes (15): AbstractLoginFormAuthenticator, AfterEntityPersistedEvent, AfterEntityUpdatedEvent, AuthenticationException, BeforeEntityDeletedEvent, EntityWithBuilderElementsSaver, EasyAdminSubscriber, EventSubscriberInterface (+7 more)
-
 ### Community 21 - "Community 21"
 Cohesion: 0.13
-Nodes (14): TranslationField, CodeField, LimitPerUserField, LimitUsageField, MontantReductionField, TypeReductionField, FieldInterface, FieldTrait (+6 more)
+Nodes (15): AbstractLoginFormAuthenticator, AfterEntityPersistedEvent, AfterEntityUpdatedEvent, AuthenticationException, BeforeEntityDeletedEvent, EntityWithBuilderElementsSaver, EasyAdminSubscriber, EventSubscriberInterface (+7 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.11
@@ -459,260 +466,260 @@ Cohesion: 0.13
 Nodes (8): EntityWithBuilderElementsSaver, ProductImage, UploadedFile, EntityManagerInterface, RequestStack, DateTimeInterface, File, Product
 
 ### Community 25 - "Community 25"
-Cohesion: 0.16
-Nodes (14): AccoungApiV1, CategoryImporter, DeliveryShippingRepository, EbayConfigurationController, EbayApiConnector, EbayService, GetEbayConfigurationUseCase, AdminUrlGenerator (+6 more)
+Cohesion: 0.15
+Nodes (15): AccoungApiV1, CategoryImporter, DeliveryShippingRepository, EbayConfigurationController, EbayApiConnector, EbayService, FormFactoryInterface, GetEbayConfigurationUseCase (+7 more)
 
 ### Community 26 - "Community 26"
+Cohesion: 0.18
+Nodes (12): AssociateSendcloudOrderIdHandler, AssociateSendcloudOrderIdMessage, EntityManagerInterface, SendcloudLinkFailureSubscriber, AssociateSendcloudOrderIdHandler, AssociateSendcloudOrderIdHandlerTest, LoggerInterface, OrderRepository (+4 more)
+
+### Community 27 - "Community 27"
 Cohesion: 0.11
 Nodes (4): DateTimeImmutable, FulfillmentOrderDTO, FulfillmentAmountDTO, FulfillmentAmountDTO
 
-### Community 27 - "Community 27"
+### Community 28 - "Community 28"
 Cohesion: 0.13
 Nodes (4): DateTimeInterface, ShippingService, File, self
 
-### Community 28 - "Community 28"
+### Community 29 - "Community 29"
 Cohesion: 0.12
 Nodes (5): Delivery, Country, CountryZone, DeliveryShipping, static
 
-### Community 29 - "Community 29"
-Cohesion: 0.12
-Nodes (7): EbayTradingAPI, CreateEbayOutput, CreateProductInput, OrderEbayResponseDTO, CreateEbayOutput, ShippingProvider, XmlEncoder
-
 ### Community 30 - "Community 30"
-Cohesion: 0.19
-Nodes (11): AssociateSendcloudOrderIdHandler, AssociateSendcloudOrderIdMessage, EntityManagerInterface, SendcloudLinkFailureSubscriber, AssociateSendcloudOrderIdHandler, AssociateSendcloudOrderIdHandlerTest, OrderRepository, SendcloudApiClient (+3 more)
+Cohesion: 0.32
+Nodes (3): ConfigurationCrudController, Actions, Crud
 
 ### Community 31 - "Community 31"
 Cohesion: 0.12
-Nodes (5): Country, Collection, CountryZone, Delivery, static
+Nodes (7): EbayTradingAPI, CreateEbayOutput, CreateProductInput, OrderEbayResponseDTO, CreateEbayOutput, ShippingProvider, XmlEncoder
 
 ### Community 32 - "Community 32"
+Cohesion: 0.12
+Nodes (5): Country, Collection, CountryZone, Delivery, static
+
+### Community 33 - "Community 33"
 Cohesion: 0.15
 Nodes (15): FilterInterface, NullFilter, StringLengthFilter, FilterTrait, Filters, EntityDto, FieldDto, FilterDataDto (+7 more)
 
-### Community 33 - "Community 33"
+### Community 34 - "Community 34"
 Cohesion: 0.18
 Nodes (14): ImportEbayOrderCommand, Country, ItemSoldDTO, PaymentReceiveEventDTO, ShippingCostDTO, Country, DateTime, InputInterface (+6 more)
 
-### Community 34 - "Community 34"
+### Community 35 - "Community 35"
 Cohesion: 0.14
 Nodes (6): CountryZone, Collection, Country, CountryZoneCommune, Delivery, static
 
-### Community 35 - "Community 35"
-Cohesion: 0.13
-Nodes (8): AbstractController, BuilderController, HomePageController, MenuController, PageController, Response, Response, Response
-
 ### Community 36 - "Community 36"
+Cohesion: 0.18
+Nodes (6): AbstractController, BuilderController, HomePageController, MenuController, Response, Response
+
+### Community 37 - "Community 37"
 Cohesion: 0.14
 Nodes (10): FormEvent, LivraisonType, OrderType, AddressType, FormBuilderInterface, OptionsResolver, FormBuilderInterface, OptionsResolver (+2 more)
 
-### Community 37 - "Community 37"
+### Community 38 - "Community 38"
 Cohesion: 0.10
 Nodes (5): SendcloudOrderDTO, SendcloudAddressDTO, SendcloudCustomerDetailsDTO, SendcloudOrderDetailsDTO, SendcloudPaymentDetailsDTO
 
-### Community 38 - "Community 38"
+### Community 39 - "Community 39"
 Cohesion: 0.18
 Nodes (12): AdminCrudController, MailService, RandomService, Actions, Crud, EntityDto, EntityManagerInterface, FieldCollection (+4 more)
-
-### Community 39 - "Community 39"
-Cohesion: 0.16
-Nodes (9): NewsletterSubscribeCrudController, CsvService, StreamedResponse, Actions, AdminContext, Crud, FieldCollection, QueryBuilder (+1 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.12
 Nodes (4): ImportBuyerDTO, FulfillmentOrderDTO, PaymentReceiveEventDTO, self
 
 ### Community 43 - "Community 43"
+Cohesion: 0.15
+Nodes (5): ProductAlert, MailService, Order, ProductAlert, User
+
+### Community 44 - "Community 44"
+Cohesion: 0.17
+Nodes (11): UserCrudController, Actions, AdminContext, Crud, EntityDto, FieldCollection, FilterCollection, QueryBuilder (+3 more)
+
+### Community 45 - "Community 45"
 Cohesion: 0.30
 Nodes (11): GetEbayFulfillmentOrderCommand, ImportBuyerDTO, InputInterface, OrderAddress, OutputInterface, FulfillmentOrderDTO, FulfillmentShipToDTO, InputInterface (+3 more)
 
-### Community 44 - "Community 44"
+### Community 46 - "Community 46"
 Cohesion: 0.12
 Nodes (3): down(), _move(), up()
 
-### Community 46 - "Community 46"
+### Community 48 - "Community 48"
 Cohesion: 0.11
 Nodes (9): Exception, ConvertException, CountryNotFoundException, EbayCreateErrorException, EbayOrderAlreadyImportedException, EbayProductsMissingException, ExternalEbayApiException, ExternalSendcloudApiException (+1 more)
 
-### Community 47 - "Community 47"
+### Community 49 - "Community 49"
 Cohesion: 0.19
 Nodes (8): ProductNotationCrudController, Actions, AdminContext, AdminUrlGenerator, Crud, Filters, Product, RedirectResponse
 
-### Community 48 - "Community 48"
+### Community 50 - "Community 50"
 Cohesion: 0.16
 Nodes (3): CategoryEbay, Collection, DateTime
 
-### Community 50 - "Community 50"
+### Community 52 - "Community 52"
 Cohesion: 0.17
 Nodes (4): ProductNotation, OrderProducts, Product, static
 
-### Community 51 - "Community 51"
+### Community 53 - "Community 53"
+Cohesion: 0.21
+Nodes (11): DeleteEbayUseCase, GetDeliveryShippingUseCase, AdminContext, AdminUrlGenerator, EbayTradingAPI, EntityDto, FieldCollection, FilterCollection (+3 more)
+
+### Community 54 - "Community 54"
+Cohesion: 0.14
+Nodes (6): CodeReduction, CartHelper, static, CodeReduction, static, Order
+
+### Community 55 - "Community 55"
 Cohesion: 0.15
 Nodes (3): CreateEbayHistory, DateTime, Product
 
-### Community 52 - "Community 52"
+### Community 56 - "Community 56"
 Cohesion: 0.18
 Nodes (9): MappingCategoryEbayCrudController, Actions, Crud, EntityDto, FieldCollection, FilterCollection, Filters, QueryBuilder (+1 more)
 
-### Community 53 - "Community 53"
+### Community 57 - "Community 57"
 Cohesion: 0.17
 Nodes (5): Selection, Category, Collection, Product, static
 
-### Community 54 - "Community 54"
+### Community 58 - "Community 58"
 Cohesion: 0.24
 Nodes (9): FulfillmentLineItemDTO, ImportFulfillmentOrderUseCase, Country, DateTime, FulfillmentAmountDTO, FulfillmentLineItemDTO, FulfillmentOrderDTO, Order (+1 more)
 
-### Community 57 - "Community 57"
+### Community 59 - "Community 59"
+Cohesion: 0.26
+Nodes (4): MockHandler, SendcloudApiClientTest, SendcloudConfiguration, TestCase
+
+### Community 62 - "Community 62"
 Cohesion: 0.24
 Nodes (3): SendcloudPaymentDetailsDTO, SendcloudOrderStatusDTO, SendcloudPriceDTO
 
-### Community 58 - "Community 58"
-Cohesion: 0.18
-Nodes (7): AbstractCrudController, CodeReductionCrudController, DeliveryShippingCrudController, Actions, Assets, Crud, Crud
-
-### Community 60 - "Community 60"
-Cohesion: 0.23
-Nodes (8): LogCrudController, Actions, AdminContext, AdminUrlGenerator, Crud, EntityManagerInterface, Filters, RequestStack
-
-### Community 61 - "Community 61"
+### Community 64 - "Community 64"
 Cohesion: 0.21
 Nodes (8): ArrayCollection, Collection, ShippingProvider, ShippingService, ArrayCollection, Collection, ShippingProvider, ShippingService
 
-### Community 62 - "Community 62"
-Cohesion: 0.14
-Nodes (5): CategoryRepository, CreateOnEbayUseCase, GetProductsToCreateOnEbayUseCase, PreviewCreateProductsEbayUseCase, CreateEbayOutput
+### Community 65 - "Community 65"
+Cohesion: 0.19
+Nodes (9): AbstractDashboardController, DashboardController, Assets, Dashboard, Response, Tva, Assets, Response (+1 more)
 
-### Community 63 - "Community 63"
+### Community 66 - "Community 66"
 Cohesion: 0.23
 Nodes (3): SyncRefonteCommand, InputInterface, OutputInterface
 
-### Community 64 - "Community 64"
+### Community 67 - "Community 67"
 Cohesion: 0.29
 Nodes (6): OrderController, Order, PaypalApiConnector, RedirectResponse, Request, Response
 
-### Community 65 - "Community 65"
+### Community 68 - "Community 68"
 Cohesion: 0.20
 Nodes (5): CategoryFilter, Category, Collection, Product, static
 
-### Community 66 - "Community 66"
-Cohesion: 0.16
-Nodes (4): CartHelper, User, User, Order
-
-### Community 67 - "Community 67"
+### Community 69 - "Community 69"
 Cohesion: 0.24
 Nodes (4): CategoryRepository, Brand, category, ManagerRegistry
 
-### Community 68 - "Community 68"
+### Community 70 - "Community 70"
 Cohesion: 0.18
 Nodes (5): OrderRepository, CodeReduction, DateTime, ManagerRegistry, User
 
-### Community 69 - "Community 69"
+### Community 71 - "Community 71"
 Cohesion: 0.19
 Nodes (6): ProductRepository, Brand, Category, ManagerRegistry, Product, Selection
 
-### Community 72 - "Community 72"
+### Community 74 - "Community 74"
 Cohesion: 0.13
 Nodes (14): autoload, autoload-dev, psr-4, psr-4, conflict, symfony/symfony, extra, symfony (+6 more)
 
-### Community 73 - "Community 73"
-Cohesion: 0.20
-Nodes (8): AbstractDashboardController, DashboardController, Assets, Dashboard, Tva, Assets, Response, Tva
-
-### Community 74 - "Community 74"
+### Community 75 - "Community 75"
 Cohesion: 0.23
 Nodes (8): CategoryCrudController, Actions, Crud, EntityDto, FieldCollection, FilterCollection, QueryBuilder, SearchDto
 
-### Community 75 - "Community 75"
+### Community 76 - "Community 76"
 Cohesion: 0.18
 Nodes (5): addElementFromTemplate(), _createElementFromTemplate(), data(), initialize(), _randomString()
 
-### Community 77 - "Community 77"
+### Community 78 - "Community 78"
 Cohesion: 0.22
 Nodes (6): ShippingServiceRepository, ManagerRegistry, OrderAddressRepository, SendcloudConfigurationRepository, ShippingService, SendcloudConfiguration
 
-### Community 81 - "Community 81"
+### Community 82 - "Community 82"
 Cohesion: 0.21
 Nodes (4): Cart, Product, self, User
 
-### Community 83 - "Community 83"
-Cohesion: 0.23
-Nodes (8): LoggerInterface, OrderProducts, Product, UpdateEbayOrderPricingUseCase, OrderProducts, FulfillmentLineItemDTO, FulfillmentOrderDTO, Order
+### Community 84 - "Community 84"
+Cohesion: 0.25
+Nodes (7): OrderProducts, Product, UpdateEbayOrderPricingUseCase, OrderProducts, FulfillmentLineItemDTO, FulfillmentOrderDTO, Order
 
-### Community 86 - "Community 86"
-Cohesion: 0.23
-Nodes (5): AbstractMigration, Version20240127062559, Version20260220182425, Schema, Schema
-
-### Community 87 - "Community 87"
+### Community 88 - "Community 88"
 Cohesion: 0.27
 Nodes (4): ProductController, JsonResponse, Request, Response
 
-### Community 89 - "Community 89"
+### Community 90 - "Community 90"
 Cohesion: 0.21
 Nodes (5): CategoryFilter, ProductAlert, ProductNotation, Selection, static
 
-### Community 90 - "Community 90"
+### Community 91 - "Community 91"
 Cohesion: 0.27
 Nodes (3): ProductImage, UpdateProductUseCase, Product
 
 ### Community 95 - "Community 95"
 Cohesion: 0.24
-Nodes (6): AbstractType, HomePageSliderFormType, CategoryChooseEbayType, FormBuilderInterface, OptionsResolver, FormBuilderInterface
+Nodes (3): OrderHelper, Delivery, Order
 
-### Community 96 - "Community 96"
+### Community 97 - "Community 97"
+Cohesion: 0.24
+Nodes (6): AbstractType, CountryZoneType, CategoryChooseEbayType, FormBuilderInterface, OptionsResolver, FormBuilderInterface
+
+### Community 98 - "Community 98"
 Cohesion: 0.27
 Nodes (4): ProductCrudController, Actions, Crud, EntityManagerInterface
 
-### Community 99 - "Community 99"
+### Community 100 - "Community 100"
 Cohesion: 0.24
 Nodes (6): RegistrationFormType, ProfileType, FormBuilderInterface, OptionsResolver, FormBuilderInterface, OptionsResolver
 
-### Community 101 - "Community 101"
+### Community 102 - "Community 102"
 Cohesion: 0.25
 Nodes (4): PageCrudController, Actions, Crud, EntityManagerInterface
 
-### Community 102 - "Community 102"
+### Community 103 - "Community 103"
 Cohesion: 0.35
 Nodes (4): AuthenticationUtils, SecurityController, Request, Response
 
-### Community 103 - "Community 103"
+### Community 104 - "Community 104"
 Cohesion: 0.20
 Nodes (3): Cart, CountryZoneCommune, static
 
-### Community 104 - "Community 104"
+### Community 105 - "Community 105"
 Cohesion: 0.33
 Nodes (7): RegistrationController, TranslatorInterface, UserRepository, EntityManagerInterface, Request, Response, UserPasswordHasherInterface
 
-### Community 105 - "Community 105"
+### Community 106 - "Community 106"
 Cohesion: 0.40
 Nodes (3): ShopController, Request, Response
 
-### Community 106 - "Community 106"
+### Community 107 - "Community 107"
 Cohesion: 0.25
 Nodes (5): ShippingProviderCrudController, NormalizerInterface, Actions, Crud, ShippingProviderRepository
 
-### Community 107 - "Community 107"
+### Community 108 - "Community 108"
 Cohesion: 0.22
 Nodes (3): AwayTranslation, CategoryFilterTranslation, TranslationTrait
 
-### Community 108 - "Community 108"
+### Community 109 - "Community 109"
 Cohesion: 0.22
 Nodes (3): CountryTranslation, ServiceContactTranslation, TranslationInterface
 
-### Community 111 - "Community 111"
+### Community 112 - "Community 112"
 Cohesion: 0.42
 Nodes (4): OperationCommercialeListener, LifecycleEventArgs, EntityManagerInterface, OperationCommerciale
 
-### Community 113 - "Community 113"
+### Community 114 - "Community 114"
 Cohesion: 0.53
 Nodes (4): CodeReductionAjaxController, EntityManagerInterface, JsonResponse, Request
 
-### Community 114 - "Community 114"
-Cohesion: 0.29
-Nodes (6): DeleteEbayUseCase, GetDeliveryShippingUseCase, AdminContext, AdminUrlGenerator, EbayTradingAPI, RedirectResponse
-
 ### Community 115 - "Community 115"
 Cohesion: 0.20
-Nodes (11): PreviewCreateProductsEbayUseCase, RunCreateProductsEbayUseCase, StockManagementService, EntityDto, FieldCollection, FilterCollection, JsonResponse, Product (+3 more)
+Nodes (3): CategoryRepository, GetProductsToCreateOnEbayUseCase, PreviewCreateProductsEbayUseCase
 
 ### Community 116 - "Community 116"
 Cohesion: 0.29
@@ -747,16 +754,16 @@ Cohesion: 0.29
 Nodes (4): Footer, FooterLink, Collection, self
 
 ### Community 130 - "Community 130"
+Cohesion: 0.28
+Nodes (5): PreviewCreateProductsEbayUseCase, RunCreateProductsEbayUseCase, JsonResponse, Product, Request
+
+### Community 131 - "Community 131"
 Cohesion: 0.31
 Nodes (4): StatistiquesCACrudController, AdminContext, Crud, Response
 
-### Community 131 - "Community 131"
+### Community 132 - "Community 132"
 Cohesion: 0.33
 Nodes (6): $, updateCartProduct(), $, $, refreshCountryZone(), refreshCountryZoneCommune()
-
-### Community 132 - "Community 132"
-Cohesion: 0.39
-Nodes (5): CreateUserCommand, EntityManagerInterface, InputInterface, OutputInterface, UserPasswordHasherInterface
 
 ### Community 133 - "Community 133"
 Cohesion: 0.36
@@ -787,86 +794,82 @@ Cohesion: 0.36
 Nodes (3): BrandCrudController, Actions, Crud
 
 ### Community 144 - "Community 144"
-Cohesion: 0.32
-Nodes (3): ConfigurationCrudController, Actions, Crud
-
-### Community 145 - "Community 145"
 Cohesion: 0.36
 Nodes (3): CountryCrudController, Actions, Crud
 
-### Community 146 - "Community 146"
+### Community 145 - "Community 145"
 Cohesion: 0.36
 Nodes (3): DeliveryAdditionalCrudController, Actions, Crud
 
-### Community 147 - "Community 147"
+### Community 146 - "Community 146"
 Cohesion: 0.36
 Nodes (3): DeliveryCrudController, Actions, Crud
 
-### Community 148 - "Community 148"
+### Community 147 - "Community 147"
 Cohesion: 0.36
 Nodes (3): FaqCrudController, Actions, Crud
 
-### Community 149 - "Community 149"
-Cohesion: 0.36
-Nodes (3): FooterCrudController, Actions, Crud
-
-### Community 150 - "Community 150"
+### Community 148 - "Community 148"
 Cohesion: 0.32
 Nodes (3): HomePageCrudController, Actions, Crud
 
-### Community 151 - "Community 151"
+### Community 149 - "Community 149"
 Cohesion: 0.36
 Nodes (3): OperationCommercialeCrudController, Actions, Crud
 
-### Community 152 - "Community 152"
-Cohesion: 0.39
-Nodes (3): SelectionCrudController, Actions, Crud
+### Community 150 - "Community 150"
+Cohesion: 0.20
+Nodes (6): AbstractCrudController, SelectionCrudController, DeliveryShippingCrudController, Crud, Actions, Crud
 
-### Community 153 - "Community 153"
+### Community 151 - "Community 151"
 Cohesion: 0.36
 Nodes (3): ServiceContactCrudController, Actions, Crud
 
-### Community 154 - "Community 154"
+### Community 152 - "Community 152"
 Cohesion: 0.36
 Nodes (3): TvaCrudController, Actions, Crud
 
-### Community 155 - "Community 155"
+### Community 153 - "Community 153"
 Cohesion: 0.39
 Nodes (4): NotationController, JsonResponse, OrderProducts, Response
 
-### Community 156 - "Community 156"
+### Community 154 - "Community 154"
 Cohesion: 0.39
 Nodes (4): PaymentController, JsonResponse, PaypalApiConnector, Request
 
-### Community 157 - "Community 157"
+### Community 155 - "Community 155"
 Cohesion: 0.43
 Nodes (3): ProfileController, Request, Response
 
-### Community 159 - "Community 159"
+### Community 157 - "Community 157"
 Cohesion: 0.43
 Nodes (3): Ebay, EbayApiConnector, EbayConfiguration
 
-### Community 160 - "Community 160"
+### Community 158 - "Community 158"
 Cohesion: 0.36
 Nodes (3): CategoryEbayCrudController, Actions, Crud
 
-### Community 162 - "Community 162"
+### Community 160 - "Community 160"
 Cohesion: 0.25
 Nodes (3): HomePageTranslation, HasBuilderElements, self
 
-### Community 167 - "Community 167"
+### Community 162 - "Community 162"
+Cohesion: 0.36
+Nodes (3): Environment, GenerateAndConcatePdfInvoiceUseCase, Order
+
+### Community 166 - "Community 166"
 Cohesion: 0.39
 Nodes (3): BrandRepository, Brand, ManagerRegistry
 
-### Community 168 - "Community 168"
+### Community 167 - "Community 167"
 Cohesion: 0.36
 Nodes (4): CategoryFilterRepository, Category, ManagerRegistry, Selection
 
-### Community 169 - "Community 169"
+### Community 168 - "Community 168"
 Cohesion: 0.36
 Nodes (4): ProductColorRepository, Category, ManagerRegistry, Selection
 
-### Community 170 - "Community 170"
+### Community 169 - "Community 169"
 Cohesion: 0.39
 Nodes (4): EmailVerifier, TemplatedEmail, Request, UserInterface
 
@@ -875,52 +878,48 @@ Cohesion: 0.25
 Nodes (8): replace, symfony/polyfill-ctype, symfony/polyfill-iconv, symfony/polyfill-php72, symfony/polyfill-php73, symfony/polyfill-php74, symfony/polyfill-php80, symfony/polyfill-php81
 
 ### Community 172 - "Community 172"
+Cohesion: 0.48
+Nodes (4): ImportDeliveries, EntityManagerInterface, InputInterface, OutputInterface
+
+### Community 173 - "Community 173"
 Cohesion: 0.20
 Nodes (6): SyncSendcloudOrderIdsCommand, SendcloudOrderLinker, SendcloudOrderDTO, InputInterface, OutputInterface, Order
 
-### Community 173 - "Community 173"
+### Community 174 - "Community 174"
 Cohesion: 0.48
 Nodes (3): DeliveryController, JsonResponse, Request
 
-### Community 174 - "Community 174"
+### Community 175 - "Community 175"
 Cohesion: 0.43
 Nodes (4): NewsletterController, JsonResponse, Request, Response
 
-### Community 175 - "Community 175"
+### Community 176 - "Community 176"
 Cohesion: 0.48
 Nodes (3): CategoryEbayRepository, CategoryEbay, ManagerRegistry
 
-### Community 181 - "Community 181"
+### Community 182 - "Community 182"
 Cohesion: 0.52
 Nodes (4): MaintenanceListener, RouterInterface, EntityManagerInterface, RequestEvent
 
-### Community 186 - "Community 186"
+### Community 187 - "Community 187"
 Cohesion: 0.38
 Nodes (3): OrderProductsRepository, DateTime, ManagerRegistry
 
-### Community 188 - "Community 188"
+### Community 189 - "Community 189"
 Cohesion: 0.29
 Nodes (7): assets:install %PUBLIC_DIR%, cache:clear, ckeditor:install --tag=4.16.0, scripts, auto-scripts, post-install-cmd, post-update-cmd
 
-### Community 190 - "Community 190"
+### Community 191 - "Community 191"
 Cohesion: 0.43
 Nodes (3): UpdateEbayOrderAddressesUseCase, FulfillmentShipToDTO, Order
 
-### Community 191 - "Community 191"
-Cohesion: 0.40
-Nodes (4): CodeReduction, static, CodeReduction, static
-
 ### Community 192 - "Community 192"
-Cohesion: 0.48
-Nodes (4): ImportDeliveries, EntityManagerInterface, InputInterface, OutputInterface
+Cohesion: 0.33
+Nodes (4): CodeReductionCrudController, Actions, Assets, Crud
 
 ### Community 193 - "Community 193"
 Cohesion: 0.53
 Nodes (3): FooterController, EntityManagerInterface, Response
-
-### Community 194 - "Community 194"
-Cohesion: 0.47
-Nodes (3): ContactController, Request, Response
 
 ### Community 195 - "Community 195"
 Cohesion: 0.53
@@ -935,8 +934,8 @@ Cohesion: 0.47
 Nodes (3): CountryZoneCommuneType, FormBuilderInterface, OptionsResolver
 
 ### Community 198 - "Community 198"
-Cohesion: 0.47
-Nodes (3): CountryZoneType, FormBuilderInterface, OptionsResolver
+Cohesion: 0.39
+Nodes (5): CreateUserCommand, EntityManagerInterface, InputInterface, OutputInterface, UserPasswordHasherInterface
 
 ### Community 199 - "Community 199"
 Cohesion: 0.47
@@ -944,7 +943,7 @@ Nodes (3): FooterLinkFormType, FormBuilderInterface, OptionsResolver
 
 ### Community 200 - "Community 200"
 Cohesion: 0.47
-Nodes (3): ContactType, FormBuilderInterface, OptionsResolver
+Nodes (3): HomePageSliderFormType, FormBuilderInterface, OptionsResolver
 
 ### Community 201 - "Community 201"
 Cohesion: 0.47
@@ -959,83 +958,107 @@ Cohesion: 0.53
 Nodes (3): EbayConfigurationRepository, EbayConfiguration, ManagerRegistry
 
 ### Community 204 - "Community 204"
-Cohesion: 0.47
-Nodes (3): AlerteDisponibiliteType, FormBuilderInterface, OptionsResolver
+Cohesion: 0.40
+Nodes (3): OrderListener, OnFlushEventArgs, StockManagementService
 
 ### Community 205 - "Community 205"
 Cohesion: 0.47
-Nodes (3): LoginType, FormBuilderInterface, OptionsResolver
+Nodes (3): AlerteDisponibiliteType, FormBuilderInterface, OptionsResolver
 
 ### Community 206 - "Community 206"
 Cohesion: 0.47
-Nodes (3): NotationType, FormBuilderInterface, OptionsResolver
+Nodes (3): LoginType, FormBuilderInterface, OptionsResolver
 
 ### Community 207 - "Community 207"
 Cohesion: 0.47
-Nodes (3): PasswordType, FormBuilderInterface, OptionsResolver
+Nodes (3): NotationType, FormBuilderInterface, OptionsResolver
 
 ### Community 208 - "Community 208"
 Cohesion: 0.47
+Nodes (3): PasswordType, FormBuilderInterface, OptionsResolver
+
+### Community 209 - "Community 209"
+Cohesion: 0.47
 Nodes (3): FormBuilderInterface, OptionsResolver, SendcloudConfigurationFormType
 
-### Community 210 - "Community 210"
+### Community 211 - "Community 211"
 Cohesion: 0.40
 Nodes (3): FulfillmentShipToDTO, FulfillmentShipToDTO, FulfillmentShipToDTO
 
-### Community 279 - "Community 279"
-Cohesion: 0.53
-Nodes (3): CountryRepository, Country, ManagerRegistry
+### Community 218 - "Community 218"
+Cohesion: 0.23
+Nodes (5): AbstractMigration, Version20240127062559, Version20260220182425, Schema, Schema
+
+### Community 272 - "Community 272"
+Cohesion: 0.36
+Nodes (3): FooterCrudController, Actions, Crud
 
 ### Community 280 - "Community 280"
 Cohesion: 0.53
-Nodes (3): SelectionRepository, ManagerRegistry, Selection
+Nodes (3): CountryRepository, Country, ManagerRegistry
 
 ### Community 281 - "Community 281"
 Cohesion: 0.53
+Nodes (3): SelectionRepository, ManagerRegistry, Selection
+
+### Community 282 - "Community 282"
+Cohesion: 0.53
 Nodes (3): UserChecker, UserCheckerInterface, UserInterface
 
-### Community 287 - "Community 287"
+### Community 285 - "Community 285"
+Cohesion: 0.47
+Nodes (3): ContactController, Request, Response
+
+### Community 288 - "Community 288"
 Cohesion: 0.33
 Nodes (6): php-http/discovery, symfony/flex, symfony/runtime, config, allow-plugins, sort-packages
 
-### Community 288 - "Community 288"
+### Community 289 - "Community 289"
 Cohesion: 0.47
 Nodes (3): GetDeliveryShippingUseCase, DeliveryShipping, Product
 
 ### Community 290 - "Community 290"
+Cohesion: 0.47
+Nodes (3): UpdateEbayOrderShippingServiceUseCase, FulfillmentOrderDTO, Order
+
+### Community 292 - "Community 292"
 Cohesion: 0.60
 Nodes (3): $, loadAdditionalFilters(), loadProduct()
 
-### Community 301 - "Community 301"
+### Community 302 - "Community 302"
+Cohesion: 0.47
+Nodes (3): ContactType, FormBuilderInterface, OptionsResolver
+
+### Community 303 - "Community 303"
 Cohesion: 0.60
 Nodes (4): $builderRoots, hideSpLoader(), maybeLoadServicePoints(), showSpLoader()
 
-### Community 310 - "Community 310"
+### Community 313 - "Community 313"
 Cohesion: 0.67
 Nodes (3): containerPaymentMode, onApprove(), resultMessage()
 
-### Community 311 - "Community 311"
+### Community 314 - "Community 314"
 Cohesion: 0.67
 Nodes (3): BaseKernel, MicroKernelTrait, Kernel
 
 ## Knowledge Gaps
 - **177 isolated node(s):** `$`, `$`, `containerPaymentMode`, `$`, `$` (+172 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **169 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **172 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `CategoryRepository` connect `Community 62` to `Community 4`, `Community 101`, `Community 74`, `Community 10`, `Community 115`, `Community 52`, `Community 152`, `Community 95`?**
+- **Why does `CategoryRepository` connect `Community 115` to `Community 97`, `Community 312`, `Community 3`, `Community 102`, `Community 75`, `Community 11`, `Community 53`, `Community 150`, `Community 56`?**
   _High betweenness centrality (0.063) - this node is a cross-community bridge._
-- **Why does `Order` connect `Community 2` to `Community 66`, `Community 163`, `Community 73`, `Community 11`, `Community 83`, `Community 313`, `Community 61`, `Community 158`, `Community 191`?**
+- **Why does `Order` connect `Community 2` to `Community 64`, `Community 161`, `Community 65`, `Community 321`, `Community 12`, `Community 84`, `Community 54`, `Community 316`, `Community 156`?**
   _High betweenness centrality (0.035) - this node is a cross-community bridge._
-- **Why does `DateTime` connect `Community 158` to `Community 0`, `Community 33`, `Community 2`, `Community 71`, `Community 54`, `Community 61`?**
-  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Why does `DateTime` connect `Community 156` to `Community 0`, `Community 64`, `Community 34`, `Community 2`, `Community 73`, `Community 58`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
 - **What connects `$`, `$`, `containerPaymentMode` to the rest of the system?**
   _177 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.05002337540906966 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06845238095238096 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.03125 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
