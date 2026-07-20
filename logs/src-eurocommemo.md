@@ -1,5 +1,89 @@
 # Log — src-eurocommemo
 
+## [2026-07-20 10:05] src-eurocommemo — Création commande Sendcloud post-paiement (point relais, web)
+
+**Target**: src-eurocommemo @ branch `feature/checkout-point-relais` (non commité)
+**Status**: SUCCESS (php -l, lint:yaml/twig/container, cache:clear, debug:messenger, doctrine:schema:validate --skip-sync — tous OK ; test end-to-end à faire par un humain, clés Sendcloud + integration_id réels)
+**Files affected**:
+- `src/Messenger/Message/CreateSendcloudOrderMessage.php` (new) — message async portant `int $orderId`.
+- `src/Messenger/Handler/CreateSendcloudOrderHandler.php` (new) — `#[AsMessageHandler]` idempotent : refetch, gardes (`sendcloudOrderId` vide + `sendcloudServicePointId` présent), délègue à `SendcloudOrderCreator`, log `[Sendcloud] Web relay order created`.
+- `src/Service/Sendcloud/SendcloudOrderCreator.php` (new) — construit le payload Sendcloud v3 (`POST /api/v3/orders`) depuis l'`Order` (order_items, shipping_address, customer_details, payment_details, `service_point_details.id`, `shipping_details.ship_with.shipping_option_code`), appelle `SendcloudApiClient::createOrder()`, stocke `sendcloudOrderId` + flush. Constantes `CURRENCY='EUR'`, `ORDER_STATUS_CODE='fulfilled'`, `PAYMENT_STATUS_CODE='paid'`. Valide les champs d'adresse requis avant l'appel (suggestion review #2).
+- `src/Service/Sendcloud/SendcloudApiClient.php` — ajout `createOrder(array $order): SendcloudOrderDTO` (POST, body enveloppé en tableau, lit `data[0]`, lève `ExternalSendcloudApiException` si réponse invalide).
+- `src/Entity/Order.php` — ajout `getSendcloudExternalOrderId(): ?string` (`orderIdEbay ?? reference`) et `isSendcloudManaged(): bool` (`isEbay || sendcloudOrderId ∉ {null,'0'}`).
+- `src/Service/Sendcloud/SendcloudLabelService.php` — `generateLabel()` utilise `getSendcloudExternalOrderId()` au lieu de `getOrderIdEbay()` (agnostique eBay/web).
+- `src/EventListener/OrderListener.php` — injection `MessageBusInterface`, propriété tampon `$sendcloudOrdersToCreate`, collecte en `onFlush` (transition VALID des commandes web point relais non encore créées), dispatch en `postFlush`.
+- `config/services.yaml` — tag `doctrine.event_listener` `postFlush` sur `OrderListener`.
+- `config/packages/messenger.yaml` — route `CreateSendcloudOrderMessage` → `async_sendcloud`.
+- `src/Controller/Admin/OrderCrudController.php` — 6 verrous `getIsEbay()` → `isSendcloudManaged()` (resolveSendcloudTracking displayIf + méthode, batch, shippingOptions, applyShipping, generateLabel) ; `syncSendcloud` et `admin_delivery_validate` laissés en eBay-only.
+- `templates/admin/order/order_sendcloud_action.html.twig` — gate `isEbay` → `isSendcloudManaged`.
+- `templates/admin/order/order_ebay_shipping_service.html.twig` — lien « Voir sur Sendcloud » élargi à `orderIdEbay ?? reference`.
+
+**Notes**: Implémente `plans/2026-07-19_creation-commande-sendcloud-post-paiement-point-relais.md` (approuvé par plan-reviewer, v2). Déclenchement centralisé sur la transition VALID (`OrderListener`), couvrant CB, PayPal, chèque ET virement (dispatch en `postFlush` = après commit, transport `doctrine://default`). Aucune migration (champs Sendcloud déjà en base). **À confirmer avant prod** (documenté dans le plan) : devise EUR (enum Sendcloud `EUR|GBP|USD`), valeur `order_details.status.code='fulfilled'` pour une commande payée non expédiée (observable via le corps d'erreur au 1er appel réel), non-régression étiquette eBay. Test fonctionnel end-to-end (CB/PayPal + chèque/virement via « Confirmer la réception du paiement ») à réaliser par un humain avec clés réelles. Non commité (rule no-autonomous-commits).
+
+## [2026-07-19 15:45] src-eurocommemo — Route webhook Sendcloud (log seul, pour test)
+
+**Target**: src-eurocommemo @ branch `feature/checkout-point-relais` (même branche, non commitée)
+**Status**: SUCCESS (php -l, debug:router, cache:clear OK ; test POST end-to-end à faire par un humain)
+**Files affected**:
+- `src/Controller/WebhookController.php` — nouvelle action `webhookSendcloud(Request, LoggerInterface): JsonResponse` ajoutée à côté de `webhookEbay()`. Route `#[Route("/sendcloud/notification", name: 'webhook_sendcloud', methods: ['POST'])]` → résout en `/{_locale}/sendcloud/notification` (préfixe global de `config/routes.yaml`, ex. `/fr/sendcloud/notification`). Log `info` `[Webhook][Sendcloud] Notification received` avec headers/query/body brut, retour `JsonResponse(null, 200)`. Aucun nouvel `use` (tous déjà présents).
+**Notes**: Implémente `plans/` (plan approuvé « Route webhook Sendcloud (log seul, pour test) »). Choix : `info` et non `critical` pour ne pas déclencher l'e-mail Monolog en prod ; corps loggé brut (pas de décodage) pour découvrir la forme réelle du payload avant tout parsing ; pas de gate `isWebhookEnable()` à ce stade. Route publique sans modif (security.yaml ne restreint que `^/(fr|en|de)/admin`), CSRF déjà désactivé. `debug:router webhook_sendcloud` confirme `Path /{_locale}/sendcloud/notification`, `Method POST`. **Sendcloud doit appeler une URL avec la locale** (ex. `https://<host>/fr/sendcloud/notification`). Non commité (rule no-autonomous-commits).
+
+## [2026-07-19 15:20] src-eurocommemo — deliveryAddress = adresse du point relais + nom client (aligner web sur eBay)
+
+**Target**: src-eurocommemo @ branch `feature/checkout-point-relais` (même branche, non commitée)
+**Status**: SUCCESS (php -l, lint:twig, lint:container, cache:clear, yarn dev OK ; vérif base/back-office end-to-end à faire par un humain)
+**Files affected**:
+- `templates/order/delivery.html.twig` — 5 champs cachés ajoutés dans `#service-point-picker` : `service_point_street`, `service_point_house_number`, `service_point_postal_code`, `service_point_city`, `service_point_country`.
+- `assets/app-order.js` — callback succès SPP remplit ces 5 champs depuis le payload (`p.street`, `p.house_number`, `p.postal_code`, `p.city`, `p.country`) ; handler `change` des radios les réinitialise (via `addressInputs`). Encore rebuild (`yarn dev`).
+- `src/Controller/OrderController.php` — branche POST relais : `sendcloudDelivery` enrichi d'un sous-tableau `servicePoint` {name, street, houseNumber, postalCode, city, country} lu depuis la requête.
+- `src/Entity/OrderAddress.php` — nouvelle fabrique `fromServicePoint(User $user, array $servicePoint): self` : nom/téléphone du client + adresse du point relais, **line1 = rue du point, line2 = nom du point** (rendu correct via `getDeliveryAddressText()`), countryCode avec fallback ISO utilisateur.
+- `src/Service/CartHelper.php` — `cartToOrder()` : dans la branche relais, override `deliveryAddress` par `OrderAddress::fromServicePoint($user, $sc['servicePoint'])` ; **billingAddress reste `fromUser` (domicile)**. `Order::setDeliveryAddress()`→`replaceAddress()` retire proprement l'adresse posée en amont.
+- `templates/admin/order/order_delivery.html.twig` — branche relais affiche désormais l'adresse complète (`getDeliveryAddressText()` + pays) au lieu du seul nom du point.
+- `docs/src-eurocommemo/graphify-out/*` — graphe rafraîchi (4 fichiers re-extraits ; 346 communities).
+
+**Notes**: Implémente `plans/2026-07-19_livraison-point-relais-tunnel-achat.md` (affinage validé). Motivation : le back-office utilise `deliveryAddress` comme adresse d'expédition ; historiquement (et pour eBay) une commande relais y porte l'adresse du point relais + nom de l'acheteur, alors que le tunnel web y mettait le domicile client. Désormais cohérent. Composition demandée par l'utilisateur : line1 = adresse du point, line2 = nom du point. `pdf-preparation.html.twig` (bordereau) lit déjà `deliveryAddress.*` → affiche l'adresse relais automatiquement ; facture (`pdf-invoice`) = billingAddress = domicile (inchangé). **À confirmer au test** : clés du payload SPP (`street`/`house_number`/`postal_code`/`city`/`country`) — si l'adresse arrive vide en base, logguer le payload à la sélection. Non commité (rule no-autonomous-commits).
+
+## [2026-07-19 14:40] src-eurocommemo — Fix : frais de livraison relais à 0 € sur la page paiement
+
+**Target**: src-eurocommemo @ branch `feature/checkout-point-relais` (même branche, non commitée)
+**Status**: SUCCESS (lint:twig OK ; contrôle visuel page paiement à faire par un humain)
+**Files affected**:
+- `templates/order/paiement.html.twig` (bloc « Livraison », ~l.184-194) — la ligne des frais lisait `delivery.price` (entité `Delivery` passée au template), nulle pour une commande relais (session `delivery` vidée) → affichait « Gratuit » et n'ajoutait rien au total. Remplacé par `order.amountLivraison` (montant persisté, autoritatif) avec la logique `> 0 ? montant : Gratuit`, alignée sur celle déjà utilisée par les mails et la facture.
+**Notes**: Bug **purement d'affichage** : `CartHelper::cartToOrder()` posait déjà `amountLivraison` (2,95 € Shop2Shop) et l'incluait dans `amountCmd` — le débit PayPal/CB était donc correct, seul le récap paiement affichait 0 €. Confirmé isolé : `facture.html.twig:112`, `pdf-invoice.html.twig:166`, `mail_order*.html.twig:51` utilisaient déjà `order.amountLivraison`. Couvre relais (2,95 €), livraison adresse (prix grille ou gratuité déjà calculée) et retrait magasin (0 → Gratuit). Aucune logique PHP modifiée. Non commité (rule no-autonomous-commits).
+
+## [2026-07-19 14:05] src-eurocommemo — Restreindre l'option relais du tunnel au seul Shop2Shop (Chrono Shop2Shop)
+
+**Target**: src-eurocommemo @ branch `feature/checkout-point-relais` (même branche, non commitée)
+**Status**: SUCCESS (php -l, lint:container, cache:clear OK ; picker end-to-end conditionné à une activation compte Sendcloud, voir Notes)
+**Files affected**:
+- `src/Controller/OrderController.php` — ajout constante `SENDCLOUD_SHOP2SHOP_CODE = 'chronopost:shop2shop'` ; `loadSendcloudRelayOptions()` : filtre changé de `requiresServicePoint()` (toutes options relais) à `getCode() === self::SENDCLOUD_SHOP2SHOP_CODE` (Shop2Shop uniquement). NB : une ligne de constante dupliquée (édition concurrente) a été supprimée.
+- `docs/src-eurocommemo/graphify-out/*` — graphe rafraîchi (1 fichier re-extrait ; 350 communities).
+- `plans/2026-07-19_livraison-point-relais-tunnel-achat.md` (meta-repo) — décision « options » corrigée : une seule option Shop2Shop, code exact, + prérequis compte Sendcloud.
+
+**Découverte (commande jetable `app:sendcloud:debug-shipping-options`, créée puis SUPPRIMÉE)** : le listing live des shipping-options FR→FR a montré que **Shop2Shop est un produit Chronopost** — `code=chronopost:shop2shop`, `carrier=chronopost`, `name="Chrono Shop2Shop"`, `requiresServicePoint=YES`, prix 2,95 € — **et non Mondial Relay** (hypothèse initiale du plan, corrigée). Autres options relais du compte : `chronopost:service_point`, `colissimo:post-office`, `mondial_relay:service_point,dualapi/size=l,c2c`, `mondial_relay:locker_delivery`, `mondial_relay:service_point_qr`.
+
+**Notes**: Implémente l'affinage validé de `plans/2026-07-19_livraison-point-relais-tunnel-achat.md`. **Cause de l'erreur picker « transporteurs pas encore activés dans votre section chronopost » clarifiée** : Shop2Shop étant Chronopost, le widget SPP ouvre `carrier=chronopost` ; l'erreur vient de ce que l'affichage des points relais **Chronopost** n'est pas activé dans le compte Sendcloud du client → **activation à faire côté panneau Sendcloud** (Paramètres → Transporteurs), aucun correctif code possible. Le filtre Shop2Shop ne change pas ce point (le transporteur reste Chronopost). Aucun autre fichier modifié (template boucle sur 0/1 option, picker/POST/persistance/mails/admin/traductions inchangés). Non commité (rule no-autonomous-commits).
+
+## [2026-07-19 13:10] src-eurocommemo — Livraison en point relais dans le tunnel d'achat (Sendcloud, côté client)
+
+**Target**: src-eurocommemo @ branch `feature/checkout-point-relais` (nouvelle branche, coupée de `main`, non commitée)
+**Status**: SUCCESS (php -l, lint:twig, lint:yaml, lint:container, cache:clear, doctrine:schema:validate --skip-sync, `yarn dev` — tous OK ; test fonctionnel end-to-end à faire par un humain, clés Sendcloud requises)
+**Files affected**:
+- `src/Dto/Sendcloud/SendcloudShippingOptionDTO.php` — ajout `getPrice(): ?float` + `getCurrency(): ?string` lisant le quote (`calculate_quotes:true`). ⚠ Chemin JSON du prix (`quotes[0].price.total.value`…) non confirmé sur réponse live — plusieurs chemins tentés avec fallback null, à ajuster après 1er appel réel.
+- `src/Controller/OrderController.php` — const `SENDCLOUD_FROM_COUNTRY='FR'` ; injection `SendcloudApiClient $sendcloudApi` (paramètre renommé pour éviter la collision avec le bind `$sendcloudApiClient` = client Guzzle dans services.yaml), `SendcloudConfigurationService`, `LoggerInterface`. `delivery()` : GET charge les options relais dynamiques (`loadSendcloudRelayOptions()`, filtre `requiresServicePoint()`, dégrade en liste vide si API KO) et passe options/clé publique/pays/CP au template ; POST reconnaît `sendcloud:<code>`, valide l'option côté serveur (session `checkoutSendcloudOptions`) + exige un point choisi, stocke `sendcloudDelivery` en session.
+- `src/Service/CartHelper.php` — `cartToOrder()` : branche relais (persiste `sendcloudShippingOptionCode`/`sendcloudServicePointId`/`sendcloudServicePointName` + `amountLivraison` = prix du devis serveur) AVANT la grille `Delivery` existante (elseif). `removeAllCartItem()` purge `sendcloudDelivery` + `checkoutSendcloudOptions`.
+- `templates/order/delivery.html.twig` — bloc `javascripts` (CDN SPP `embed.sendcloud.sc/spp/1.0.0/api.min.js` + `encore_entry_script_tags('app-order')`, absents avant) ; `id="order-delivery-form"` ; boucle radios relais (`sendcloud:<code>`, `data-carrier`) + prix ; bloc `#service-point-picker` (bouton + résumé + erreur inline + inputs cachés `service_point_id/name`).
+- `assets/app-order.js` — glue SPP dans le handler `window.load` : affiche le picker si radio relais coché, ouvre `sendcloud.servicePoints.open()` scoping le transporteur, remplit les inputs, bloque le submit sans point (message inline, pas d'`alert`). Encore rebuild (`yarn dev`, 58 fichiers).
+- `templates/order/paiement.html.twig` — récap : branche relais (`order.sendcloudServicePointId`) avant magasin/adresse.
+- `templates/mail/mail_order.html.twig` + `mail_order_waiting_payment.html.twig` — branche relais dans le bloc « Réception ».
+- `templates/admin/order/order_delivery.html.twig` — affichage back-office « Point relais : <nom> » pour les commandes web relais (`delivery` null n'affiche plus « à récupérer en magasin » à tort).
+- `translations/shop.fr.yml` · `shop.en.yml` · `shop.de.yml` — clés `servicePointOpen`, `servicePointMissing`, `relayDelivery`, `deliveryMissing`.
+- `docs/src-eurocommemo/graphify-out/*` — graphe rafraîchi (5 fichiers re-extraits ; 3877 nodes / 6056 edges / 351 communities).
+
+**Notes**: Implémente `plans/2026-07-19_livraison-point-relais-tunnel-achat.md`. Décisions produit validées : tarif = devis live Sendcloud, UX = widget carte Service Point Picker, options = dynamiques (`requiresServicePoint()`). **Aucune migration** : colonnes `orders.sendcloud_shipping_option_code`/`sendcloud_service_point_id`/`sendcloud_service_point_name` déjà en base (`Version20260712000000.php`) ; `doctrine:schema:validate` mapping OK.
+**Modification pré-existante détectée (non mienne, laissée intacte)** : `src/Service/Sendcloud/SendcloudApiClient.php` porte un changement du working tree du sous-repo (`getServicePoints` radius 300→1000 + fallback `$result` si le filtre `carrierServicePointId` ne matche rien) présent avant cette session — à trier par l'humain au moment du commit, hors périmètre point-relais.
+**À flaguer / hors scope** : génération d'étiquette / push colis Sendcloud pour commandes web (non-eBay) reste hors scope (flux admin gated `getIsEbay()`). **Non vérifié end-to-end** (humain, clés Sendcloud réelles) : parcours panier→information→delivery (radios relais + prix), ouverture carte SPP + choix point, blocage submit sans point, persistance en base + affichage mail/récap/admin, non-régression livraison adresse. **2 points à confirmer sur du réel** : chemin JSON exact du quote (`getPrice`) et signature/champs de `sendcloud.servicePoints.open()` (le `id` renvoyé doit être l'id Sendcloud attendu par `service_point_details.id`). Non poussé / non commité (rule no-autonomous-commits).
+
 ## [2026-07-13 12:45] src-eurocommemo — Guide opérateur Sendcloud (PDF brandé, version simplifiée)
 
 **Target**: meta-repo (livrable dérivé de la Partie A de `docs/src-eurocommemo/sendcloud.md`)
