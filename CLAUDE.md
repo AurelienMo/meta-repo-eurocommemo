@@ -74,8 +74,7 @@ N/A
 
 Each child repo has its own knowledge graph under `docs/<repo>/graphify-out/`
 (one sub-folder per project), with god nodes, community structure, and cross-file
-relationships. Current graphs: `docs/src-eurocommemo/graphify-out/`. The graphs are
-AST-only (no semantic/INFERRED edges, community names are `Community N` placeholders).
+relationships.
 
 Rules:
 - For codebase questions, first run `graphify query "<question>" --graph docs/<repo>/graphify-out/graph.json` when that file exists. Use `graphify path "<A>" "<B>" --graph <...>` for relationships and `graphify explain "<concept>" --graph <...>` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.

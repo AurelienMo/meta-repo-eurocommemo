@@ -8,23 +8,11 @@ Every action taken by Claude on a child repository must be recorded in a per-rep
 logs/<repo>.md
 ```
 
-One file per child repository, named after the project key defined in `projects.json`:
+One file per child repository, named after the child repos declared in the meta-repo's
+`workspace.yaml` — one file per key under `repos:`. The list is therefore project-specific and
+populated when the template is initialized for a client; there is no fixed set of repos here.
 
-- `logs/src-alchimia-api.md`
-- `logs/src-api.md`
-- `logs/src-api-shared-entities.md`
-- `logs/src-cockpit.md`
-- `logs/src-myprems.md`
-- `logs/src-corpo-website.md`
-- `logs/src-iframe-monitoring.md`
-- `logs/src-keycloak-react-templates.md`
-- `logs/src-lambda-pdf-engine.md`
-- `logs/src-mobility-api.md`
-- `logs/src-mobility-front.md`
-- `logs/src-openfinance-widget.md`
-- `logs/src-sharpit.md`
-- `logs/src-smartaccount.md`
-- `logs/src-alchimia-agents.md`
+Example: a repo declared as `projet-alpha:` in `workspace.yaml` logs to `logs/projet-alpha.md`.
 
 Each file lives in the meta-repo and is tracked by Git. Together they form the complete record of all Claude activity across the workspace.
 
