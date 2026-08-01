@@ -1087,3 +1087,38 @@ Verified via `scripts/repo_exec.py` in the container: `php -l` clean; `lint:twig
 **Notes**: The uncommitted work-in-progress in the tree passed a 6th argument to `MailService::sendSendcloudWebhookDebug()`, which only declares 5 parameters — PHP silently discards extra arguments to a userland function, so the filter never applied. Its condition was also inverted and type-wrong (`str_contains(".ebay.com", $parcel)` — haystack/needle swapped, and `$parcel` is an array, which would raise a `TypeError`). Replaced by early returns in the controller; `MailService` keeps its 5-parameter signature unchanged. The pre-existing unused `$configuration` local on line 73 was left as-is (out of scope).
 
 Verified via `scripts/repo_exec.py` in the container: `php -l` clean on `WebhookController.php`. **Not verified**: no live Sendcloud webhook replay, and no unit test added (the controller has no existing test). No commit made (awaiting explicit user instruction).
+
+## [2026-08-01 13:05] src-eurocommemo — Feature: email the buyer when the parcel is available at the pickup point
+
+**Target**: src-eurocommemo @ `main` (working tree, no branch/commit created)
+**Status**: SUCCESS
+**Files affected**:
+- `src/Dto/Sendcloud/SendcloudParcelDTO.php` (new) — read-only view over the webhook `parcel` block, on the `SendcloudServicePointDTO` mould. Service point data is read from `to_address` (`address_line_2` = name, `address_line_1` = street), with the flat root-level keys (`address_2`, `address`, `postal_code`, `city`) as fallback. `getServicePointFullAddress()` assembles "12 RUE DU GENERAL LECLERC, 57390 AUDUN LE TICHE".
+- `src/Entity/Enum/SendcloudParcelStatusEnum.php` (new) — backed enum over the 35 statuses of the account catalogue (`GET /parcels/statuses`). `tryFromPayload()` resolves `code` (v3) → observed numeric `id` (v2) → `message`. **Only id 12 is mapped** (observed in production for "Awaiting customer pickup"): Sendcloud does not publish the id table, and a hand-made test payload once used id 3 for "Ready to send" while the docs map 3 to "En route to sorting center".
+- `src/Service/Sendcloud/UseCase/NotifyServicePointPickupUseCase.php` (new) — resolves the order, guards (eBay, already notified), sends, then stamps + flushes. Unlike `BackfillSendcloudTrackingUseCase` it flushes, having no transactional caller. Backfills `sendcloudServicePointName` only when null.
+- `templates/mail/mail_service_point_pickup.html.twig` (new) — same skeleton/inline styles as `mail_delivery.html.twig`; renders pickup point name, full address, carrier, tracking number and tracking button, payload first with order fallback.
+- `migrations/Version20260801120000.php` (new) — `orders.sendcloud_pickup_notified_at DATETIME DEFAULT NULL`.
+- `src/Entity/Order.php` (modified) — field `sendcloudPickupNotifiedAt` + accessors, next to the other `sendcloud*` columns.
+- `src/Repository/OrderRepository.php` (modified) — `findOneByParcelIdentifiers()`: parcel id → tracking number → `order_number` (matched on `orderIdEbay` OR `reference`). Excludes the `'0'` sentinel of `BackfillSendcloudTrackingUseCase`; `setMaxResults(1)` avoids `NonUniqueResultException`.
+- `src/Service/MailService.php` (modified) — `sendMailServicePointPickup(Order, SendcloudParcelDTO): bool`. **Deliberate deviation**: the subject does not read the `seo` request attribute like the other customer emails. `ConfigurationListener` sets it on every request including the webhook, but only when a `Configuration` row exists; a chained call on null would be fatal inside an endpoint that must always answer 200. Uses the `'EuroCommemorative'` literal, as `sendSendcloudLinkFailure()` already does.
+- `src/Controller/WebhookController.php` (modified) — `webhookSendcloud()` now handles `parcel_status_changed`: builds the DTO, resolves the status, sends on `AWAITING_CUSTOMER_PICKUP`, logs unresolved statuses at `info`. The debug email is untouched and every path still returns 200 so Sendcloud never retries.
+- `tests/Dto/Sendcloud/SendcloudParcelDTOTest.php`, `tests/Entity/Enum/SendcloudParcelStatusEnumTest.php`, `tests/Service/Sendcloud/UseCase/NotifyServicePointPickupUseCaseTest.php`, `tests/fixtures/sendcloud_parcel_awaiting_pickup.json` (new) — 23 tests, fed by the real production payload.
+
+**Notes**: Implements `plans/2026-08-01_mail-colis-dispo-point-relais.md` (estimate `estimates/2026-08-01_mail-colis-dispo-point-relais.md`, ~7.5 h). Scope confirmed with the user: web orders only, dedicated template, single send, no reminder.
+
+**Key finding — there is no per-carrier status list.** Sendcloud normalises every carrier's events into one catalogue of 35 values; only *which* statuses a carrier emits varies. `AWAITING_CUSTOMER_PICKUP` is the single status matching the need. The production webhook sends the **v2 shape** (`{"id": 12, "message": …}`, no `code`) while the account catalogue endpoint answers in v3 (`code` + `message`) — hence the three-key resolution.
+
+**Route correction**: the webhook path is `/{_locale}/sendcloud/notification` (`_locale: fr|en|de`), not `/sendcloud/notification`. Sendcloud must be configured on the `/fr/` prefixed URL.
+
+Verified via `scripts/repo_exec.py` in the container: `php -l` clean on the 7 PHP files; `lint:twig` OK; `lint:container` OK; full suite green (**49 tests, 108 assertions**, up from 26/48). Migration applied (`doctrine:migrations:migrate`), `doctrine:schema:validate` mapping OK — the remaining "database not in sync" is pre-existing and unrelated (`DROP INDEX external_id ON orders`, absent from the mapping); the new column produces no diff.
+
+End-to-end over real HTTP against `https://eurocommemo.orb.local/fr/sendcloud/notification` with the production payload, on real dev orders: (1) **nominal** — order 40375 `EWRQ3E` matched via `order_number` (the parcel-id and tracking branches missing on purpose, so the full fallback chain was exercised), mail received in mailcatcher rendering "PRO ET CIE MORANDINI / 12 RUE DU GENERAL LECLERC, 57390 AUDUN LE TICHE / Chronopost / XM020261994TS", column stamped; (2) **anti-duplicate** — same payload replayed, still exactly 1 pickup email, stamp unchanged; (3) **`code` path** — `{"code":"AWAITING_CUSTOMER_PICKUP"}` on `BBX732` → sent; (4) **`message` path** — `{"message":"Awaiting customer pickup"}` alone on `2ZG8MV` → sent; (5) **`Delivered`** on `9LUR7T` → no mail, not stamped; (6) **unknown status** `{"id":777}` on `5D1OAD` → no mail, `Unrecognised parcel status` logged. The 3 test stamps were **reset to NULL afterwards** (0 rows stamped in base).
+
+**Not verified**: no real Chronopost Shop2Shop delivery observed end to end — that `AWAITING_CUSTOMER_PICKUP` is actually emitted by Chronopost on a live parcel remains to be confirmed on the first real shipment. No commit made (awaiting explicit user instruction).
+
+## [2026-08-02 00:50] src-eurocommemo — Commit the service point pickup notification feature
+
+**Target**: src-eurocommemo @ `main` — commit `c7bbba7`
+**Status**: SUCCESS
+**Files affected**: no file modified by Claude. The 13 files of the 2026-08-01 13:05 entry were staged and committed as one atomic commit `feat(sendcloud): notify buyer on relay pickup` (978 insertions, 1 deletion).
+**Notes**: Two debug leftovers were flagged in `MailService::sendMailServicePointPickup` before staging — a hardcoded recipient (`morvan.aurelien@gmail.com`) and a `dd($e)` short-circuiting the `catch`. The user fixed both manually; the committed code sends to `$order->getUser()->getEmail()` and logs the exception. Not pushed — no push instruction given. This supersedes the "No commit made" note of the previous entry.
