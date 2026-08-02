@@ -1122,3 +1122,23 @@ End-to-end over real HTTP against `https://eurocommemo.orb.local/fr/sendcloud/no
 **Status**: SUCCESS
 **Files affected**: no file modified by Claude. The 13 files of the 2026-08-01 13:05 entry were staged and committed as one atomic commit `feat(sendcloud): notify buyer on relay pickup` (978 insertions, 1 deletion).
 **Notes**: Two debug leftovers were flagged in `MailService::sendMailServicePointPickup` before staging — a hardcoded recipient (`morvan.aurelien@gmail.com`) and a `dd($e)` short-circuiting the `catch`. The user fixed both manually; the committed code sends to `$order->getUser()->getEmail()` and logs the exception. Not pushed — no push instruction given. This supersedes the "No commit made" note of the previous entry.
+
+## [2026-08-02 13:05] src-eurocommemo — Announce the 7-day pickup deadline in the service point email
+
+**Target**: src-eurocommemo @ `main` (working tree, no branch/commit created)
+**Status**: SUCCESS
+**Files affected**:
+- `src/Dto/Sendcloud/SendcloudParcelDTO.php` (modified) — added `DATE_FORMAT` (`'d-m-Y H:i:s'`, the v2 webhook shape observed on every date field of the production payload), `getStatusUpdatedAt(): ?\DateTimeImmutable` and `getPickupDeadline(int $retentionDays): ?\DateTimeImmutable`. Parsing is tolerant: `createFromFormat` first, then a generic `new \DateTimeImmutable()` for the ISO 8601 v3 shape, `null` on failure — this feeds a customer email that must go out even without a date, so nothing throws.
+- `src/Service/MailService.php` (modified) — new `public const PICKUP_RETENTION_DAYS = 7` (first constant of the class) and two variables added to the `render()` of `sendMailServicePointPickup()`: `pickup_retention_days` and `pickup_deadline`. Method signature, subject and error handling untouched.
+- `templates/mail/mail_service_point_pickup.html.twig` (modified) — retention block inserted between the tracking button and the ID-card reminder: "disponible pendant 7 jours, **jusqu'au 05/08/2026 inclus**. Passé ce délai, il sera automatiquement renvoyé à l'expéditeur.", with a dateless variant when `pickup_deadline` is `null`.
+- `tests/Dto/Sendcloud/SendcloudParcelDTOTest.php` (modified) — 4 tests added (status date read from the production payload, deadline `05/08/2026`, `null` when the date is missing/blank/unparsable, ISO 8601 parsing).
+
+**Notes**: Implements `plans/2026-08-02_mail-relais-delai-retrait-7-jours.md`. Sendcloud transmits **no** retention delay — the previous plan's conclusion still holds — but `parcel.date_updated` carries the moment the parcel switched to "Awaiting customer pickup", which is the correct start of the 7-day window. Decisions confirmed with the user: date computed and displayed (never invented — no date in the payload means the generic wording), delay frozen at 7 days in a constant rather than a per-carrier table, since every web relay order goes through `chronopost:shop2shop` today. Nothing persisted: the deadline is derived at send time, so no entity change and no migration.
+
+Verified via `scripts/repo_exec.py` in the container: `php -l` clean on both PHP files; `lint:twig` OK; `lint:container` OK; full suite green (**53 tests, 114 assertions**, up from 49/108).
+
+End-to-end over real HTTP against `https://eurocommemo.orb.local/fr/sendcloud/notification`, on order **41715** `F-2026-1247` — the order that actually matches the production payload (parcel id `690794557` / tracking `XM020261994TS`), stamp reset to `NULL` before each replay: (1) **nominal** — mail rendering "disponible pendant 7 jours, jusqu'au **05/08/2026** inclus. Passé ce délai, il sera automatiquement renvoyé à l'expéditeur."; (2) **no `date_updated`** — mail sent, fallback wording, no date, no error logged; (3) **ISO 8601 `date_updated`** — same output as nominal, confirming the v3 parsing path; (4) **anti-duplicate** — replayed without reset, no fourth pickup mail. The stamp was **restored to its pre-session value** (`2026-08-02 00:36:23`); no other order was touched.
+
+**Trap worth remembering**: a first replay round pointed the payload's `order_number` at other orders and produced *nothing at all, silently*. `findOneByParcelIdentifiers()` resolves parcel id and tracking number **before** `order_number`, so it matched order 41715 (already stamped) and returned `'already_notified'` — a branch that logs nothing. Redirecting a replay by `order_number` alone is ineffective while the payload still carries parcel id/tracking of a known order.
+
+**Not verified**: still no real Chronopost Shop2Shop delivery observed end to end. No commit made (awaiting explicit user instruction).
