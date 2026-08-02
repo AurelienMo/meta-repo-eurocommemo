@@ -725,9 +725,9 @@
     "semantic_hash": "2d6dab3a51478f95cdf3cf392b60d27b"
   },
   "src/Controller/Admin/OrderCrudController.php": {
-    "mtime": 1784988517.1175096,
-    "ast_hash": "37d22dd7b0052c73b76d421a629ba765",
-    "semantic_hash": "37d22dd7b0052c73b76d421a629ba765"
+    "mtime": 1784995338.713,
+    "ast_hash": "86b6940574d91f48950faca003fdf14c",
+    "semantic_hash": "86b6940574d91f48950faca003fdf14c"
   },
   "src/Controller/Admin/PageCrudController.php": {
     "mtime": 1742430172.3264112,
@@ -820,9 +820,9 @@
     "semantic_hash": "8fd78117157142d25be57a15b364172c"
   },
   "src/Controller/OrderController.php": {
-    "mtime": 1784670223.179242,
-    "ast_hash": "7349cce67a439a31ace93dccf4f06739",
-    "semantic_hash": "7349cce67a439a31ace93dccf4f06739"
+    "mtime": 1785176665.155,
+    "ast_hash": "9d5b0698d2854e8122607268257df48b",
+    "semantic_hash": "9d5b0698d2854e8122607268257df48b"
   },
   "src/Controller/PageController.php": {
     "mtime": 1742430172.3384113,
@@ -860,9 +860,9 @@
     "semantic_hash": "7651e86ba8bbc58ff9f97b759bc212af"
   },
   "src/Controller/WebhookController.php": {
-    "mtime": 1784674251.864,
-    "ast_hash": "28aa4eb20a857f9f30100be117581168",
-    "semantic_hash": "28aa4eb20a857f9f30100be117581168"
+    "mtime": 1785623622.177,
+    "ast_hash": "6cecd991c1acae0a04fc42bcf9aed005",
+    "semantic_hash": "6cecd991c1acae0a04fc42bcf9aed005"
   },
   "src/Dto/Contact.php": {
     "mtime": 1742430172.3434112,
@@ -1065,9 +1065,9 @@
     "semantic_hash": "620841b6f640a8de58cf63530316d0e9"
   },
   "src/Entity/Order.php": {
-    "mtime": 1784670223.1830425,
-    "ast_hash": "406d4090b1ddc91b702bf6ed82d0ae04",
-    "semantic_hash": "406d4090b1ddc91b702bf6ed82d0ae04"
+    "mtime": 1785581727.5614865,
+    "ast_hash": "e761fa4803fb3698c8a9899539ef677d",
+    "semantic_hash": "e761fa4803fb3698c8a9899539ef677d"
   },
   "src/Entity/OrderProducts.php": {
     "mtime": 1742430172.3684113,
@@ -1400,9 +1400,9 @@
     "semantic_hash": "f5162ff6405fb651afd81093a50217c9"
   },
   "src/Repository/OrderRepository.php": {
-    "mtime": 1784217027.4248557,
-    "ast_hash": "8c9207db54c200aa12539f06ae8c4a3e",
-    "semantic_hash": "8c9207db54c200aa12539f06ae8c4a3e"
+    "mtime": 1785581755.8113763,
+    "ast_hash": "135e74cbaec99456ebbd9cae8ec1d8fe",
+    "semantic_hash": "135e74cbaec99456ebbd9cae8ec1d8fe"
   },
   "src/Repository/PageRepository.php": {
     "mtime": 1742430172.4034111,
@@ -1590,9 +1590,9 @@
     "semantic_hash": "58935e9728db2adc62cf886d89faca23"
   },
   "src/Service/MailService.php": {
-    "mtime": 1784673834.8147793,
-    "ast_hash": "988b73da853c5b509fa062f8bb05af22",
-    "semantic_hash": "988b73da853c5b509fa062f8bb05af22"
+    "mtime": 1785668121.2263138,
+    "ast_hash": "d50d7ed208c5d0ee5e898eb276aba1d2",
+    "semantic_hash": "d50d7ed208c5d0ee5e898eb276aba1d2"
   },
   "src/Service/OrderHelper.php": {
     "mtime": 1783296565.5725257,
@@ -1890,9 +1890,9 @@
     "semantic_hash": "e1132546d398fc011a3e192905fa22bc"
   },
   "src/Service/Sendcloud/SendcloudApiClient.php": {
-    "mtime": 1784670223.1967084,
-    "ast_hash": "044ec74f6f89566fae7955b2fe575837",
-    "semantic_hash": "044ec74f6f89566fae7955b2fe575837"
+    "mtime": 1785108770.38,
+    "ast_hash": "f7d223e0118b670ed449a6eb0f2566d3",
+    "semantic_hash": "f7d223e0118b670ed449a6eb0f2566d3"
   },
   "tests/Service/Sendcloud/SendcloudApiClientTest.php": {
     "mtime": 1783729272.4227352,
@@ -2043,5 +2043,45 @@
     "mtime": 1784988204.0708678,
     "ast_hash": "2dc2b62b7c735d41cb2bb5a4dc28782f",
     "semantic_hash": "2dc2b62b7c735d41cb2bb5a4dc28782f"
+  },
+  "migrations/Version20260801120000.php": {
+    "mtime": 1785581734.8024604,
+    "ast_hash": "5ad339627678e111dcaa3d772e8b563c",
+    "semantic_hash": "5ad339627678e111dcaa3d772e8b563c"
+  },
+  "src/Dto/Sendcloud/SendcloudParcelDTO.php": {
+    "mtime": 1785668089.2304325,
+    "ast_hash": "a6ac65cf31773fb803a64d8f7f5dbef5",
+    "semantic_hash": "a6ac65cf31773fb803a64d8f7f5dbef5"
+  },
+  "src/Entity/Enum/SendcloudParcelStatusEnum.php": {
+    "mtime": 1785581696.7055986,
+    "ast_hash": "605e41d541db4904da22d3fe367ecab2",
+    "semantic_hash": "605e41d541db4904da22d3fe367ecab2"
+  },
+  "src/Service/Sendcloud/UseCase/NotifyServicePointPickupUseCase.php": {
+    "mtime": 1785623702.235,
+    "ast_hash": "427d04c5d4d375e45a9b5667ccfba80c",
+    "semantic_hash": "427d04c5d4d375e45a9b5667ccfba80c"
+  },
+  "tests/Dto/Sendcloud/SendcloudParcelDTOTest.php": {
+    "mtime": 1785668159.6001713,
+    "ast_hash": "54568b96e02e26f9db72122f86357565",
+    "semantic_hash": "54568b96e02e26f9db72122f86357565"
+  },
+  "tests/Entity/Enum/SendcloudParcelStatusEnumTest.php": {
+    "mtime": 1785581897.5166316,
+    "ast_hash": "e85400dbf9350ca196d55712c0e17342",
+    "semantic_hash": "e85400dbf9350ca196d55712c0e17342"
+  },
+  "tests/Service/Sendcloud/UseCase/NotifyServicePointPickupUseCaseTest.php": {
+    "mtime": 1785581931.4164662,
+    "ast_hash": "bfa1ddd2b444b0356ee0664f964c0d50",
+    "semantic_hash": "bfa1ddd2b444b0356ee0664f964c0d50"
+  },
+  "tests/fixtures/sendcloud_parcel_awaiting_pickup.json": {
+    "mtime": 1785581866.2998405,
+    "ast_hash": "e658f3d6e5950a6c99035273ed1845cf",
+    "semantic_hash": "e658f3d6e5950a6c99035273ed1845cf"
   }
 }
